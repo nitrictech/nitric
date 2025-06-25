@@ -2,15 +2,16 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/websocket"
 )
@@ -28,11 +29,23 @@ type WebSocketServer struct {
 	unregister chan *websocket.Conn
 	incoming   chan Message
 	filePath   string
+	file       *os.File
 	mutex      sync.RWMutex
 }
 
 // NewWebSocketServer creates a new WebSocket server instance
 func NewWebSocketServer(filePath string) *WebSocketServer {
+	// Open the file and keep it open
+	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
+	if err != nil {
+		log.Printf("Error opening file %s: %v", filePath, err)
+		// Create the file if it doesn't exist
+		file, err = os.Create(filePath)
+		if err != nil {
+			log.Fatal("Error creating file:", err)
+		}
+	}
+
 	return &WebSocketServer{
 		clients:    make(map[*websocket.Conn]bool),
 		broadcast:  make(chan Message),
@@ -40,6 +53,14 @@ func NewWebSocketServer(filePath string) *WebSocketServer {
 		unregister: make(chan *websocket.Conn),
 		incoming:   make(chan Message),
 		filePath:   filePath,
+		file:       file,
+	}
+}
+
+// Close closes the file handle
+func (s *WebSocketServer) Close() {
+	if s.file != nil {
+		s.file.Close()
 	}
 }
 
@@ -80,7 +101,9 @@ func (s *WebSocketServer) Run() {
 
 		case message := <-s.incoming:
 			// Write the incoming content to the file
-			err := os.WriteFile(s.filePath, []byte(message.Contents), 0644)
+			s.file.Seek(0, 0)  // Seek to beginning
+			s.file.Truncate(0) // Clear the file
+			_, err := s.file.Write([]byte(message.Contents))
 			if err != nil {
 				log.Printf("Error writing to file %s: %v", s.filePath, err)
 			} else {
@@ -150,29 +173,28 @@ var editCmd = &cobra.Command{
 		done := make(chan bool)
 		go func(doneCh chan bool) {
 			defer close(doneCh)
+			var cancel, debounced func()
 			for event := range watcher.Events {
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					fmt.Println("File modified:", event.Name)
-
-					// Read the current contents of the file
-					file, err := os.Open(event.Name)
-					if err != nil {
-						log.Printf("Error opening file %s: %v", event.Name, err)
-						continue
+				if event.Has(fsnotify.Write) {
+					if cancel != nil {
+						cancel()
 					}
 
-					contents, err := io.ReadAll(file)
-					file.Close()
-					if err != nil {
-						log.Printf("Error reading file %s: %v", event.Name, err)
-						continue
-					}
+					debounced, cancel = lo.NewDebounce(100*time.Millisecond, func() {
+						// Read the current contents of the file
+						wsServer.file.Seek(0, 0) // Seek to beginning
+						contents, err := io.ReadAll(wsServer.file)
+						if err != nil {
+							log.Printf("Error reading file %s: %v", event.Name, err)
+						}
 
-					// Broadcast file change with contents to WebSocket clients
-					message := Message{
-						Contents: string(contents),
-					}
-					wsServer.broadcast <- message
+						// Broadcast file change with contents to WebSocket clients
+						message := Message{
+							Contents: string(contents),
+						}
+						wsServer.broadcast <- message
+					})
+					debounced()
 				}
 			}
 		}(done)
@@ -183,10 +205,11 @@ var editCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		// I want to start a websocket server here that will broadcast yaml file changes to connected clients
-
 		// Block on done
 		<-done
+
+		// Close the file when done
+		wsServer.Close()
 	},
 }
 
