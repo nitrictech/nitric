@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/nitrictech/nitric/cli/internal/browser"
-	"github.com/nitrictech/nitric/cli/internal/filex"
+	"github.com/nitrictech/nitric/cli/internal/devserver"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +24,13 @@ var editCmd = &cobra.Command{
 			log.Printf("Error listening: %v", err)
 		}
 
-		// Create and start the file watcher
-		fileWatcher := filex.NewWebsocketServerSync(fileName, filex.WithDebounce(time.Millisecond*100), filex.WithListener(listener))
-		defer fileWatcher.Close()
+		devwsServer := devserver.NewDevWebsocketServer(devserver.WithListener(listener))
+		fileSync, err := devserver.NewFileSync(fileName, devwsServer.Publish, devserver.WithDebounce(time.Millisecond*100))
+		cobra.CheckErr(err)
+		defer fileSync.Close()
+
+		// subscribe the file sync to the websocket server
+		devwsServer.Subscribe(fileSync)
 
 		log.Printf("Watching file: %s", fileName)
 		log.Println("Press Ctrl+C to stop")
@@ -34,11 +38,16 @@ var editCmd = &cobra.Command{
 		// Start the WebSocket server
 		errChan := make(chan error)
 		go func(errChan chan error) {
-			err := fileWatcher.Start()
+			err := devwsServer.Start()
 			if err != nil {
 				errChan <- err
 			}
 		}(errChan)
+
+		err = fileSync.Start()
+		if err != nil {
+			log.Printf("Error starting file sync: %v", err)
+		}
 
 		// Get the port for the listener
 		port := listener.Addr().(*net.TCPAddr).Port

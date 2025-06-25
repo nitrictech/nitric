@@ -1,7 +1,7 @@
 package schema
 
 type WebsiteIntent struct {
-	Resource
+	Resource     `json:",inline" yaml:",inline"`
 	BaseDir      string      `json:"baseDir" yaml:"baseDir"`
 	AssetDir     string      `json:"assetDir" yaml:"assetDir"`
 	ErrorPage    string      `json:"errorPage" yaml:"errorPage"`
