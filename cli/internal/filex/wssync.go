@@ -31,10 +31,22 @@ type WebsocketServerSync struct {
 	filePath   string
 	file       *os.File
 	mutex      sync.RWMutex
+	debounce   time.Duration
 }
 
+// Implement additional constructor options
+type WebsocketServerSyncOption func(*WebsocketServerSync)
+
+func WithDebounce(debounce time.Duration) WebsocketServerSyncOption {
+	return func(ws *WebsocketServerSync) {
+		ws.debounce = debounce
+	}
+}
+
+const defaultDebounce = time.Millisecond * 100
+
 // NewWebsocketServerSync creates a Websocket file syncing service
-func NewWebsocketServerSync(filePath string) *WebsocketServerSync {
+func NewWebsocketServerSync(filePath string, options ...WebsocketServerSyncOption) *WebsocketServerSync {
 	// Open the file and keep it open
 	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
 	if err != nil {
@@ -46,7 +58,7 @@ func NewWebsocketServerSync(filePath string) *WebsocketServerSync {
 		}
 	}
 
-	return &WebsocketServerSync{
+	ws := &WebsocketServerSync{
 		clients:    make(map[*websocket.Conn]bool),
 		broadcast:  make(chan Message),
 		register:   make(chan *websocket.Conn),
@@ -54,7 +66,15 @@ func NewWebsocketServerSync(filePath string) *WebsocketServerSync {
 		incoming:   make(chan Message),
 		filePath:   filePath,
 		file:       file,
+		debounce:   defaultDebounce,
 	}
+
+	// Apply options
+	for _, option := range options {
+		option(ws)
+	}
+
+	return ws
 }
 
 // Close closes the file handle
@@ -189,7 +209,7 @@ func (fw *WebsocketServerSync) watchFile() error {
 			}
 
 			var fileError error = nil
-			debounced, cancel = lo.NewDebounce(100*time.Millisecond, func() {
+			debounced, cancel = lo.NewDebounce(fw.debounce, func() {
 				// Read the current contents of the file
 				fw.file.Seek(0, 0) // Seek to beginning
 				contents, err := io.ReadAll(fw.file)

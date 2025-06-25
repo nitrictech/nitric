@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+	"time"
 
 	"github.com/nitrictech/nitric/cli/internal/filex"
 	"github.com/spf13/cobra"
@@ -16,7 +17,7 @@ var editCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// Create and start the file watcher
-		fileWatcher := filex.NewWebsocketServerSync(fileName)
+		fileWatcher := filex.NewWebsocketServerSync(fileName, filex.WithDebounce(time.Millisecond*100))
 		defer fileWatcher.Close()
 
 		log.Printf("Watching file: %s", fileName)
