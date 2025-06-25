@@ -38,7 +38,8 @@ type NitricSyncMessage struct {
 
 // WebsocketServerSync manages WebSocket connections and file watching
 type WebsocketServerSync struct {
-	clients map[*websocket.Conn]bool
+	listener *net.Listener
+	clients  map[*websocket.Conn]bool
 	// TODO: Update to interface
 	broadcast  chan NitricSyncMessage
 	register   chan *websocket.Conn
@@ -57,6 +58,12 @@ type WebsocketServerSyncOption func(*WebsocketServerSync)
 func WithDebounce(debounce time.Duration) WebsocketServerSyncOption {
 	return func(ws *WebsocketServerSync) {
 		ws.debounce = debounce
+	}
+}
+
+func WithListener(listener net.Listener) WebsocketServerSyncOption {
+	return func(ws *WebsocketServerSync) {
+		ws.listener = &listener
 	}
 }
 
@@ -188,15 +195,19 @@ func (fw *WebsocketServerSync) Start() error {
 	// Set up HTTP server for WebSocket connections
 	http.Handle("/ws", httpServer)
 
-	listener, err := net.Listen("tcp", "localhost:0")
-	if err != nil {
-		return err
+	if fw.listener == nil {
+		listener, err := net.Listen("tcp", "localhost:0")
+		if err != nil {
+			return err
+		}
+		fw.listener = &listener
 	}
 
+	address := (*fw.listener).Addr().String()
 	// Start HTTP server in a goroutine
 	go func() {
-		log.Println("Starting WebSocket server on", listener.Addr().String())
-		if err := http.Serve(listener, nil); err != nil {
+		log.Println("Starting WebSocket server on", address)
+		if err := http.Serve(*fw.listener, nil); err != nil {
 			log.Fatal("WebSocket server error:", err)
 		}
 	}()
