@@ -190,7 +190,6 @@ func (fw *DevWebsockerServer) Start() error {
 
 	// Start HTTP server in a goroutine
 	go func() {
-		log.Println("Starting WebSocket server on", listener.Addr().String())
 		if err := http.Serve(listener, nil); err != nil {
 			log.Fatal("WebSocket server error:", err)
 		}

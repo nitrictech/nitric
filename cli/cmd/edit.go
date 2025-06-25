@@ -6,12 +6,26 @@ import (
 	"net"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/browser"
 	"github.com/nitrictech/nitric/cli/internal/devserver"
+	"github.com/nitrictech/nitric/cli/internal/style"
+	"github.com/nitrictech/nitric/cli/internal/style/icons"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/spf13/cobra"
 )
 
 const fileName = "nitric.yaml"
+
+var nitric = style.Purple(icons.Lightning + " Nitric")
+
+func nitricIntro() string {
+	version := version.GetShortVersion()
+
+	intro := fmt.Sprintf("\n%s %s\n", nitric, style.Gray(version))
+
+	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder(), false, true).Render(intro)
+}
 
 var editCmd = &cobra.Command{
 	Use:   "edit",
@@ -32,8 +46,10 @@ var editCmd = &cobra.Command{
 		// subscribe the file sync to the websocket server
 		devwsServer.Subscribe(fileSync)
 
-		log.Printf("Watching file: %s", fileName)
-		log.Println("Press Ctrl+C to stop")
+		fmt.Println(nitricIntro())
+
+		fmt.Printf("Watching file: %s\n", fileName)
+		fmt.Println("Press Ctrl+C to stop")
 
 		// Start the WebSocket server
 		errChan := make(chan error)
@@ -44,10 +60,12 @@ var editCmd = &cobra.Command{
 			}
 		}(errChan)
 
-		err = fileSync.Start()
-		if err != nil {
-			log.Printf("Error starting file sync: %v", err)
-		}
+		go func() {
+			err = fileSync.Start()
+			if err != nil {
+				log.Printf("Error starting file sync: %v", err)
+			}
+		}()
 
 		// Get the port for the listener
 		port := listener.Addr().(*net.TCPAddr).Port
