@@ -21,8 +21,8 @@ type Message struct {
 	Contents string `json:"contents"`
 }
 
-// FileSyncer manages WebSocket connections and file watching
-type FileSyncer struct {
+// WebsocketServerSync manages WebSocket connections and file watching
+type WebsocketServerSync struct {
 	clients    map[*websocket.Conn]bool
 	broadcast  chan Message
 	register   chan *websocket.Conn
@@ -33,8 +33,8 @@ type FileSyncer struct {
 	mutex      sync.RWMutex
 }
 
-// NewFileWatcher creates a new file watcher instance
-func NewFileSyncer(filePath string) *FileSyncer {
+// NewWebsocketServerSync creates a Websocket file syncing service
+func NewWebsocketServerSync(filePath string) *WebsocketServerSync {
 	// Open the file and keep it open
 	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
 	if err != nil {
@@ -46,7 +46,7 @@ func NewFileSyncer(filePath string) *FileSyncer {
 		}
 	}
 
-	return &FileSyncer{
+	return &WebsocketServerSync{
 		clients:    make(map[*websocket.Conn]bool),
 		broadcast:  make(chan Message),
 		register:   make(chan *websocket.Conn),
@@ -58,14 +58,14 @@ func NewFileSyncer(filePath string) *FileSyncer {
 }
 
 // Close closes the file handle
-func (fw *FileSyncer) Close() {
+func (fw *WebsocketServerSync) Close() {
 	if fw.file != nil {
 		fw.file.Close()
 	}
 }
 
-// Run starts the WebSocket server
-func (fw *FileSyncer) Run() {
+// run starts the WebSocket server
+func (fw *WebsocketServerSync) run() {
 	for {
 		select {
 		case client := <-fw.register:
@@ -114,7 +114,7 @@ func (fw *FileSyncer) Run() {
 }
 
 // handleWebSocket handles WebSocket connections
-func (fw *FileSyncer) handleWebSocket(ws *websocket.Conn) {
+func (fw *WebsocketServerSync) handleWebSocket(ws *websocket.Conn) {
 	fw.register <- ws
 
 	// Handle client disconnection
@@ -136,9 +136,9 @@ func (fw *FileSyncer) handleWebSocket(ws *websocket.Conn) {
 	}
 }
 
-// StartServer starts the WebSocket server and file watcher
-func (fw *FileSyncer) StartServer() error {
-	go fw.Run()
+// Start starts the WebSocket server and file watcher
+func (fw *WebsocketServerSync) Start() error {
+	go fw.run()
 
 	httpServer := websocket.Server{
 		Handler: websocket.Handler(fw.handleWebSocket),
@@ -163,24 +163,22 @@ func (fw *FileSyncer) StartServer() error {
 		}
 	}()
 
-	// Start file watcher
-	go fw.watchFile()
-
-	return nil
+	// Block on watch file and return in case of errors
+	return fw.watchFile()
 }
 
 // watchFile watches the file for changes and broadcasts updates
-func (fw *FileSyncer) watchFile() {
+func (fw *WebsocketServerSync) watchFile() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer watcher.Close()
 
 	// Add the file to the watcher
 	err = watcher.Add(fw.filePath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	var cancel, debounced func()
@@ -190,12 +188,13 @@ func (fw *FileSyncer) watchFile() {
 				cancel()
 			}
 
+			var fileError error = nil
 			debounced, cancel = lo.NewDebounce(100*time.Millisecond, func() {
 				// Read the current contents of the file
 				fw.file.Seek(0, 0) // Seek to beginning
 				contents, err := io.ReadAll(fw.file)
 				if err != nil {
-					log.Printf("Error reading file %s: %v", event.Name, err)
+					fileError = err
 					return
 				}
 
@@ -206,6 +205,11 @@ func (fw *FileSyncer) watchFile() {
 				fw.broadcast <- message
 			})
 			debounced()
+			if fileError != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }

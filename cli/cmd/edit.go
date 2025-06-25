@@ -16,18 +16,15 @@ var editCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// Create and start the file watcher
-		fileWatcher := filex.NewFileSyncer(fileName)
+		fileWatcher := filex.NewWebsocketServerSync(fileName)
 		defer fileWatcher.Close()
-
-		// Start the WebSocket server
-		err := fileWatcher.StartServer()
-		cobra.CheckErr(err)
 
 		log.Printf("Watching file: %s", fileName)
 		log.Println("Press Ctrl+C to stop")
 
-		// Block forever
-		select {}
+		// Start the WebSocket server
+		err := fileWatcher.Start()
+		cobra.CheckErr(err)
 	},
 }
 
