@@ -41,7 +41,7 @@ var editCmd = &cobra.Command{
 		}
 
 		devwsServer := devserver.NewDevWebsocketServer(devserver.WithListener(listener))
-		fileSync, err := devserver.NewFileSync(fileName, devwsServer.Publish, devserver.WithDebounce(time.Millisecond*100))
+		fileSync, err := devserver.NewFileSync(fileName, devwsServer.Broadcast, devserver.WithDebounce(time.Millisecond*100))
 		cobra.CheckErr(err)
 		defer fileSync.Close()
 

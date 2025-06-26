@@ -41,10 +41,10 @@ func WithListener(listener net.Listener) WebsocketServerSyncOption {
 
 const defaultDebounce = time.Millisecond * 100
 
-type PublishFunc func(Message[any])
+type BroadcastFunc func(Message[any])
 
-// Publish a message to connected clients
-func (fw *DevWebsockerServer) Publish(message Message[any]) {
+// Broadcast a message to connected clients
+func (fw *DevWebsockerServer) Broadcast(message Message[any]) {
 	fw.broadcast <- message
 }
 
@@ -63,8 +63,23 @@ func (fw *DevWebsockerServer) notify(message json.RawMessage) {
 	}
 }
 
+type SendFunc func(message Message[any])
+
+func (fw *DevWebsockerServer) sendToClient(client *websocket.Conn) SendFunc {
+	return func(message Message[any]) {
+		messageJSON, err := json.Marshal(message)
+		if err != nil {
+			log.Printf("Error marshaling message: %v", err)
+			return
+		}
+		client.Write(messageJSON)
+	}
+}
+
 type Subscriber interface {
 	OnMessage(message json.RawMessage)
+	// Provide a function reference that allows the subscriber to send messages to the newly connected client
+	OnConnect(send SendFunc)
 }
 
 func (fw *DevWebsockerServer) Subscribe(subscriber Subscriber) func() {
@@ -106,6 +121,11 @@ func (fw *DevWebsockerServer) run() {
 			fw.mutex.Lock()
 			fw.clients[client] = true
 			fw.mutex.Unlock()
+			// Notify all subscribers that a new client has connected and allow them to message that client directly
+			send := fw.sendToClient(client)
+			for _, subscriber := range fw.subscribers {
+				subscriber.OnConnect(send)
+			}
 			log.Printf("Client connected. Total clients: %d", len(fw.clients))
 
 		case client := <-fw.unregister:

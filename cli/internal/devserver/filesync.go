@@ -18,7 +18,7 @@ type NitricFileSync struct {
 	filePath         string
 	file             *os.File
 	debounce         time.Duration
-	publish          PublishFunc
+	broadcast        BroadcastFunc
 	lastSyncContents []byte
 }
 
@@ -30,6 +30,51 @@ func WithDebounce(debounce time.Duration) FileSyncOption {
 	return func(fs *NitricFileSync) {
 		fs.debounce = debounce
 	}
+}
+
+func (fs *NitricFileSync) getFileContents() (*schema.Application, []byte, error) {
+	fs.file.Seek(0, 0) // Seek to beginning
+	contents, err := io.ReadAll(fs.file)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	application, schemaResult, err := schema.ApplicationFromYaml(string(contents))
+	if err != nil {
+		fmt.Println("Error parsing application from yaml:", err)
+		return nil, contents, err
+	} else if schemaResult != nil && len(schemaResult.Errors()) > 0 {
+		// Wrap the schema errors in a new error
+		return nil, contents, fmt.Errorf("Errors parsing application from yaml: %v", schemaResult.Errors())
+	}
+
+	return application, contents, nil
+}
+
+func (fs *NitricFileSync) setFileContents(contents []byte) error {
+	_, err := fs.file.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+	err = fs.file.Truncate(0)
+	if err != nil {
+		return err
+	}
+
+	_, err = fs.file.Write(contents)
+	return err
+}
+
+func (fs *NitricFileSync) OnConnect(send SendFunc) {
+	application, _, err := fs.getFileContents()
+	if err != nil {
+		return
+	}
+	// Send initial state to a newly connected client
+	send(Message[any]{
+		Type:    "nitricSync",
+		Payload: *application,
+	})
 }
 
 func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
@@ -50,34 +95,24 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 		return
 	}
 
-	_, err = fs.file.Seek(0, 0)
+	err = fs.setFileContents(yamlContents)
 	if err != nil {
-		return
-	}
-	err = fs.file.Truncate(0)
-	if err != nil {
-		fmt.Println("Error truncating file:", err)
+		fmt.Println("Error setting file contents:", err)
 		return
 	}
 
 	fs.lastSyncContents = yamlContents
-
-	_, err = fs.file.Write(yamlContents)
-	if err != nil {
-		fmt.Println("Error writing file:", err)
-		return
-	}
 }
 
 func (fs *NitricFileSync) Close() error {
 	return fs.file.Close()
 }
 
-func NewFileSync(filePath string, publish PublishFunc, options ...FileSyncOption) (*NitricFileSync, error) {
+func NewFileSync(filePath string, broadcast BroadcastFunc, options ...FileSyncOption) (*NitricFileSync, error) {
 	var err error
 	fs := &NitricFileSync{
-		filePath: filePath,
-		publish:  publish,
+		filePath:  filePath,
+		broadcast: broadcast,
 	}
 
 	for _, option := range options {
@@ -119,29 +154,17 @@ func (fw *NitricFileSync) watchFile() error {
 
 			var fileError error = nil
 			debounced, cancel = lo.NewDebounce(fw.debounce, func() {
-				// Read the current contents of the file
-				fw.file.Seek(0, 0) // Seek to beginning
-				contents, err := io.ReadAll(fw.file)
+				application, contents, err := fw.getFileContents()
 				if err != nil {
 					fileError = err
 					return
 				}
 
-				application, schemaResult, err := schema.ApplicationFromYaml(string(contents))
-				if err != nil {
-					fmt.Println("Error parsing application from yaml:", err)
-					return
-				} else if schemaResult != nil && len(schemaResult.Errors()) > 0 {
-					fmt.Println("Errors parsing application from yaml:", schemaResult.Errors())
-					return
-				}
-
-				// Don't publish if the contents are the same as the last sync down
 				if bytes.Equal(fw.lastSyncContents, contents) {
 					return
 				}
 
-				fw.publish(Message[any]{
+				fw.broadcast(Message[any]{
 					Type:    "nitricSync",
 					Payload: *application,
 				})
