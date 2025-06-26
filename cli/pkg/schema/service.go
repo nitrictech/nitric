@@ -1,7 +1,7 @@
 package schema
 
 type ServiceIntent struct {
-	Resource
+	Resource  `json:",inline" yaml:",inline"`
 	Env       map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 	Container Container         `json:"container" yaml:"container" jsonschema:"oneof_required=container"`
 

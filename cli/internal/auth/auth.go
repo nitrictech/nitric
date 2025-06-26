@@ -128,7 +128,7 @@ func getWorkOSClient() (*workos.HttpClient, error) {
 		return workosClient, nil
 	}
 
-	nitricApiClient := api.NewNitricApiClient(config.GetApiUrl())
+	nitricApiClient := api.NewNitricApiClient(config.GetNitricServerUrl())
 	workosDetails, err := nitricApiClient.GetWorkOSPublicDetails()
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "connection reset by peer") {

@@ -21,10 +21,10 @@ var ErrNotFound = errors.New("no token found")
 const KEYRING_SERVICE = "nitric.v2.cli"
 
 // Store 1 token per API
-var WORKOS_TOKEN_KEY = getWorkosTokenKey(config.GetApiUrl())
+var WORKOS_TOKEN_KEY = getWorkosTokenKey(config.GetNitricServerUrl().String())
 
 func getWorkosTokenKey(apiUrl string) string {
-	// Hash the API URL for a consistent length.
+	// Hash the API URL for a consistent length. We don't use the scheme or host, just the path
 	hash := sha256.Sum256([]byte(apiUrl + ".workos"))
 	return fmt.Sprintf("%x", hash)
 }

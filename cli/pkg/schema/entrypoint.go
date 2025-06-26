@@ -12,8 +12,8 @@ const (
 )
 
 type EntrypointIntent struct {
-	Resource
-	Routes map[string]Route `json:"routes" yaml:"routes"`
+	Resource `json:",inline" yaml:",inline"`
+	Routes   map[string]Route `json:"routes" yaml:"routes"`
 }
 
 func (e *EntrypointIntent) GetType() string {

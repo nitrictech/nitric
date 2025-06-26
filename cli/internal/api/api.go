@@ -6,17 +6,17 @@ import (
 )
 
 type NitricApiClient struct {
-	apiUrl string
+	apiUrl *url.URL
 }
 
-func NewNitricApiClient(apiUrl string) *NitricApiClient {
+func NewNitricApiClient(apiUrl *url.URL) *NitricApiClient {
 	return &NitricApiClient{
 		apiUrl: apiUrl,
 	}
 }
 
 func (c *NitricApiClient) get(path string) (*http.Response, error) {
-	apiUrl, err := url.JoinPath(c.apiUrl, path)
+	apiUrl, err := url.JoinPath(c.apiUrl.String(), path)
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,7 @@
 package schema
 
 type BucketIntent struct {
-	Resource
+	Resource `json:",inline" yaml:",inline"`
 
 	ContentPath string `json:"content_path,omitempty" yaml:"content_path,omitempty"`
 

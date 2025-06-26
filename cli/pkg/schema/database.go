@@ -1,7 +1,7 @@
 package schema
 
 type DatabaseIntent struct {
-	Resource
+	Resource `json:",inline" yaml:",inline"`
 
 	Access map[string][]string `json:"access,omitempty" yaml:"access,omitempty"`
 }
