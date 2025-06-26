@@ -82,7 +82,7 @@ func Save() error {
 }
 
 func setDefaults() {
-	viper.SetDefault(NitricServerUrlKey, "https://app.nitric.io/api/")
+	viper.SetDefault(NitricServerUrlKey, "https://app.nitric.io/")
 }
 
 // Load loads the config from the file or the home directory
