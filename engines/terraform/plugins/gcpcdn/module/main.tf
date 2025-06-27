@@ -190,7 +190,7 @@ resource "google_compute_url_map" "https_url_map" {
       for_each = local.cloud_storage_origins
 
       content {
-        service = google_compute_backend_bucket.website_backends[path_rule.key].self_link
+        service = google_compute_backend_bucket.bucket_backends[path_rule.key].self_link
         paths   = [
           startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}/*" : "/${path_rule.value.base_path}/${path_rule.value.path}/*", // Ensure /${path}/*
           startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}/${path_rule.value.path}"] // Ensure /${path}
