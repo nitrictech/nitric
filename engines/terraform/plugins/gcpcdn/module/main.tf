@@ -93,7 +93,7 @@ data "google_storage_bucket" "bucket" {
   name = each.value.id
 }
 
-resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
+resource "google_storage_bucket_iam_binding" "bucket_iam" {
   for_each = local.cloud_storage_origins
 
   bucket = data.google_storage_bucket.bucket[each.key].name
@@ -104,7 +104,7 @@ resource "google_storage_bucket_iam_binding" "website_bucket_iam" {
   ]
 }
 
-resource "google_compute_backend_bucket" "website_backends" {
+resource "google_compute_backend_bucket" "bucket_backends" {
   for_each = local.cloud_storage_origins
 
   project = var.project_id
@@ -144,11 +144,20 @@ resource "google_compute_backend_service" "external_backends" {
   }
 }
 
+locals {
+  // Return correct backend_service depending on type of the default origin
+  default_origin_backend_service = (contains(keys(local.cloud_storage_origins), local.default_origin) ? 
+    google_compute_backend_bucket.bucket_backends[local.default_origin].self_link : 
+    (contains(keys(local.cloud_run_origins), local.default_origin) ? 
+      google_compute_backend_service.service_backends[local.default_origin].self_link : 
+      google_compute_backend_service.external_backends[local.default_origin].self_link))
+}
+
 # Create a URL Map for routing requests
 resource "google_compute_url_map" "https_url_map" {
   name            = "https-site-url-map-${random_string.cdn_prefix.result}"
   project = var.project_id
-  default_service = google_compute_backend_service.service_backends[local.default_origin].self_link
+  default_service = local.default_origin_backend_service
 
   host_rule {
     hosts        = ["*"]
@@ -157,7 +166,7 @@ resource "google_compute_url_map" "https_url_map" {
 
   path_matcher {
     name            = "all-paths"
-    default_service = google_compute_backend_service.service_backends[local.default_origin].self_link
+    default_service = local.default_origin_backend_service
 
     dynamic "path_rule" {
       for_each = local.cloud_run_origins
