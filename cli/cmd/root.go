@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/nitrictech/nitric/cli/cmd/templates"
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -26,6 +27,9 @@ func init() {
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.nitric.yaml)")
+
+	// Add non-sibling commands
+	rootCmd.AddCommand(templates.TemplatesCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
