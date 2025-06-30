@@ -9,8 +9,8 @@ import (
 
 var loginCmd = &cobra.Command{
 	Use:   "accesstoken",
-	Short: "Get the access token for the Nitric",
-	Long:  `Get the access token for the Nitric.`,
+	Short: "Get the access token for the Nitric Platform",
+	Long:  `Get the access token for the Nitric Platform.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		token, err := auth.GetOrRefreshWorkosToken()
 		if err != nil {
