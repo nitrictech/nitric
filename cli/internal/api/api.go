@@ -1,17 +1,27 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type NitricApiClient struct {
-	apiUrl *url.URL
+	apiUrl      *url.URL
+	client      *http.Client
+	accessToken *string
 }
 
-func NewNitricApiClient(apiUrl *url.URL) *NitricApiClient {
+func NewNitricApiClient(apiUrl *url.URL, accessToken *string) *NitricApiClient {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	return &NitricApiClient{
-		apiUrl: apiUrl,
+		apiUrl:      apiUrl,
+		client:      client,
+		accessToken: accessToken,
 	}
 }
 
@@ -26,5 +36,12 @@ func (c *NitricApiClient) get(path string) (*http.Response, error) {
 		return nil, err
 	}
 
-	return http.DefaultClient.Do(req)
+	if c.accessToken != nil {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", *c.accessToken))
+	}
+
+	req.Header.Set("User-Agent", "nitric-cli")
+	req.Header.Set("Accept", "application/json")
+
+	return c.client.Do(req)
 }
