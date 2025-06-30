@@ -14,6 +14,21 @@ locals {
   }
 
   default_origin = length(local.root_origins) > 0 ? keys(local.root_origins)[0] : keys(var.nitric.origins)[0]
+
+  cloud_storage_origins = {
+    for k, v in var.nitric.origins : k => v
+    if contains(keys(v.resources), "google_storage_bucket")
+  }
+
+  cloud_run_origins = {
+    for k, v in var.nitric.origins : k => v
+    if contains(keys(v.resources), "google_cloud_run_v2_service")
+  }
+
+  other_origins = {
+    for k, v in var.nitric.origins : k => v
+    if !contains(keys(v.resources), "google_storage_bucket") && !contains(keys(v.resources), "google_cloud_run_v2_service")
+  }
 }
 
 
@@ -37,8 +52,8 @@ resource "random_string" "cdn_prefix" {
 
 # Create Network Endpoint Groups for services
 resource "google_compute_region_network_endpoint_group" "service_negs" {
+  for_each = local.cloud_run_origins
   provider = google-beta
-  for_each = var.nitric.origins
 
   name                  = "${each.key}-service-neg"
   region                = var.region
@@ -53,11 +68,12 @@ resource "google_compute_region_network_endpoint_group" "service_negs" {
 
 # Create Backend Services for services
 resource "google_compute_backend_service" "service_backends" {
-  for_each = var.nitric.origins
+  for_each = local.cloud_run_origins
 
-  name     = "${each.key}-service-bs"
-  protocol = "HTTPS"
   project = var.project_id
+
+  name     = "${provider::corefunc::str_kebab(each.key)}-service-bs"
+  protocol = "HTTPS"
   enable_cdn  = false
 
   backend {
@@ -71,11 +87,77 @@ resource "google_compute_global_address" "cdn_ip" {
   project = var.project_id
 }
 
+data "google_storage_bucket" "bucket" {
+  for_each = local.cloud_storage_origins
+
+  name = each.value.id
+}
+
+resource "google_storage_bucket_iam_binding" "bucket_iam" {
+  for_each = local.cloud_storage_origins
+
+  bucket = data.google_storage_bucket.bucket[each.key].name
+  role   = "roles/storage.objectViewer"
+
+  members = [
+    "allUsers"
+  ]
+}
+
+resource "google_compute_backend_bucket" "bucket_backends" {
+  for_each = local.cloud_storage_origins
+
+  project = var.project_id
+
+  name        = "${provider::corefunc::str_kebab(each.key)}-site-bucket"
+  bucket_name = data.google_storage_bucket.bucket[each.key].name
+  enable_cdn  = true
+}
+
+resource "google_compute_region_network_endpoint_group" "external_negs" {
+  for_each = local.other_origins
+  provider = google-beta
+
+  name                  = "${each.key}-external-neg"
+  network_endpoint_type = "INTERNET_FQDN_PORT"
+  region = var.region
+
+  connection {
+    host = each.value.domain_name
+    port = 443
+  }
+
+  depends_on = [ google_project_service.required_services ]
+}
+
+resource "google_compute_backend_service" "external_backends" {
+  for_each = local.other_origins
+
+  project = var.project_id
+
+  name     = "${provider::corefunc::str_kebab(each.key)}-external-bs"
+  protocol = "HTTPS"
+  enable_cdn  = false
+
+  backend {
+    group = google_compute_region_network_endpoint_group.external_negs[each.key].self_link
+  }
+}
+
+locals {
+  // Return correct backend_service depending on type of the default origin
+  default_origin_backend_service = (contains(keys(local.cloud_storage_origins), local.default_origin) ? 
+    google_compute_backend_bucket.bucket_backends[local.default_origin].self_link : 
+    (contains(keys(local.cloud_run_origins), local.default_origin) ? 
+      google_compute_backend_service.service_backends[local.default_origin].self_link : 
+      google_compute_backend_service.external_backends[local.default_origin].self_link))
+}
+
 # Create a URL Map for routing requests
 resource "google_compute_url_map" "https_url_map" {
   name            = "https-site-url-map-${random_string.cdn_prefix.result}"
   project = var.project_id
-  default_service = google_compute_backend_service.service_backends[local.default_origin].self_link
+  default_service = local.default_origin_backend_service
 
   host_rule {
     hosts        = ["*"]
@@ -84,23 +166,66 @@ resource "google_compute_url_map" "https_url_map" {
 
   path_matcher {
     name            = "all-paths"
-    default_service = google_compute_backend_service.service_backends[local.default_origin].self_link
+    default_service = local.default_origin_backend_service
 
     dynamic "path_rule" {
-      for_each = var.nitric.origins
+      for_each = local.cloud_run_origins
 
       content {
         service = google_compute_backend_service.service_backends[path_rule.key].self_link
         paths   = [
-          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}/*" : "/${path_rule.value.path}/*", // Ensure /${path}/*
-          startswith(path_rule.value.path, "/") ? "${path_rule.value.path}" : "/${path_rule.value.path}" // Ensure /${path}
+          // The route path provided by the user may or may not start with a slash but will always end with a slash. 
+          // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}*" : "/${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
         ]
+        
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
           }
         }
 
+      }
+    }
+
+    dynamic "path_rule" {
+      for_each = local.cloud_storage_origins
+
+      content {
+        service = google_compute_backend_bucket.bucket_backends[path_rule.key].self_link
+        paths   = [
+          // The route path provided by the user may or may not start with a slash but will always end with a slash. 
+          // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}*" : "/${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+        ]
+        
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
+        }
+      }
+    }
+
+    dynamic "path_rule" {
+      for_each = local.other_origins
+
+      content {
+        service = google_compute_backend_service.external_backends[path_rule.key].self_link
+        paths   = [
+          // The route path provided by the user may or may not start with a slash but will always end with a slash. 
+          // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}*" : "/${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+        ]
+        
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
+        }
       }
     }
   }
