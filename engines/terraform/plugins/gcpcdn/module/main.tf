@@ -176,8 +176,8 @@ resource "google_compute_url_map" "https_url_map" {
         paths   = [
           // The route path provided by the user may or may not start with a slash but will always end with a slash. 
           // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
-          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}*" : "${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
-          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}*" : "/${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
         ]
         
         route_action {
@@ -197,8 +197,8 @@ resource "google_compute_url_map" "https_url_map" {
         paths   = [
           // The route path provided by the user may or may not start with a slash but will always end with a slash. 
           // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
-          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}*" : "${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
-          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}*" : "/${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
         ]
         
         route_action {
@@ -217,8 +217,8 @@ resource "google_compute_url_map" "https_url_map" {
         paths   = [
           // The route path provided by the user may or may not start with a slash but will always end with a slash. 
           // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
-          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}*" : "${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
-          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}*" : "/${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
         ]
         
         route_action {
