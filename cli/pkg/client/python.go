@@ -43,7 +43,7 @@ func AppSpecToPyTemplateData(appSpec schema.Application) (PySDKTemplateData, err
 
 func GeneratePython(fs afero.Fs, appSpec schema.Application, outputDir string) error {
 	if outputDir == "" {
-		outputDir = "nitric/python/client"
+		outputDir = "nitric"
 	}
 
 	tmpl := template.Must(template.New("client").Parse(pyClientTemplate))
