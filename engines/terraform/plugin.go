@@ -2,7 +2,6 @@ package terraform
 
 type PluginManifest struct {
 	Name       string           `json:"name" yaml:"name"`
-	Version    string           `json:"version" yaml:"version"`
 	Deployment DeploymentModule `json:"deployment" yaml:"deployment"`
 	Type       string           `json:"type" yaml:"type"`
 	Runtime    RuntimeModule    `json:"runtime" yaml:"runtime"`
