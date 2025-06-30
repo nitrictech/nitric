@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var accessTokenCmd = &cobra.Command{
+var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Login to Nitric",
 	Long:  `Login to the Nitric CLI.`,
