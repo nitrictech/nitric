@@ -4,6 +4,7 @@ variable "nitric" {
     stack_id = string
     origins = map(object({
       path = string
+      base_path = string
       type = string
       domain_name = string
       id = string
