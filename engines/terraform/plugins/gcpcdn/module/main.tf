@@ -174,8 +174,11 @@ resource "google_compute_url_map" "https_url_map" {
       content {
         service = google_compute_backend_service.service_backends[path_rule.key].self_link
         paths   = [
-          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}/*" : "/${path_rule.value.base_path}/${path_rule.value.path}/*", // Ensure /${path}/*
-          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}/${path_rule.value.path}"] // Ensure /${path}
+          // The route path provided by the user may or may not start with a slash but will always end with a slash. 
+          // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}*" : "${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+        ]
         
         route_action {
           url_rewrite {
@@ -192,8 +195,12 @@ resource "google_compute_url_map" "https_url_map" {
       content {
         service = google_compute_backend_bucket.bucket_backends[path_rule.key].self_link
         paths   = [
-          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}/*" : "/${path_rule.value.base_path}/${path_rule.value.path}/*", // Ensure /${path}/*
-          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}/${path_rule.value.path}"] // Ensure /${path}
+          // The route path provided by the user may or may not start with a slash but will always end with a slash. 
+          // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}*" : "${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+        ]
+        
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
@@ -208,8 +215,12 @@ resource "google_compute_url_map" "https_url_map" {
       content {
         service = google_compute_backend_service.external_backends[path_rule.key].self_link
         paths   = [
-          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}/*" : "/${path_rule.value.base_path}/${path_rule.value.path}/*", // Ensure /${path}/*
-          startswith(path_rule.value.path, "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "/${path_rule.value.base_path}/${path_rule.value.path}"] // Ensure /${path}
+          // The route path provided by the user may or may not start with a slash but will always end with a slash. 
+          // Ensure /${path}/* and /${path}/ are both supported regardless of what the base path is.
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}*" : "${path_rule.value.base_path}${path_rule.value.path}*", // Ensure /${path}/*
+          startswith("${path_rule.value.base_path}${path_rule.value.path}", "/") ? "/${path_rule.value.base_path}${path_rule.value.path}" : "${path_rule.value.base_path}${path_rule.value.path}" // Ensure /${path}/
+        ]
+        
         route_action {
           url_rewrite {
             path_prefix_rewrite = "/"
