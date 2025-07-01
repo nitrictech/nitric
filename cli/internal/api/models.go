@@ -5,9 +5,9 @@ import "time"
 // TODO: We need a better mechanism to sync the models with the server.
 
 type TemplateResponse struct {
-	Name             string   `json:"name"`
-	OrganizationSlug string   `json:"organizationSlug"`
-	Versions         []string `json:"versions"`
+	Name     string   `json:"name"`
+	TeamSlug string   `json:"teamSlug"`
+	Versions []string `json:"versions"`
 }
 
 type TemplateVersionResponse struct {
