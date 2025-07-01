@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func (c *NitricApiClient) GetTemplates() (*ListTemplatesResponse, error) {
+func (c *NitricApiClient) GetTemplates() ([]TemplateResponse, error) {
 	response, err := c.get("/api/templates")
 	if err != nil {
 		return nil, err
@@ -23,10 +23,10 @@ func (c *NitricApiClient) GetTemplates() (*ListTemplatesResponse, error) {
 		return nil, err
 	}
 
-	var templates ListTemplatesResponse
+	var templates []TemplateResponse
 	if err := json.Unmarshal(body, &templates); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal templates: %v, body: %s", err, string(body))
 	}
 
-	return &templates, nil
+	return templates, nil
 }

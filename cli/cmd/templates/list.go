@@ -28,7 +28,7 @@ var listCmd = &cobra.Command{
 			return
 		}
 
-		for _, template := range resp.Templates {
+		for _, template := range resp {
 			fmt.Printf(" - %s\n", template.Name)
 		}
 	},
