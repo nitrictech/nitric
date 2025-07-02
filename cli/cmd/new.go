@@ -10,7 +10,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-getter"
-	"github.com/manifoldco/promptui"
 	"github.com/nitrictech/nitric/cli/internal/api"
 	"github.com/nitrictech/nitric/cli/internal/auth"
 	"github.com/nitrictech/nitric/cli/internal/config"
@@ -34,25 +33,22 @@ var newCmd = &cobra.Command{
 
 		if projectName == "" {
 			fmt.Println()
-			namePrompt := promptui.Prompt{
-				Label: "Project name",
-				Validate: func(input string) error {
-					if input == "" {
-						return errors.New("project name is required")
-					}
-
-					// Must be kebab-case
-					if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(input) {
-						return errors.New("project name must start with a letter and be lower kebab-case")
-					}
-
-					return nil
-				},
-			}
-
 			var err error
-			projectName, err = namePrompt.Run()
-			cobra.CheckErr(err)
+			projectName, err = tui.RunTextInput("Project name:", func(input string) error {
+				if input == "" {
+					return errors.New("project name is required")
+				}
+
+				// Must be kebab-case
+				if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(input) {
+					return errors.New("project name must start with a letter and be lower kebab-case")
+				}
+
+				return nil
+			})
+			if err != nil || projectName == "" {
+				return
+			}
 		}
 
 		token, err := auth.GetOrRefreshWorkosToken()

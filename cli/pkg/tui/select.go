@@ -101,7 +101,7 @@ func (s *Select) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter", " ":
 			s.selected = s.cursor
 			return s, tea.Quit
-		case "q", "ctrl+c":
+		case "q", "ctrl+c", "ctrl+\\", "esc":
 			return s, tea.Quit
 		}
 	case tea.WindowSizeMsg:
