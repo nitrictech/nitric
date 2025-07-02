@@ -44,6 +44,22 @@ type SpecReference struct {
 	Path []string
 }
 
+func (e *TerraformEngine) resolveIdentityPlugin(blueprint *ResourceBlueprint) (*IdentityPluginManifest, error) {
+	pluginRef, err := blueprint.ResolvePlugin(e.platform)
+	if err != nil {
+		return nil, err
+	}
+	return e.repository.GetIdentityPlugin(pluginRef.Library.Team, pluginRef.Library.Name, pluginRef.Library.Version, pluginRef.Name)
+}
+
+func (e *TerraformEngine) resolvePlugin(blueprint *ResourceBlueprint) (*ResourcePluginManifest, error) {
+	pluginRef, err := blueprint.ResolvePlugin(e.platform)
+	if err != nil {
+		return nil, err
+	}
+	return e.repository.GetResourcePlugin(pluginRef.Library.Team, pluginRef.Library.Name, pluginRef.Library.Version, pluginRef.Name)
+}
+
 func (e *TerraformEngine) GetPluginManifestsForType(typ string) (map[string]*ResourcePluginManifest, error) {
 	manifests := map[string]*ResourcePluginManifest{}
 
@@ -53,7 +69,7 @@ func (e *TerraformEngine) GetPluginManifestsForType(typ string) (map[string]*Res
 	}
 
 	for blueprintIntent, blueprint := range blueprints {
-		plug, err := e.repository.GetResourcePlugin(blueprint.PluginId)
+		plug, err := e.resolvePlugin(blueprint)
 		if err != nil {
 			return nil, err
 		}
@@ -115,13 +131,13 @@ func (tf *TerraformDeployment) resolveInfraResource(infraName string) (cdktf.Ter
 	}
 
 	if _, ok := tf.terraformInfraResources[infraName]; !ok {
-		plugin, err := tf.engine.repository.GetResourcePlugin(resource.PluginId)
+		pluginRef, err := tf.engine.resolvePlugin(resource)
 		if err != nil {
 			return nil, err
 		}
 
 		tf.terraformInfraResources[infraName] = cdktf.NewTerraformHclModule(tf.stack, jsii.String(infraName), &cdktf.TerraformHclModuleConfig{
-			Source: jsii.String(plugin.Deployment.Terraform),
+			Source: jsii.String(pluginRef.Deployment.Terraform),
 		})
 	}
 
@@ -369,7 +385,7 @@ func (e *TerraformDeployment) resolveService(name string, spec *app_spec_schema.
 
 	identityModuleOutputs := map[string]interface{}{}
 	for _, id := range resourceSpec.Identities {
-		identityPlugin, err := e.engine.repository.GetIdentityPlugin(id.PluginId)
+		identityPlugin, err := e.engine.resolveIdentityPlugin(&id)
 		if err != nil {
 			return nil, err
 		}
@@ -457,9 +473,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		if err != nil {
 			return fmt.Errorf("could not find platform type for %s.%s: %w", serviceIntent.GetType(), serviceIntent.GetSubType(), err)
 		}
-		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		plug, err := e.resolvePlugin(spec.ResourceBlueprint)
 		if err != nil {
-			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+			return fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
 		}
 
 		nitricVar, err := tfDeployment.resolveService(intentName, serviceIntent, spec, plug)
@@ -484,9 +500,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		if err != nil {
 			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.GetType(), resourceIntent.GetSubType(), err)
 		}
-		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+			return fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
 		}
 
 		servicesInput := map[string]any{}
@@ -539,9 +555,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		if err != nil {
 			return fmt.Errorf("could not find platform type for %s.%s: %w", bucketIntent.GetType(), bucketIntent.GetSubType(), err)
 		}
-		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+			return fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
 		}
 
 		servicesInput := map[string]any{}
@@ -589,9 +605,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		if err != nil {
 			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.GetType(), resourceIntent.GetSubType(), err)
 		}
-		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+			return fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
 		}
 
 		var nitricVar *NitricServiceVariables = serviceInputs[intentName]
@@ -620,9 +636,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 		if err != nil {
 			return fmt.Errorf("could not find platform type for %s.%s: %w", resourceIntent.GetType(), resourceIntent.GetSubType(), err)
 		}
-		plug, err := e.repository.GetResourcePlugin(spec.PluginId)
+		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return fmt.Errorf("could not find plugin %s", spec.PluginId)
+			return fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
 		}
 
 		nitricVar, err := tfDeployment.resolveEntrypointNitricVar(intentName, appSpec, resourceIntent)

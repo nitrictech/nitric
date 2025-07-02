@@ -41,6 +41,6 @@ type PluginOutput struct {
 }
 
 type PluginRepository interface {
-	GetResourcePlugin(name string) (*ResourcePluginManifest, error)
-	GetIdentityPlugin(name string) (*IdentityPluginManifest, error)
+	GetResourcePlugin(team, libname, version, name string) (*ResourcePluginManifest, error)
+	GetIdentityPlugin(team, libname, version, name string) (*IdentityPluginManifest, error)
 }

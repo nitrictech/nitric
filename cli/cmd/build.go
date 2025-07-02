@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/engines/terraform"
 	"github.com/spf13/afero"
@@ -29,9 +30,6 @@ var buildCmd = &cobra.Command{
 		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
 		cobra.CheckErr(err)
 
-		// TODO: 912 repository
-		embeddedRepository := terraform.NewNitricTerraformPluginRepository()
-
 		mockPlatformRepository := terraform.NewMockPlatformRepository()
 
 		// TODO:prompt for platform selection if multiple targets are specified
@@ -40,7 +38,7 @@ var buildCmd = &cobra.Command{
 		platform, err := terraform.PlatformFromId(fs, targetPlatform, mockPlatformRepository)
 		cobra.CheckErr(err)
 
-		engine := terraform.New(platform, terraform.WithRepository(embeddedRepository))
+		engine := terraform.New(platform, terraform.WithRepository(plugins.NewPluginRepository()))
 		// Parse the application spec
 		// Validate the application spec
 		// Build the application using the specified platform
