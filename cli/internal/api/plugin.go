@@ -21,8 +21,6 @@ func (c *NitricApiClient) GetPluginManifest(team, lib, version, name string) (in
 		return nil, fmt.Errorf("failed to read response from nitric auth details endpoint: %v", err)
 	}
 
-	fmt.Println("Body:", string(body))
-
 	var pluginManifest terraform.ResourcePluginManifest
 	err = json.Unmarshal(body, &pluginManifest)
 	if err != nil {
