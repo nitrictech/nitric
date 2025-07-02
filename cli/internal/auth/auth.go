@@ -23,6 +23,15 @@ var loginSuccessPage []byte
 // This is used to handle the callback from the WorkOS auth provider.
 var LOCAL_AUTH_CALLBACK_PORT = 48321
 
+func WithAuthHeader(req *http.Request) {
+	token, err := GetOrRefreshWorkosToken()
+	if err != nil {
+		return
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
+}
+
 // ErrPortNotAvailable is returned when the local auth callback port is not available.
 var ErrPortNotAvailable = fmt.Errorf("port %d is not available, unable to start local auth callback server", LOCAL_AUTH_CALLBACK_PORT)
 

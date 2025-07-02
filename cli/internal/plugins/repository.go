@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cli/internal/api"
+	"github.com/nitrictech/nitric/cli/internal/auth"
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/engines/terraform"
 )
@@ -42,6 +43,6 @@ func (r *PluginRepository) GetIdentityPlugin(team, libname, version, name string
 
 func NewPluginRepository() *PluginRepository {
 	return &PluginRepository{
-		apiClient: api.NewNitricApiClient(config.GetNitricServerUrl()),
+		apiClient: api.NewNitricApiClient(config.GetNitricServerUrl(), auth.WithAuthHeader),
 	}
 }

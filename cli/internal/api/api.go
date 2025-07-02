@@ -4,24 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
+
+	"github.com/nitrictech/nitric/cli/internal/api/transformer"
 )
 
 type NitricApiClient struct {
-	apiUrl      *url.URL
-	client      *http.Client
-	accessToken *string
+	apiUrl       *url.URL
+	transformers []transformer.RequestTransformer
 }
 
-func NewNitricApiClient(apiUrl *url.URL, accessToken *string) *NitricApiClient {
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
+func NewNitricApiClient(apiUrl *url.URL, transformers ...transformer.RequestTransformer) *NitricApiClient {
 	return &NitricApiClient{
-		apiUrl:      apiUrl,
-		client:      client,
-		accessToken: accessToken,
+		apiUrl:       apiUrl,
+		transformers: transformers,
 	}
 }
 
@@ -36,12 +31,9 @@ func (c *NitricApiClient) get(path string) (*http.Response, error) {
 		return nil, err
 	}
 
-	if c.accessToken != nil {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", *c.accessToken))
+	for _, transformer := range c.transformers {
+		transformer(req)
 	}
 
-	req.Header.Set("User-Agent", "nitric-cli")
-	req.Header.Set("Accept", "application/json")
-
-	return c.client.Do(req)
+	return http.DefaultClient.Do(req)
 }
