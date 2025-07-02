@@ -13,7 +13,7 @@ type Template struct {
 	Versions []string `json:"versions"`
 }
 
-func (t *Template) FQN() string {
+func (t *Template) String() string {
 	return fmt.Sprintf("%s/%s", t.TeamSlug, t.Slug)
 }
 
@@ -26,4 +26,8 @@ type TemplateVersion struct {
 	Public            bool      `json:"public"`
 	CreatedAt         time.Time `json:"createdAt"`
 	UpdatedAt         time.Time `json:"updatedAt"`
+}
+
+func (t *TemplateVersion) String() string {
+	return fmt.Sprintf("%s/%s@%s", t.TeamSlug, t.TemplateSlug, t.Version)
 }

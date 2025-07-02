@@ -1,0 +1,155 @@
+package cmd
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/hashicorp/go-getter"
+	"github.com/manifoldco/promptui"
+	"github.com/nitrictech/nitric/cli/internal/api"
+	"github.com/nitrictech/nitric/cli/internal/auth"
+	"github.com/nitrictech/nitric/cli/internal/config"
+	"github.com/nitrictech/nitric/cli/internal/style/colors"
+	"github.com/nitrictech/nitric/cli/pkg/files"
+	"github.com/nitrictech/nitric/cli/pkg/schema"
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
+)
+
+var newCmd = &cobra.Command{
+	Use:   "new",
+	Short: "Create a new Nitric project",
+	Run: func(cmd *cobra.Command, args []string) {
+
+		projectName := ""
+		if len(args) > 0 {
+			projectName = args[0]
+		}
+
+		if projectName == "" {
+			fmt.Println()
+			namePrompt := promptui.Prompt{
+				Label: "Project name",
+				Validate: func(input string) error {
+					if input == "" {
+						return errors.New("project name is required")
+					}
+
+					// Must be kebab-case
+					if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(input) {
+						return errors.New("project name must start with a letter and be lower kebab-case")
+					}
+
+					return nil
+				},
+			}
+
+			var err error
+			projectName, err = namePrompt.Run()
+			cobra.CheckErr(err)
+		}
+
+		token, err := auth.GetOrRefreshWorkosToken()
+		if err != nil {
+			fmt.Printf("\n Not currently logged in, run `nitric login` to login")
+			return
+		}
+
+		client := api.NewNitricApiClient(config.GetNitricServerUrl(), &token.AccessToken)
+
+		resp, err := client.GetTemplates()
+		if err != nil {
+			fmt.Printf("Failed to get templates: %v", err)
+			return
+		}
+
+		if len(resp) == 0 {
+			fmt.Println("No templates found")
+			return
+		}
+
+		templateNames := make([]string, len(resp))
+		for i, template := range resp {
+			templateNames[i] = template.String()
+		}
+
+		// Prompt the user to select one of the templates
+		selectTemplate := promptui.Select{
+			Label: "Select a template",
+			Items: templateNames,
+		}
+
+		fmt.Println("")
+		index, _, err := selectTemplate.Run()
+		if err != nil {
+			return
+		}
+
+		template, err := client.GetTemplate(resp[index].TeamSlug, resp[index].Slug, "")
+		cobra.CheckErr(err)
+
+		// Find home directory.
+		home, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		templateDir := filepath.Join(home, ".nitric", "templates", template.TeamSlug, template.TemplateSlug, template.Version)
+
+		goGetter := &getter.Client{
+			Ctx:             context.Background(),
+			Dst:             templateDir,
+			Src:             template.GitSource,
+			Mode:            getter.ClientModeAny,
+			DisableSymlinks: true,
+		}
+
+		err = goGetter.Get()
+		if err != nil {
+			fmt.Printf("Failed to get template: %v", err)
+			return
+		}
+
+		// Copy the template dir contents into a new project dir
+		projectDir := filepath.Join(".", projectName)
+		err = os.MkdirAll(projectDir, 0755)
+		if err != nil {
+			fmt.Printf("Failed to create project directory: %v", err)
+			return
+		}
+
+		fs := afero.NewOsFs()
+
+		err = files.CopyDir(fs, templateDir, projectDir)
+		if err != nil {
+			fmt.Printf("Failed to copy template directory: %v", err)
+			return
+		}
+
+		nitricYamlPath := filepath.Join(projectDir, "nitric.yaml")
+
+		appSpec, err := schema.LoadFromFile(fs, nitricYamlPath, false)
+		cobra.CheckErr(err)
+
+		appSpec.Name = projectName
+
+		err = schema.SaveToYaml(fs, nitricYamlPath, appSpec)
+		cobra.CheckErr(err)
+
+		highlight := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
+
+		fmt.Printf("\n%s\n", highlight.Render("Project created!"))
+		fmt.Printf("\nNavigate to your project with %s\n", highlight.Render("cd ./"+projectDir))
+		fmt.Println("Install dependencies and you're ready to rock! 🪨")
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(newCmd)
+}

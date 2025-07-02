@@ -16,3 +16,6 @@ export LDFLAGS="-X $(VERSION_URI).Version=${BUILD_VERSION} \
 
 build:
 	go build -ldflags $(LDFLAGS) -o bin/nitric$(EXECUTABLE_EXT) main.go
+
+test:
+	go test ./pkg/...
