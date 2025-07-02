@@ -249,13 +249,16 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 
 func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePluginManifest) (*plugin.PluginDefintion, error) {
 	// TODO: Map platform resource plugins to the service plugin
+	gets := []string{}
+
 	pluginDef := &plugin.PluginDefintion{
 		Service: plugin.GoPlugin{
 			Alias:  "svcPlugin",
 			Name:   "default",
-			Import: servicePlugin.Runtime.GoModule,
+			Import: strings.Split(servicePlugin.Runtime.GoModule, "@")[0],
 		},
 	}
+	gets = append(gets, servicePlugin.Runtime.GoModule)
 
 	// FIXME: This add all storage plugins without regard to actually requiring access
 	storagePlugins, err := e.GetPluginManifestsForType("bucket")
@@ -268,9 +271,12 @@ func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePlugin
 		pluginDef.Storage = append(pluginDef.Storage, plugin.GoPlugin{
 			Alias:  fmt.Sprintf("storage_%s", name),
 			Name:   name,
-			Import: plug.Runtime.GoModule,
+			Import: strings.Split(plug.Runtime.GoModule, "@")[0],
 		})
+		gets = append(gets, plug.Runtime.GoModule)
 	}
+
+	pluginDef.Gets = gets
 
 	return pluginDef, nil
 }

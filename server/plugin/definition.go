@@ -7,6 +7,7 @@ type GoPlugin struct {
 }
 
 type PluginDefintion struct {
+	Gets    []string   `json:"Gets"`
 	Pubsub  []GoPlugin `json:"Pubsub"`
 	Storage []GoPlugin `json:"Storage"`
 	Service GoPlugin   `json:"Service"`
