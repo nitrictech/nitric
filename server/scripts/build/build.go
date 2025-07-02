@@ -32,7 +32,6 @@ func main() {
 	}
 
 	for _, get := range pluginDef.Gets {
-		// go get -u <get>
 		cmd := exec.Command("go", "get", "-u", get)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
