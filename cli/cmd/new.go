@@ -17,6 +17,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
+	"github.com/nitrictech/nitric/cli/pkg/tui"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -79,14 +80,9 @@ var newCmd = &cobra.Command{
 		}
 
 		// Prompt the user to select one of the templates
-		selectTemplate := promptui.Select{
-			Label: "Select a template",
-			Items: templateNames,
-		}
-
 		fmt.Println("")
-		index, _, err := selectTemplate.Run()
-		if err != nil {
+		_, index, err := tui.RunSelect(templateNames, "Template:")
+		if err != nil || index == -1 {
 			return
 		}
 
