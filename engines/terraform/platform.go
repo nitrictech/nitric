@@ -15,6 +15,8 @@ import (
 type PlatformSpec struct {
 	Name string `json:"name" yaml:"name"`
 
+	Libraries map[string]string `json:"libraries" yaml:"libraries"`
+
 	Variables map[string]Variable `json:"variables" yaml:"variables,omitempty"`
 
 	ServiceBlueprints    map[string]*ServiceBlueprint  `json:"services" yaml:"services"`
