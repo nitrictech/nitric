@@ -16,6 +16,10 @@ func (c *NitricApiClient) GetPluginManifest(team, lib, version, name string) (in
 		return nil, fmt.Errorf("failed to connect to nitric auth details endpoint: %v", err)
 	}
 
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("received non 200 response from nitric plugin details endpoint: %d", response.StatusCode)
+	}
+
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response from nitric auth details endpoint: %v", err)
@@ -24,7 +28,7 @@ func (c *NitricApiClient) GetPluginManifest(team, lib, version, name string) (in
 	var pluginManifest terraform.ResourcePluginManifest
 	err = json.Unmarshal(body, &pluginManifest)
 	if err != nil {
-		return nil, fmt.Errorf("1 unexpected response from nitric plugin details endpoint: %v", err)
+		return nil, fmt.Errorf("unexpected response from nitric plugin details endpoint: %v", err)
 	}
 
 	if pluginManifest.Type == "identity" {
