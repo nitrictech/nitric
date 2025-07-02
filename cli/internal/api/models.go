@@ -1,22 +1,29 @@
 package api
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // TODO: We need a better mechanism to sync the models with the server.
 
-type TemplateResponse struct {
-	Name     string   `json:"name"`
+type Template struct {
+	Slug     string   `json:"slug"`
 	TeamSlug string   `json:"teamSlug"`
 	Versions []string `json:"versions"`
 }
 
-type TemplateVersionResponse struct {
-	ID        int64     `json:"id"`
-	Version   string    `json:"version"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+func (t *Template) FQN() string {
+	return fmt.Sprintf("%s/%s", t.TeamSlug, t.Slug)
 }
 
-type ListTemplateVersionsResponse struct {
-	Versions []*TemplateVersionResponse `json:"versions"`
+type TemplateVersion struct {
+	TemplateSlug      string    `json:"templateSlug"`
+	TeamSlug          string    `json:"teamSlug"`
+	Version           string    `json:"version"`
+	TemplateLibraryId string    `json:"templateLibraryId"`
+	GitSource         string    `json:"gitSource"`
+	Public            bool      `json:"public"`
+	CreatedAt         time.Time `json:"createdAt"`
+	UpdatedAt         time.Time `json:"updatedAt"`
 }

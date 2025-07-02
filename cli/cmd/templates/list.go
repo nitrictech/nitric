@@ -40,7 +40,7 @@ var listCmd = &cobra.Command{
 		fmt.Println(templateStyle.Render("\nAvailable templates:"))
 
 		for _, template := range resp {
-			fmt.Printf(" %s/%s\n", template.TeamSlug, template.Name)
+			fmt.Printf(" %s\n", template.FQN())
 		}
 	},
 }
