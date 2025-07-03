@@ -50,7 +50,7 @@ var dev = &cobra.Command{
 		// Read the nitric.yaml file
 		fs := afero.NewOsFs()
 
-		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml")
+		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
 		cobra.CheckErr(err)
 
 		simserver := simulation.NewSimulationServer(fs, appSpec)

@@ -6,9 +6,10 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/xeipuuv/gojsonschema"
+	"gopkg.in/yaml.v2"
 )
 
-func LoadFromFile(fs afero.Fs, path string) (*Application, error) {
+func LoadFromFile(fs afero.Fs, path string, validate bool) (*Application, error) {
 	if exists, err := afero.Exists(fs, path); err != nil {
 		return nil, fmt.Errorf("nitric application file could not be loaded at path: %s", path)
 	} else if !exists {
@@ -35,6 +36,10 @@ func LoadFromFile(fs afero.Fs, path string) (*Application, error) {
 		return nil, fmt.Errorf("error parsing nitric application file %s: %s", path, err)
 	}
 
+	if !validate {
+		return appSpec, nil
+	}
+
 	if results != nil && !results.Valid() {
 		errs := ""
 		for _, err := range results.Errors() {
@@ -49,4 +54,13 @@ func LoadFromFile(fs afero.Fs, path string) (*Application, error) {
 	}
 
 	return appSpec, nil
+}
+
+func SaveToYaml(fs afero.Fs, path string, appSpec *Application) error {
+	yaml, err := yaml.Marshal(appSpec)
+	if err != nil {
+		return fmt.Errorf("error marshalling nitric application file %s: %s", path, err)
+	}
+
+	return afero.WriteFile(fs, path, yaml, 0644)
 }

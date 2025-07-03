@@ -185,15 +185,15 @@ func ApplicationFromJson(jsonString string) (*Application, *gojsonschema.Result,
 
 	appSchema, _ := gojsonschema.NewSchema(schemaLoader)
 
-	result, err := appSchema.Validate(documentLoader)
-	if err != nil || !result.Valid() {
-		return nil, result, err
-	}
-
 	var app Application
-	err = json.Unmarshal([]byte(jsonString), &app)
+	err := json.Unmarshal([]byte(jsonString), &app)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	result, err := appSchema.Validate(documentLoader)
+	if err != nil || !result.Valid() {
+		return &app, result, err
 	}
 
 	return &app, nil, nil

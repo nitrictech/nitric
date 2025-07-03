@@ -36,7 +36,7 @@ var generateCmd = &cobra.Command{
 
 		fs := afero.NewOsFs()
 
-		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml")
+		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
 		if err != nil {
 			fmt.Println(err)
 			return
