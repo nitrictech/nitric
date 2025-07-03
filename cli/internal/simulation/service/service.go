@@ -183,6 +183,10 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 
 		srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("PORT=%d", s.port))
 
+		for key, value := range s.intent.Env {
+			srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("%s=%s", key, value))
+		}
+
 		srvCommand.Dir = s.intent.Container.Docker.Context
 		srvCommand.Stdout = stdoutWriter
 		srvCommand.Stderr = stderrWriter
