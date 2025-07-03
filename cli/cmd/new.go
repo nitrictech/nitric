@@ -47,6 +47,8 @@ var newCmd = &cobra.Command{
 				return nil
 			})
 			if err != nil || projectName == "" {
+				fmt.Println(err)
+				fmt.Println("+" + projectName + "+")
 				return
 			}
 		}

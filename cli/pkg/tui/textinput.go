@@ -1,30 +1,25 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/runeutil"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 )
 
-type TextInput struct {
-	charLimit int
+type textInputModel struct {
+	textinput textinput.Model
+	title     string
+	style     textInputStyle
+	showError bool
 
-	title    string
-	validate func(string) error
-	value    string
-	style    TextInputStyle
-
-	selected bool
-
-	startValidation bool
-
-	rsan runeutil.Sanitizer
+	value string
 }
 
-type TextInputStyle struct {
+type textInputStyle struct {
 	Title   lipgloss.Style
 	Input   lipgloss.Style
 	Faint   lipgloss.Style
@@ -32,138 +27,89 @@ type TextInputStyle struct {
 	Help    lipgloss.Style
 }
 
-func NewTextInput(title string, validate func(string) error) *TextInput {
-	return &TextInput{
-		charLimit:       200,
-		title:           title,
-		validate:        validate,
-		value:           "",
-		startValidation: false,
-		selected:        false,
-		style: TextInputStyle{
-			Title:   lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
-			Input:   lipgloss.NewStyle().Foreground(colors.White),
-			Faint:   lipgloss.NewStyle().Faint(true),
-			Invalid: lipgloss.NewStyle().Foreground(colors.Red),
-			Help:    lipgloss.NewStyle().Faint(true).Italic(true),
-		},
-	}
+func (m textInputModel) Init() tea.Cmd {
+	m.textinput.Focus()
+	return textinput.Blink
 }
 
-func (t *TextInput) Init() tea.Cmd {
-	return nil
-}
+func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 
-func (m *TextInput) san() runeutil.Sanitizer {
-	if m.rsan == nil {
-		// Textinput has all its input on a single line so collapse
-		// newlines/tabs to single spaces.
-		m.rsan = runeutil.NewSanitizer(
-			runeutil.ReplaceTabs(" "), runeutil.ReplaceNewlines(" "))
-	}
-	return m.rsan
-}
-
-func (m *TextInput) insertRunesFromUserInput(v []rune) {
-	// Clean up any special characters in the input provided by the
-	// clipboard. This avoids bugs due to e.g. tab characters and
-	// whatnot.
-	paste := m.san().Sanitize(v)
-
-	var availSpace int
-	if m.charLimit > 0 {
-		availSpace = m.charLimit - len(m.value)
-
-		// If the char limit's been reached, cancel.
-		if availSpace <= 0 {
-			return
-		}
-
-		// If there's not enough space to paste the whole thing cut the pasted
-		// runes down so they'll fit.
-		if availSpace < len(paste) {
-			paste = paste[:availSpace]
-		}
-	}
-
-	// Put it all back together
-	m.value = m.value + string(paste)
-}
-
-func (t *TextInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc", "ctrl+\\":
-			return t, tea.Quit
+			return m, tea.Quit
 		case "enter":
-			if err := t.validate(t.value); err != nil {
-				t.startValidation = true
-				return t, nil
+			if m.textinput.Err != nil {
+				m.showError = true
+				return m, nil
 			}
-			return t, tea.Quit
-		case "backspace":
-			if len(t.value) > 0 {
-				t.value = t.value[:len(t.value)-1]
-			}
-		case "delete":
-			t.value = ""
-		default:
-			// Input one or more regular characters.
-			t.insertRunesFromUserInput(msg.Runes)
+			m.value = m.textinput.Value()
+			m.textinput.PromptStyle = m.style.Faint
+			m.textinput.Blur()
+			return m, tea.Quit
 		}
 	}
 
-	return t, nil
+	// Always pass the message to the internal textinput component
+	m.textinput, cmd = m.textinput.Update(msg)
+	return m, cmd
 }
 
-func (t *TextInput) View() string {
+func (m textInputModel) View() string {
 	var b strings.Builder
 
-	titleStyle := t.style.Title
-	if t.selected {
-		titleStyle = t.style.Faint
+	m.textinput.TextStyle = m.style.Input
+	if m.showError && m.textinput.Err != nil {
+		m.textinput.TextStyle = m.style.Invalid
 	}
 
-	showHelp := t.value != "" && t.startValidation
-	validError := t.validate(t.value)
-
-	inputStyle := t.style.Input
-	if t.startValidation && validError != nil {
-		inputStyle = t.style.Invalid
-	}
-
-	b.WriteString("\n")
-	b.WriteString(titleStyle.Render(t.title))
-	b.WriteString(" ")
-	// TODO: Add cursor
-	b.WriteString(inputStyle.Render(t.value))
+	b.WriteString(m.textinput.View())
 	b.WriteString("\n")
 
-	if validError != nil && showHelp {
-		b.WriteString(t.style.Help.Render(validError.Error()))
+	if m.textinput.Err != nil && m.showError {
+		b.WriteString(m.style.Help.Render(m.textinput.Err.Error()))
 		b.WriteString("\n")
 	}
 
-	if !t.selected {
+	if m.textinput.Value() == "" {
 		b.WriteString("\n")
 	}
 
 	return b.String()
 }
 
-func (t *TextInput) GetValue() string {
-	return t.value
-}
-
 func RunTextInput(title string, validate func(string) error) (string, error) {
-	t := NewTextInput(title, validate)
-	p := tea.NewProgram(t)
+	ti := textinput.New()
+	ti.Placeholder = ""
+	ti.CharLimit = 200
+	ti.Width = 50
+	ti.Prompt = title
+	ti.PromptStyle = lipgloss.NewStyle().Foreground(colors.Teal).Bold(true).MarginRight(1)
+	ti.Validate = validate
+	ti.Focus()
 
-	_, err := p.Run()
+	style := textInputStyle{
+		Title:   lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
+		Input:   lipgloss.NewStyle().Foreground(colors.White),
+		Faint:   lipgloss.NewStyle().Faint(true),
+		Invalid: lipgloss.NewStyle().Foreground(colors.Red),
+		Help:    lipgloss.NewStyle().Faint(true).Italic(true),
+	}
+
+	model := textInputModel{
+		textinput: ti,
+		title:     title,
+		style:     style,
+	}
+
+	p := tea.NewProgram(model)
+	m, err := p.Run()
 	if err != nil {
+		fmt.Println("Error: " + err.Error())
 		return "", err
 	}
 
-	return t.GetValue(), nil
+	return m.(textInputModel).value, nil
 }
