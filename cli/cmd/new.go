@@ -22,10 +22,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func projectExists(fs afero.Fs, projectDir string) (bool, error) {
+	projectExists, err := afero.Exists(fs, projectDir)
+	if err != nil {
+		return false, fmt.Errorf("failed to read intended project directory: %v", err)
+	}
+	if projectExists {
+		// Check if the directory is empty
+		files, err := afero.ReadDir(fs, projectDir)
+		if err != nil {
+			return false, fmt.Errorf("failed to read project directory: %v", err)
+		}
+		return len(files) > 0, nil
+	}
+	return false, nil
+}
+
 var newCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Create a new Nitric project",
 	Run: func(cmd *cobra.Command, args []string) {
+		force, err := cmd.Flags().GetBool("force")
+		if err != nil {
+			fmt.Printf("Failed to get force flag: %v", err)
+			return
+		}
+
 		fs := afero.NewOsFs()
 
 		projectName := ""
@@ -56,19 +78,13 @@ var newCmd = &cobra.Command{
 		}
 
 		projectDir := filepath.Join(".", projectName)
-		projectExists, err := afero.Exists(fs, projectDir)
-		if err != nil {
-			fmt.Printf("Failed to read intended project directory: %v", err)
-			return
-		}
-		if projectExists {
-			// Check if the directory is empty
-			files, err := afero.ReadDir(fs, projectDir)
+		if !force {
+			projectExists, err := projectExists(fs, projectDir)
 			if err != nil {
-				fmt.Printf("Failed to read project directory: %v", err)
+				fmt.Println(err.Error())
 				return
 			}
-			if len(files) > 0 {
+			if projectExists {
 				fmt.Printf("\nDirectory ./%s already exists and is not empty\n", projectDir)
 				return
 			}
@@ -180,5 +196,6 @@ var newCmd = &cobra.Command{
 }
 
 func init() {
+	newCmd.Flags().BoolP("force", "f", false, "Force overwrite existing project directory")
 	rootCmd.AddCommand(newCmd)
 }
