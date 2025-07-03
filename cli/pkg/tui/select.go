@@ -60,12 +60,12 @@ func NewSelect(items []string, title string, maxDisplayed int) *Select {
 				MarginLeft(1),
 			Selected: lipgloss.NewStyle().
 				Foreground(colors.Teal).
-				Bold(true).
-				MarginLeft(1),
+				Bold(true),
+			// MarginLeft(1),
 			Cursor: lipgloss.NewStyle().
 				Foreground(colors.Teal).
 				Bold(true).
-				MarginLeft(1),
+				MarginRight(1),
 			Faint: lipgloss.NewStyle().
 				Faint(true),
 			Help: lipgloss.NewStyle().
