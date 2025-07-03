@@ -5,6 +5,7 @@ import (
 	"io"
 	"maps"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -14,6 +15,8 @@ import (
 
 type PlatformSpec struct {
 	Name string `json:"name" yaml:"name"`
+
+	Libraries map[string]string `json:"libraries" yaml:"libraries"`
 
 	Variables map[string]Variable `json:"variables" yaml:"variables,omitempty"`
 
@@ -29,6 +32,46 @@ type Variable struct {
 	Type        string
 	Description string
 	Default     interface{}
+}
+
+type Library struct {
+	Team    string `json:"team" yaml:"team"`
+	Name    string `json:"name" yaml:"name"`
+	Version string `json:"version" yaml:"version"`
+}
+
+type Plugin struct {
+	Library Library
+	Name    string
+}
+
+func (p PlatformSpec) GetLibrary(name string) (*Library, error) {
+	library, ok := p.Libraries[name]
+	if !ok {
+		return nil, fmt.Errorf("library %s not found in platform spec", name)
+	}
+
+	pattern := `^(?P<team>[^/]+)/(?P<library>[^@]+)@(?P<version>.+)$`
+	re := regexp.MustCompile(pattern)
+
+	matches := re.FindStringSubmatch(library)
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("invalid package format: %s", library)
+	}
+
+	team := matches[re.SubexpIndex("team")]
+	libName := matches[re.SubexpIndex("library")]
+	version := matches[re.SubexpIndex("version")]
+
+	return &Library{Team: team, Name: libName, Version: version}, nil
+}
+
+func (p PlatformSpec) GetLibraries() map[string]*Library {
+	libraries := map[string]*Library{}
+	for name, library := range p.Libraries {
+		libraries[name], _ = p.GetLibrary(library)
+	}
+	return libraries
 }
 
 func (p PlatformSpec) GetServiceBlueprint(intentSubType string) (*ServiceBlueprint, error) {
@@ -153,6 +196,25 @@ type ResourceBlueprint struct {
 	Properties map[string]interface{} `json:"properties" yaml:"properties"`
 	DependsOn  []string               `json:"depends_on" yaml:"depends_on,omitempty"`
 	Variables  map[string]Variable    `json:"variables" yaml:"variables,omitempty"`
+}
+
+func (r *ResourceBlueprint) ResolvePlugin(platform *PlatformSpec) (*Plugin, error) {
+	pluginId := r.PluginId
+
+	pluginParts := strings.Split(pluginId, "/")
+	if len(pluginParts) != 2 {
+		return nil, fmt.Errorf("invalid plugin id %s", pluginId)
+	}
+
+	libraryName := pluginParts[0]
+	pluginName := pluginParts[1]
+
+	lib, err := platform.GetLibrary(libraryName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Plugin{Library: *lib, Name: pluginName}, nil
 }
 
 type IdentitiesBlueprint struct {

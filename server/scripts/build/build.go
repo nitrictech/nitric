@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"os/exec"
 	"text/template"
 
 	"github.com/nitrictech/nitric/server/plugin"
@@ -28,6 +29,15 @@ func main() {
 	var pluginDef plugin.PluginDefintion
 	if err := json.Unmarshal([]byte(pluginDefEnv), &pluginDef); err != nil {
 		log.Fatalf("error unmarshaling plugin definition: %v", err)
+	}
+
+	for _, get := range pluginDef.Gets {
+		cmd := exec.Command("go", "get", "-u", get)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			log.Fatalf("error running go get: %v", err)
+		}
 	}
 
 	// NOTE: The plugin definitions will come from an externally provided config file
