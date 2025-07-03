@@ -46,7 +46,7 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			m.value = m.textinput.Value()
-			m.textinput.PromptStyle = m.style.Faint
+			m.textinput.PromptStyle = m.style.Faint.MarginRight(1)
 			m.textinput.Blur()
 			return m, tea.Quit
 		}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-getter"
@@ -136,11 +137,20 @@ var newCmd = &cobra.Command{
 		err = schema.SaveToYaml(fs, nitricYamlPath, appSpec)
 		cobra.CheckErr(err)
 
+		successStyle := lipgloss.NewStyle().MarginLeft(3)
 		highlight := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
 
-		fmt.Printf("\n%s\n", highlight.Render("Project created!"))
-		fmt.Printf("\nNavigate to your project with %s\n", highlight.Render("cd ./"+projectDir))
-		fmt.Println("Install dependencies and you're ready to rock! 🪨")
+		var b strings.Builder
+
+		b.WriteString("\n")
+		b.WriteString(highlight.Render("Project created!"))
+		b.WriteString("\n\n")
+		b.WriteString(highlight.Render("Navigate to your project with "))
+		b.WriteString("cd ./" + projectDir)
+		b.WriteString("\n")
+		b.WriteString("Install dependencies and you're ready to rock! 🪨")
+
+		fmt.Println(successStyle.Render(b.String()))
 	},
 }
 
