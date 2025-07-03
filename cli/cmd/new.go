@@ -26,6 +26,7 @@ var newCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Create a new Nitric project",
 	Run: func(cmd *cobra.Command, args []string) {
+		fs := afero.NewOsFs()
 
 		projectName := ""
 		if len(args) > 0 {
@@ -50,6 +51,25 @@ var newCmd = &cobra.Command{
 			if err != nil || projectName == "" {
 				fmt.Println(err)
 				fmt.Println("+" + projectName + "+")
+				return
+			}
+		}
+
+		projectDir := filepath.Join(".", projectName)
+		projectExists, err := afero.Exists(fs, projectDir)
+		if err != nil {
+			fmt.Printf("Failed to read intended project directory: %v", err)
+			return
+		}
+		if projectExists {
+			// Check if the directory is empty
+			files, err := afero.ReadDir(fs, projectDir)
+			if err != nil {
+				fmt.Printf("Failed to read project directory: %v", err)
+				return
+			}
+			if len(files) > 0 {
+				fmt.Printf("\nDirectory ./%s already exists and is not empty\n", projectDir)
 				return
 			}
 		}
@@ -97,29 +117,34 @@ var newCmd = &cobra.Command{
 
 		templateDir := filepath.Join(home, ".nitric", "templates", template.TeamSlug, template.TemplateSlug, template.Version)
 
-		goGetter := &getter.Client{
-			Ctx:             context.Background(),
-			Dst:             templateDir,
-			Src:             template.GitSource,
-			Mode:            getter.ClientModeAny,
-			DisableSymlinks: true,
-		}
-
-		err = goGetter.Get()
+		templateCached, err := afero.Exists(fs, filepath.Join(templateDir, "nitric.yaml"))
 		if err != nil {
-			fmt.Printf("Failed to get template: %v", err)
+			fmt.Printf("Failed read template cache directory: %v", err)
 			return
 		}
 
+		if !templateCached {
+			goGetter := &getter.Client{
+				Ctx:             context.Background(),
+				Dst:             templateDir,
+				Src:             template.GitSource,
+				Mode:            getter.ClientModeAny,
+				DisableSymlinks: true,
+			}
+
+			err = goGetter.Get()
+			if err != nil {
+				fmt.Printf("Failed to get template: %v", err)
+				return
+			}
+		}
+
 		// Copy the template dir contents into a new project dir
-		projectDir := filepath.Join(".", projectName)
 		err = os.MkdirAll(projectDir, 0755)
 		if err != nil {
 			fmt.Printf("Failed to create project directory: %v", err)
 			return
 		}
-
-		fs := afero.NewOsFs()
 
 		err = files.CopyDir(fs, templateDir, projectDir)
 		if err != nil {
@@ -143,10 +168,10 @@ var newCmd = &cobra.Command{
 		var b strings.Builder
 
 		b.WriteString("\n")
-		b.WriteString(highlight.Render("Project created!"))
+		b.WriteString("Project created!")
 		b.WriteString("\n\n")
-		b.WriteString(highlight.Render("Navigate to your project with "))
-		b.WriteString("cd ./" + projectDir)
+		b.WriteString("Navigate to your project with ")
+		b.WriteString(highlight.Render("cd ./" + projectDir))
 		b.WriteString("\n")
 		b.WriteString("Install dependencies and you're ready to rock! 🪨")
 
