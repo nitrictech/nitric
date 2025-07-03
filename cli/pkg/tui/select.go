@@ -25,8 +25,9 @@ type Select struct {
 	viewCursor   int
 }
 
+const TitleAndHelpHeight = 3
+
 func (s *Select) numToDisplay() int {
-	TitleAndHelpHeight := 3
 	return max(min(min(s.maxDisplayed, len(s.items)), s.height-TitleAndHelpHeight), 1)
 }
 
@@ -138,10 +139,10 @@ func (s *Select) View() string {
 	}
 
 	// Help text
-	if s.showHelp && s.helpText != "" && s.height >= 3 {
+	if s.showHelp && s.helpText != "" && s.height >= TitleAndHelpHeight {
 		b.WriteString(s.style.Help.Render(s.helpText))
 		b.WriteString("\n")
-		if s.height >= 4 {
+		if s.height >= TitleAndHelpHeight+1 {
 			b.WriteString("\n")
 		}
 	}
@@ -167,6 +168,10 @@ func (s *Select) View() string {
 	}
 
 	b.WriteString(strings.Join(shownItems, "\n"))
+
+	if s.selected == -1 && s.height >= s.numToDisplay()+TitleAndHelpHeight+1 {
+		b.WriteString("\n")
+	}
 
 	return b.String()
 }
