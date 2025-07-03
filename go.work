@@ -12,7 +12,7 @@ use (
 	./core
 	./engines
 	./proto
+	./runtime
 	./server
 	./test
-	./runtime
 )
