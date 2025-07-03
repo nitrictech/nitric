@@ -90,13 +90,7 @@ var newCmd = &cobra.Command{
 			}
 		}
 
-		token, err := auth.GetOrRefreshWorkosToken()
-		if err != nil {
-			fmt.Printf("\n Not currently logged in, run `nitric login` to login")
-			return
-		}
-
-		client := api.NewNitricApiClient(config.GetNitricServerUrl(), &token.AccessToken)
+		client := api.NewNitricApiClient(config.GetNitricServerUrl(), auth.WithAuthHeader)
 
 		resp, err := client.GetTemplates()
 		if err != nil {
