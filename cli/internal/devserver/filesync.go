@@ -89,19 +89,26 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 		return
 	}
 
-	yamlContents, err := yaml.Marshal(fileSyncMessage.Payload)
+	// yaml.Marshal() defaults to 4 spaces for indentation
+	// 2 is more common, so we use that here
+	// TODO: In future if we can preserve the original indentation we should do that
+	var buffer bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&buffer)
+	yamlEncoder.SetIndent(2)
+
+	err = yamlEncoder.Encode(fileSyncMessage.Payload)
 	if err != nil {
 		fmt.Println("Error marshalling application to yaml:", err)
 		return
 	}
 
-	err = fs.setFileContents(yamlContents)
+	err = fs.setFileContents(buffer.Bytes())
 	if err != nil {
 		fmt.Println("Error setting file contents:", err)
 		return
 	}
 
-	fs.lastSyncContents = yamlContents
+	fs.lastSyncContents = buffer.Bytes()
 }
 
 func (fs *NitricFileSync) Close() error {
