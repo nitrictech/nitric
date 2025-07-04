@@ -5,7 +5,9 @@ package {{.Package}}
 import (
 	"fmt"
 
+	{{ if .Buckets }}
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
+	{{ end }}
 
 	"github.com/nitrictech/nitric/client/go/nitric"
 	"google.golang.org/grpc"
@@ -24,7 +26,10 @@ func NewClient() (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to nitric runtime server: %w", err)
 	}
+	
+	{{ if .Buckets }}
 	storageClient := storagepb.NewStorageClient(cc)
+	{{ end }}
 
 	return &Client{
 		{{range .Buckets}}{{.PascalCase}}: nitric.NewBucket(storageClient, "{{.Unmodified}}"),
