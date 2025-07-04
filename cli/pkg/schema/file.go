@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/xeipuuv/gojsonschema"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func LoadFromFile(fs afero.Fs, path string, validate bool) (*Application, error) {
