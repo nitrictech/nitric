@@ -20,6 +20,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
+	"github.com/nitrictech/nitric/cli/pkg/tui"
 	pubsubpb "github.com/nitrictech/nitric/proto/pubsub/v2"
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
 	"github.com/samber/lo"
@@ -69,7 +70,7 @@ func (s *SimulationServer) startNitricApis() error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	fmt.Println(nitricIntro(addr, "https://app.nitric.io/dashboard", s.appSpec))
+	fmt.Println(tui.NitricIntro("App", s.appSpec.Name, "Addr", addr, "Dashboard", "https://app.nitric.io/dev"))
 	go srv.Serve(lis)
 
 	return nil

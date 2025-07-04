@@ -2,6 +2,7 @@ package devserver
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -126,14 +127,14 @@ func (fw *DevWebsockerServer) run() {
 			for _, subscriber := range fw.subscribers {
 				subscriber.OnConnect(send)
 			}
-			log.Printf("Client connected. Total clients: %d", len(fw.clients))
+			// log.Printf("Client connected. Total clients: %d", len(fw.clients))
 
 		case client := <-fw.unregister:
 			fw.mutex.Lock()
 			delete(fw.clients, client)
 			fw.mutex.Unlock()
 			client.Close()
-			log.Printf("Client disconnected. Total clients: %d", len(fw.clients))
+			// log.Printf("Client disconnected. Total clients: %d", len(fw.clients))
 
 		case message := <-fw.broadcast:
 			messageJSON, err := json.Marshal(message)
@@ -175,7 +176,9 @@ func (fw *DevWebsockerServer) handleWebSocket(ws *websocket.Conn) {
 		var message json.RawMessage
 		err := websocket.JSON.Receive(ws, &message)
 		if err != nil {
-			log.Printf("Error receiving message: %v", err)
+			if err != io.EOF {
+				log.Printf("Error receiving message: %v", err)
+			}
 			break
 		}
 
