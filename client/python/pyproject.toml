@@ -1,0 +1,21 @@
+[project]
+name = "veetwo-client"
+version = "0.1.0"
+description = "Nitric Python Client"
+dependencies = [
+    "grpcio",
+    "grpcio-tools",
+    "protobuf",
+]
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
