@@ -22,7 +22,7 @@ var (
 
 func GetShortVersion() string {
 	if strings.HasSuffix(Version, "dirty") {
-		return fmt.Sprintf("Build (%s)", Commit)
+		return fmt.Sprintf("Pre-release (%s)", Commit)
 	}
 	return Version
 }

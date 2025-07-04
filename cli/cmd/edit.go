@@ -4,30 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/browser"
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/devserver"
-	"github.com/nitrictech/nitric/cli/internal/style"
-	"github.com/nitrictech/nitric/cli/internal/style/icons"
-	"github.com/nitrictech/nitric/cli/internal/version"
+	"github.com/nitrictech/nitric/cli/pkg/tui"
 	"github.com/spf13/cobra"
 )
 
 const fileName = "nitric.yaml"
-
-var nitricSimple = style.Purple("Nitric")
-var nitricLightning = style.Purple(icons.Lightning + " Nitric")
-
-func nitricIntro() string {
-	version := version.GetShortVersion()
-
-	intro := fmt.Sprintf("\n%s %s\n", nitricLightning, style.Gray(version))
-
-	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder(), false, true).Render(intro)
-}
 
 var editCmd = &cobra.Command{
 	Use:   "edit",
@@ -48,9 +35,15 @@ var editCmd = &cobra.Command{
 		// subscribe the file sync to the websocket server
 		devwsServer.Subscribe(fileSync)
 
-		fmt.Println(nitricIntro())
+		port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 
-		fmt.Println("Starting nitric.yaml synchronizer on port", listener.Addr().(*net.TCPAddr).Port)
+		// Open browser tab to the dashboard
+		devUrl := config.GetNitricServerUrl().JoinPath("dev")
+		q := devUrl.Query()
+		q.Add("port", port)
+		devUrl.RawQuery = q.Encode()
+
+		fmt.Println(tui.NitricIntro("Sync Port", port, "Dashboard", devUrl.String()))
 
 		// Start the WebSocket server
 		errChan := make(chan error)
@@ -68,15 +61,9 @@ var editCmd = &cobra.Command{
 			}
 		}()
 
-		// Get the port for the listener
-		port := listener.Addr().(*net.TCPAddr).Port
+		fmt.Println("Opening browser to the editor")
 
-		fmt.Printf("Opening browser tab to the %s editor\n", nitricSimple)
-
-		// Open browser tab to the dashboard
-		devUrl := config.GetNitricServerUrl().JoinPath("dev")
-
-		err = browser.Open(fmt.Sprintf("%s?port=%d", devUrl, port))
+		err = browser.Open(devUrl.String())
 		if err != nil {
 			log.Printf("Error opening browser: %v", err)
 		}
