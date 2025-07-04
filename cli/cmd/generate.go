@@ -42,6 +42,11 @@ var generateCmd = &cobra.Command{
 			return
 		}
 
+		if !client.SpecHasClientResources(*appSpec) {
+			fmt.Println("No client compatible resources found in application, skipping client generation")
+			return
+		}
+
 		// check if the go language flag is provided
 		if goFlag {
 			fmt.Println("Generating Go client...")
