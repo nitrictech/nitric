@@ -247,11 +247,11 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 	}
 }
 
-func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePluginManifest) (*plugin.PluginDefintion, error) {
+func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePluginManifest) (*plugin.PluginDefinition, error) {
 	// TODO: Map platform resource plugins to the service plugin
 	gets := []string{}
 
-	pluginDef := &plugin.PluginDefintion{
+	pluginDef := &plugin.PluginDefinition{
 		Service: plugin.GoPlugin{
 			Alias:  "svcPlugin",
 			Name:   "default",

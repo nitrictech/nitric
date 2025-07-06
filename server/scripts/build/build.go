@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("PLUGIN_DEFINITION is not set")
 	}
 
-	var pluginDef plugin.PluginDefintion
+	var pluginDef plugin.PluginDefinition
 	if err := json.Unmarshal([]byte(pluginDefEnv), &pluginDef); err != nil {
 		log.Fatalf("error unmarshaling plugin definition: %v", err)
 	}
