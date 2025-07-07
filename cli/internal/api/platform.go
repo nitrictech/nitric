@@ -28,8 +28,6 @@ func (c *NitricApiClient) GetPlatform(team, name string, revision int) (*terrafo
 		return nil, fmt.Errorf("failed to read response from nitric auth details endpoint: %v", err)
 	}
 
-	fmt.Println("body", string(body))
-
 	var platformSpec PlatformRevisionResponse
 	err = json.Unmarshal(body, &platformSpec)
 	if err != nil {
