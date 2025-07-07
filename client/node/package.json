@@ -1,22 +1,30 @@
 {
-  "name": "@nitric/client",
-  "version": "1.0.0",
+  "name": "@veetwo/client",
+  "version": "0.1.0-alpha.2",
   "description": "nitric runtime client",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "bump": "standard-version",
-    "build": "tsc",
+    "build": "tsc && cp -r src/gen dist/gen",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "gen:sources": "mkdir -p ./src/gen && grpc_tools_node_protoc --ts_out=service=grpc-node,mode=grpc-js:./src/gen --js_out=import_style=commonjs,binary:./src/gen --grpc_out=grpc_js:./src/gen -I ../.. ../../proto/*/*/*.proto"
+    "gen:sources": "mkdir -p ./src/gen && grpc_tools_node_protoc --ts_out=service=grpc-node,mode=grpc-js:./src/gen --js_out=import_style=commonjs,binary:./src/gen --grpc_out=grpc_js:./src/gen -I ../.. ../../proto/*/*/*.proto",
+    "publish:test": "npm publish --access public --tag test"
   },
   "author": "maintainers@nitric.io",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/google-protobuf": "^3.15.12",
     "@types/node": "^20.17.58",
+    "grpc_tools_node_protoc_ts": "^5.3.3",
     "grpc-tools": "^1.13.0",
     "ts-protoc-gen": "^0.15.0",
     "typescript": "^5.3.3"
