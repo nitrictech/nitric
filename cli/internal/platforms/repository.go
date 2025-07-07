@@ -40,8 +40,6 @@ func (r *PlatformRepository) GetPlatform(name string) (*terraform.PlatformSpec, 
 		return nil, err
 	}
 
-	fmt.Println("platformSpec", platformSpec)
-
 	return platformSpec, nil
 }
 
