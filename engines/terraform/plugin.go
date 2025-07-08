@@ -5,7 +5,7 @@ type PluginManifest struct {
 	Icon       string                  `json:"icon" yaml:"icon"`
 	Deployment DeploymentModule        `json:"deployment" yaml:"deployment"`
 	Type       string                  `json:"type" yaml:"type"`
-	Runtime    RuntimeModule           `json:"runtime" yaml:"runtime"`
+	Runtime    *RuntimeModule          `json:"runtime,omitempty" yaml:"runtime,omitempty"`
 	Inputs     map[string]PluginInput  `json:"inputs" yaml:"inputs"`
 	Outputs    map[string]PluginOutput `json:"outputs" yaml:"outputs"`
 }
