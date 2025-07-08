@@ -1,13 +1,13 @@
 package terraform
 
 type PluginManifest struct {
-	Name       string           `json:"name" yaml:"name"`
-	Icon       string           `json:"icon" yaml:"icon"`
-	Deployment DeploymentModule `json:"deployment" yaml:"deployment"`
-	Type       string           `json:"type" yaml:"type"`
-	Runtime    RuntimeModule    `json:"runtime" yaml:"runtime"`
-	Inputs     []PluginInput    `json:"inputs" yaml:"inputs"`
-	Outputs    []PluginOutput   `json:"outputs" yaml:"outputs"`
+	Name       string                  `json:"name" yaml:"name"`
+	Icon       string                  `json:"icon" yaml:"icon"`
+	Deployment DeploymentModule        `json:"deployment" yaml:"deployment"`
+	Type       string                  `json:"type" yaml:"type"`
+	Runtime    RuntimeModule           `json:"runtime" yaml:"runtime"`
+	Inputs     map[string]PluginInput  `json:"inputs" yaml:"inputs"`
+	Outputs    map[string]PluginOutput `json:"outputs" yaml:"outputs"`
 }
 
 type ResourcePluginManifest struct {
@@ -30,14 +30,12 @@ type RuntimeModule struct {
 }
 
 type PluginInput struct {
-	Name        string `json:"name" yaml:"name"`
 	Description string `json:"description" yaml:"description"`
 	Type        string `json:"default" yaml:"default"`
 	Required    bool   `json:"required" yaml:"required"`
 }
 
 type PluginOutput struct {
-	Name        string `json:"name" yaml:"name"`
 	Description string `json:"description" yaml:"description"`
 }
 
