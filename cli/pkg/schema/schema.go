@@ -36,6 +36,7 @@ func (a *Application) IsValid() error {
 			violations = append(violations, fmt.Errorf("service name %s is already in use by a %s", name, existingType))
 			continue
 		}
+
 		resourceNames[name] = "service"
 	}
 
@@ -180,6 +181,9 @@ func ApplicationFromYaml(yamlString string) (*Application, *gojsonschema.Result,
 }
 
 func ApplicationFromJson(jsonString string) (*Application, *gojsonschema.Result, error) {
+	gojsonschema.ErrorTemplateFuncs = ErrorTemplateFunc()
+	gojsonschema.Locale = &NitricErrorTemplate{}
+
 	schemaLoader := gojsonschema.NewStringLoader(ApplicationJsonSchemaString())
 	documentLoader := gojsonschema.NewStringLoader(jsonString)
 

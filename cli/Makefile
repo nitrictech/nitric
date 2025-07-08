@@ -17,5 +17,23 @@ export LDFLAGS="-X $(VERSION_URI).Version=${BUILD_VERSION} \
 build:
 	go build -ldflags $(LDFLAGS) -o bin/nitric$(EXECUTABLE_EXT) main.go
 
+install:
+	@echo "Installing dependencies..."
+	@go mod tidy
+	@go mod download
+	@go mod verify
+
 test:
-	go test ./pkg/...
+	@echo "Running tests..."
+	@go test ./pkg/...
+
+test-verbose:
+	@echo "Running tests with verbose output..."
+	@go test -v ./pkg/...
+
+test-short:
+	@echo "Running tests with short output..."
+	@go test -short ./pkg/...
+
+test-pretty:
+	@go tool gotest.tools/gotestsum --format=pkgname ./pkg/...

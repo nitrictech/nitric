@@ -42,10 +42,7 @@ func LoadFromFile(fs afero.Fs, path string, validate bool) (*Application, error)
 	}
 
 	if results != nil && !results.Valid() {
-		errs := ""
-		for _, err := range results.Errors() {
-			errs += fmt.Sprintf(" - %s\n", err)
-		}
+		errs := FormatErrors(results)
 		return nil, fmt.Errorf("invalid %s application file %s:\n%s", version.ProductName, path, errs)
 	}
 
