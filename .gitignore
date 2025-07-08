@@ -25,3 +25,7 @@ tools/protoc*.zip
 tools/readme.txt
 
 *.coverprofile
+
+client/python/dist/
+
+client/python/src/sdk/gen/
