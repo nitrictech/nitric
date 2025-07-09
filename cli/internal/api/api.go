@@ -12,10 +12,18 @@ type NitricApiClient struct {
 	transformers []transformer.RequestTransformer
 }
 
+func withAcceptHeader(req *http.Request) {
+	req.Header.Set("Accept", "application/json")
+}
+
 func NewNitricApiClient(apiUrl *url.URL, transformers ...transformer.RequestTransformer) *NitricApiClient {
+	defaultTransformers := []transformer.RequestTransformer{
+		withAcceptHeader,
+	}
+
 	return &NitricApiClient{
 		apiUrl:       apiUrl,
-		transformers: transformers,
+		transformers: append(defaultTransformers, transformers...),
 	}
 }
 
