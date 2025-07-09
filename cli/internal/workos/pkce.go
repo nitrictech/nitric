@@ -126,8 +126,6 @@ func newCallbackHandler(callbackResult chan CallbackResult, client *workos_http.
 				User:         &res.User,
 			}}
 		}()
-
-		fmt.Println("Callback received")
 	}
 }
 
