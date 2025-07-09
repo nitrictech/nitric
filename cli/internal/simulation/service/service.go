@@ -168,6 +168,13 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 		}
 
 		commandParts := strings.Split(s.intent.Dev.Script, " ")
+
+		// The $PORT env is also needed if the dev command decides the port the service should listen on.
+		// e.g. python `uv run uvicorn main:app --host 0.0.0.0 --port $PORT`
+		for i := range commandParts {
+			commandParts[i] = strings.ReplaceAll(commandParts[i], "$PORT", fmt.Sprintf("%d", s.port))
+		}
+
 		srvCommand := exec.Command(
 			commandParts[0],
 			commandParts[1:]...,
