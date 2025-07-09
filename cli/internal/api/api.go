@@ -8,26 +8,16 @@ import (
 )
 
 type NitricApiClient struct {
-	apiUrl       *url.URL
-	transformers []transformer.RequestTransformer
+	apiUrl *url.URL
 }
 
-func withAcceptHeader(req *http.Request) {
-	req.Header.Set("Accept", "application/json")
-}
-
-func NewNitricApiClient(apiUrl *url.URL, transformers ...transformer.RequestTransformer) *NitricApiClient {
-	defaultTransformers := []transformer.RequestTransformer{
-		withAcceptHeader,
-	}
-
+func NewNitricApiClient(apiUrl *url.URL) *NitricApiClient {
 	return &NitricApiClient{
-		apiUrl:       apiUrl,
-		transformers: append(defaultTransformers, transformers...),
+		apiUrl: apiUrl,
 	}
 }
 
-func (c *NitricApiClient) get(path string) (*http.Response, error) {
+func (c *NitricApiClient) get(path string, transformers ...transformer.RequestTransformer) (*http.Response, error) {
 	apiUrl, err := url.JoinPath(c.apiUrl.String(), path)
 	if err != nil {
 		return nil, err
@@ -38,8 +28,13 @@ func (c *NitricApiClient) get(path string) (*http.Response, error) {
 		return nil, err
 	}
 
-	for _, transformer := range c.transformers {
-		transformer(req)
+	req.Header.Set("Accept", "application/json")
+
+	for _, transformer := range transformers {
+		err := transformer(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return http.DefaultClient.Do(req)

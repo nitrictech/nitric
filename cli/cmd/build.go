@@ -18,43 +18,44 @@ func (r *MockTerraformPluginRepository) GetPlugin(name string) (*terraform.Plugi
 	return r.plugins[name], nil
 }
 
-var buildCmd = &cobra.Command{
-	Use:   "build",
-	Short: "Builds the nitric application",
-	Long:  `Builds an application using the nitric.yaml application spec and referenced platform.`,
-	Run: func(cmd *cobra.Command, args []string) {
+func NewBuildCmd(deps *Dependencies) *cobra.Command {
+	var buildCmd = &cobra.Command{
+		Use:   "build",
+		Short: "Builds the nitric application",
+		Long:  `Builds an application using the nitric.yaml application spec and referenced platform.`,
+		Run: func(cmd *cobra.Command, args []string) {
 
-		// Read the nitric.yaml file
-		fs := afero.NewOsFs()
+			// Read the nitric.yaml file
+			fs := afero.NewOsFs()
 
-		appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
-		cobra.CheckErr(err)
+			appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
+			cobra.CheckErr(err)
 
-		mockPlatformRepository := terraform.NewMockPlatformRepository()
+			mockPlatformRepository := terraform.NewMockPlatformRepository()
 
-		// TODO:prompt for platform selection if multiple targets are specified
-		targetPlatform := appSpec.Targets[0]
+			// TODO:prompt for platform selection if multiple targets are specified
+			targetPlatform := appSpec.Targets[0]
 
-		platform, err := terraform.PlatformFromId(fs, targetPlatform, mockPlatformRepository)
-		cobra.CheckErr(err)
+			platform, err := terraform.PlatformFromId(fs, targetPlatform, mockPlatformRepository)
+			cobra.CheckErr(err)
 
-		engine := terraform.New(platform, terraform.WithRepository(plugins.NewPluginRepository()))
-		// Parse the application spec
-		// Validate the application spec
-		// Build the application using the specified platform
-		// Handle any errors that occur during the build process
+			repo := plugins.NewPluginRepository(deps.NitricApiClient)
+			engine := terraform.New(platform, terraform.WithRepository(repo))
+			// Parse the application spec
+			// Validate the application spec
+			// Build the application using the specified platform
+			// Handle any errors that occur during the build process
 
-		err = engine.Apply(appSpec)
-		if err != nil {
-			fmt.Print("Error applying platform: ", err)
-			return
-		}
+			err = engine.Apply(appSpec)
+			if err != nil {
+				fmt.Print("Error applying platform: ", err)
+				return
+			}
 
-		fmt.Println("Build completed successfully.")
+			fmt.Println("Build completed successfully.")
 
-	},
-}
+		},
+	}
 
-func init() {
-	rootCmd.AddCommand(buildCmd)
+	return buildCmd
 }
