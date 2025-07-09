@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,19 +19,19 @@ func TestApplicationSchemaValidationErrors(t *testing.T) {
 			name:        "missing required name field",
 			jsonData:    `{"description": "test application", "targets": ["aws"]}`,
 			expectError: true,
-			err:         "Missing application configuration: name is required",
+			err:         "Invalid application configuration: The `name` property is required",
 		},
 		{
 			name:        "missing required targets field",
 			jsonData:    `{"name": "test-app", "description": "test application"}`,
 			expectError: true,
-			err:         "Missing application configuration: targets is required",
+			err:         "Invalid application configuration: The `targets` property is required",
 		},
 		{
 			name:        "missing required description field",
 			jsonData:    `{"name": "test-app", "targets": ["aws"]}`,
 			expectError: true,
-			err:         "Missing application configuration: description is required",
+			err:         "Invalid application configuration: The `description` property is required",
 		},
 		{
 			name:        "valid application",
@@ -54,7 +53,7 @@ func TestApplicationSchemaValidationErrors(t *testing.T) {
 				assert.False(t, result.Valid())
 
 				errorStr := FormatErrors(result)
-				assert.Contains(t, strings.ToLower(errorStr), strings.ToLower(tt.err))
+				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, app)
@@ -80,7 +79,7 @@ func TestServiceSchemaValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "services.my-service: container is required",
+			err:         "service my-service has an invalid config: The `container` property is required",
 		},
 		{
 			name: "missing both docker and image in container",
@@ -95,7 +94,7 @@ func TestServiceSchemaValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "services.my-service.container: Must provide a valid docker or image configuration, but not both.",
+			err:         "service my-service has an invalid container property: Must provide either a valid docker or image configuration. But not both",
 		},
 		{
 			name: "both docker and image specified",
@@ -113,7 +112,7 @@ func TestServiceSchemaValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "services.my-service.container: Must provide a valid docker or image configuration, but not both.",
+			err:         "service my-service has an invalid container property: Must provide either a valid docker or image configuration. But not both",
 		},
 		{
 			name: "docker image missing required id",
@@ -130,7 +129,7 @@ func TestServiceSchemaValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "services.my-service.container.image: id is required",
+			err:         " - service my-service has an invalid container property (image): The `id` property is required",
 		},
 		{
 			name: "valid service with docker",
@@ -183,7 +182,7 @@ func TestServiceSchemaValidationErrors(t *testing.T) {
 				assert.False(t, result.Valid())
 
 				errorStr := FormatErrors(result)
-				assert.Contains(t, strings.ToLower(errorStr), strings.ToLower(tt.err))
+				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, app)
@@ -220,7 +219,7 @@ func TestServiceTriggerValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "services.my-service.triggers.my-trigger: path is required",
+			err:         "service my-service has an invalid triggers property (my-trigger): The `path` property is required",
 		},
 		{
 			name: "missing schedule in trigger",
@@ -242,7 +241,7 @@ func TestServiceTriggerValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "services.my-service.triggers.my-trigger: schedule is required",
+			err:         "service my-service has an invalid triggers property (my-trigger): The `schedule` property is required",
 		},
 		{
 			name: "missing cron_expression in schedule",
@@ -265,7 +264,7 @@ func TestServiceTriggerValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "services.my-service.triggers.my-trigger.schedule: cron_expression is required",
+			err:         "service my-service has an invalid my-trigger property (schedule): The `cron_expression` property is required",
 		},
 		{
 			name: "valid trigger with schedule",
@@ -308,7 +307,7 @@ func TestServiceTriggerValidationErrors(t *testing.T) {
 				assert.False(t, result.Valid())
 
 				errorStr := FormatErrors(result)
-				assert.Contains(t, strings.ToLower(errorStr), strings.ToLower(tt.err))
+				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, app)
@@ -334,7 +333,7 @@ func TestEntrypointValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "entrypoints.my-entrypoint: routes is required",
+			err:         "entrypoint my-entrypoint has an invalid config: The `routes` property is required",
 		},
 		{
 			name: "invalid route name pattern (missing trailing slash)",
@@ -353,7 +352,7 @@ func TestEntrypointValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "entrypoints.my-entrypoint.routes: missing trailing slash for route: api",
+			err:         "entrypoint my-entrypoint has an invalid routes property: Missing trailing slash for route api",
 		},
 		{
 			name: "missing required name in route",
@@ -370,7 +369,7 @@ func TestEntrypointValidationErrors(t *testing.T) {
 				}
 			}`,
 			expectError: true,
-			err:         "entrypoints.my-entrypoint.routes.api/: name is required",
+			err:         "entrypoint my-entrypoint has an invalid routes property (api/): The `name` property is required",
 		},
 		{
 			name: "valid entrypoint with routes",
@@ -404,7 +403,7 @@ func TestEntrypointValidationErrors(t *testing.T) {
 				assert.False(t, result.Valid())
 
 				errorStr := FormatErrors(result)
-				assert.Contains(t, strings.ToLower(errorStr), strings.ToLower(tt.err))
+				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, app)
@@ -501,7 +500,8 @@ func TestApplicationIsValidErrors(t *testing.T) {
 
 			if tt.expectError {
 				assert.NotNil(t, err)
-				assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(tt.err))
+
+				assert.Contains(t, err.Error(), tt.err)
 			} else {
 				assert.NoError(t, err)
 			}

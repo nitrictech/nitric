@@ -7,33 +7,95 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-type FieldInformation struct {
-	Type          string
-	Name          string
-	Property      string
-	OptionalValue string
+type FieldPath struct {
+	IsRoot       bool
+	ResourceType string
+	ResourceName string
+	Property     string
+	Value        string
 }
 
-func getInformationFromField(field string) *FieldInformation {
+func ParseFieldPath(field string) *FieldPath {
 	splits := strings.Split(field, ".")
+
 	if len(splits) < 2 {
-		return nil
+		return &FieldPath{IsRoot: true}
 	}
 
-	fieldInfo := &FieldInformation{}
-
-	fieldInfo.Type = strings.TrimSuffix(splits[0], "s")
-	fieldInfo.Name = splits[1]
-
-	if len(splits) > 2 {
-		fieldInfo.Property = splits[len(splits)-1]
+	path := &FieldPath{
+		ResourceType: strings.TrimSuffix(splits[0], "s"),
+		ResourceName: splits[1],
 	}
 
-	if len(splits) > 4 {
-		fieldInfo.OptionalValue = splits[len(splits)-1]
+	switch len(splits) {
+	case 2:
+		return path
+	case 3:
+		path.Property = splits[2]
+	case 4:
+		path.Property = splits[2]
+		path.Value = splits[3]
+	default:
+		// For longer paths, take the last two elements
+		if len(splits) > 3 {
+			path.Property = splits[len(splits)-2]
+			path.Value = splits[len(splits)-1]
+		}
 	}
 
-	return fieldInfo
+	return path
+}
+
+type ErrorFormatter struct {
+	path *FieldPath
+}
+
+func NewErrorFormatter(field string) *ErrorFormatter {
+	return &ErrorFormatter{
+		path: ParseFieldPath(field),
+	}
+}
+
+func (ef *ErrorFormatter) FormatErrorPrefix() string {
+	path := ef.path
+
+	if path.IsRoot {
+		return "Invalid application configuration"
+	}
+
+	if path.Property == "" {
+		return fmt.Sprintf("%s %s has an invalid config", path.ResourceType, path.ResourceName)
+	}
+
+	if path.Value == "" {
+		return fmt.Sprintf("%s %s has an invalid %s property", path.ResourceType, path.ResourceName, path.Property)
+	}
+
+	return fmt.Sprintf("%s %s has an invalid %s property (%s)", path.ResourceType, path.ResourceName, path.Property, path.Value)
+}
+
+func (ef *ErrorFormatter) FormatNumberOneOf() string {
+	path := ef.path
+
+	if path.ResourceType == "service" && path.Property == "container" {
+		return "Must provide either a valid docker or image configuration. But not both."
+	}
+
+	return "Must validate one and only one schema"
+}
+
+func (ef *ErrorFormatter) FormatInvalidProperty() string {
+	path := ef.path
+
+	if path.ResourceType == "entrypoint" && path.Property == "routes" {
+		return "Missing trailing slash for route"
+	}
+
+	return path.ResourceName
+}
+
+func (ef *ErrorFormatter) ShouldSkipError(errType string) bool {
+	return errType == "pattern" && ef.path.ResourceType == "entrypoint" && ef.path.Property == "routes"
 }
 
 type NitricErrorTemplate struct {
@@ -52,58 +114,44 @@ func (t *NitricErrorTemplate) InvalidPropertyName() string {
 	return "{{ invalid_property_name .field}} {{.property}}"
 }
 
+func (t *NitricErrorTemplate) RegexPattern() string {
+	return "{{ invalid_pattern .field}} {{.pattern}}"
+}
+
+func (t *NitricErrorTemplate) Required() string {
+	return "The `{{.property}}` property is required"
+}
+
 func ErrorTemplateFunc() map[string]interface{} {
 	return map[string]interface{}{
 		"error_prefix": func(field string) string {
-			resource := getInformationFromField(field)
-
-			if resource.Type == "(root)" {
-				return fmt.Sprintf("Invalid application config")
-			}
-
-			if resource.Property == "" {
-				return fmt.Sprintf("%s %s has invalid config", resource.Type, resource.Name)
-			}
-
-			if resource.OptionalValue == "" {
-				return fmt.Sprintf("%s %s has invalid %s property", resource.Type, resource.Name, resource.Property)
-			}
-
-			return fmt.Sprintf("%s %s has invalid %s property (%s)", resource.Type, resource.Name, resource.Property, resource.OptionalValue)
+			formatter := NewErrorFormatter(field)
+			return formatter.FormatErrorPrefix()
 		},
 		"one_of": func(field string) string {
-			resource := getInformationFromField(field)
-
-			if resource.Type == "service" && resource.Property == "container" {
-				return "Must provide a valid docker or image configuration, but not both."
-			}
-
-			return "Must validate one and only one schema"
+			formatter := NewErrorFormatter(field)
+			return formatter.FormatNumberOneOf()
 		},
 		"invalid_property_name": func(field string) string {
-			resource := getInformationFromField(field)
-
-			if resource.Type == "entrypoint" && resource.Property == "route" {
-				return "Missing trailing slash for route:"
-			}
-
-			return field
+			formatter := NewErrorFormatter(field)
+			return formatter.FormatInvalidProperty()
 		},
 	}
 }
 
 func FormatErrors(results *gojsonschema.Result) string {
-	errs := ""
-	for _, err := range results.Errors() {
-		resource := getInformationFromField(err.Field())
+	var errs strings.Builder
 
-		// Ignore printing the pattern matching error for entrypoint routes (handled by the invalid_property_name function)
-		if err.Type() == "pattern" && resource.Type == "entrypoint" && resource.Property == "route" {
+	for _, err := range results.Errors() {
+		formatter := NewErrorFormatter(err.Field())
+
+		// Skip certain errors based on context
+		if formatter.ShouldSkipError(err.Type()) {
 			continue
 		}
 
-		errs += fmt.Sprintf(" - %s\n", err)
+		errs.WriteString(fmt.Sprintf(" - %s\n", err))
 	}
 
-	return errs
+	return errs.String()
 }
