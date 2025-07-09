@@ -15,8 +15,11 @@ var (
 )
 
 type TokenStore interface {
+	// GetTokens returns the tokens from the store, or nil if no tokens are found
 	GetTokens() (*Tokens, error)
+	// SaveTokens saves the tokens to the store
 	SaveTokens(*Tokens) error
+	// Clear clears the tokens from the store
 	Clear() error
 }
 
@@ -35,10 +38,16 @@ type WorkOSAuth struct {
 func NewWorkOSAuth(tokenStore TokenStore, clientID string, endpoint string) *WorkOSAuth {
 	httpClient := http.NewHttpClient(clientID, http.WithHostname(endpoint))
 
-	return &WorkOSAuth{tokenStore: tokenStore, httpClient: httpClient}
+	tokens, _ := tokenStore.GetTokens()
+
+	return &WorkOSAuth{tokenStore: tokenStore, httpClient: httpClient, tokens: tokens}
 }
 
 func (a *WorkOSAuth) Login() (*http.User, error) {
+	if a.tokens != nil {
+		return a.tokens.User, nil
+	}
+
 	err := a.performPKCE()
 	if err != nil {
 		return nil, err

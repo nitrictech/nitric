@@ -14,13 +14,15 @@ func NewLoginCmd(deps *Dependencies) *cobra.Command {
 		Short: "Login to Nitric",
 		Long:  `Login to the Nitric CLI.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("\n%s Logging in...\n", style.Purple(icons.Lightning+" Nitric"))
+
 			user, err := deps.WorkOSAuth.Login()
 			if err != nil {
 				fmt.Printf("\n%s Error logging in: %s\n", style.Red(icons.Cross), err)
 				return
 			}
 
-			fmt.Printf("\n%s Login successful, welcome %s\n", style.Green(icons.Check), style.Teal(user.FirstName))
+			fmt.Printf("\n%s Logged in as %s\n", style.Green(icons.Check), style.Teal(user.FirstName))
 		},
 	}
 
