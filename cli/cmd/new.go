@@ -11,6 +11,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-getter"
+	"github.com/nitrictech/nitric/cli/internal/api"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
@@ -43,6 +44,17 @@ func NewNewCmd(deps *Dependencies) *cobra.Command {
 			force, err := cmd.Flags().GetBool("force")
 			if err != nil {
 				fmt.Printf("Failed to get force flag: %v", err)
+				return
+			}
+
+			templates, err := deps.NitricApiClient.GetTemplates()
+			if err != nil {
+				if errors.Is(err, api.ErrUnauthenticated) {
+					fmt.Println("Please login first, using the `login` command")
+					return
+				}
+
+				fmt.Printf("Failed to get templates: %v", err)
 				return
 			}
 
@@ -88,19 +100,13 @@ func NewNewCmd(deps *Dependencies) *cobra.Command {
 				}
 			}
 
-			resp, err := deps.NitricApiClient.GetTemplates()
-			if err != nil {
-				fmt.Printf("Failed to get templates: %v", err)
-				return
-			}
-
-			if len(resp) == 0 {
+			if len(templates) == 0 {
 				fmt.Println("No templates found")
 				return
 			}
 
-			templateNames := make([]string, len(resp))
-			for i, template := range resp {
+			templateNames := make([]string, len(templates))
+			for i, template := range templates {
 				templateNames[i] = template.String()
 			}
 
@@ -111,7 +117,7 @@ func NewNewCmd(deps *Dependencies) *cobra.Command {
 				return
 			}
 
-			template, err := deps.NitricApiClient.GetTemplate(resp[index].TeamSlug, resp[index].Slug, "")
+			template, err := deps.NitricApiClient.GetTemplate(templates[index].TeamSlug, templates[index].Slug, "")
 			cobra.CheckErr(err)
 
 			// Find home directory.

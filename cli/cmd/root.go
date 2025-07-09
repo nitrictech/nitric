@@ -44,11 +44,12 @@ func init() {
 	rootCmd.AddCommand(NewAccessTokenCmd(deps))
 
 	rootCmd.AddCommand(NewTemplatesCmd(deps))
+	rootCmd.AddCommand(NewNewCmd(deps))
 	rootCmd.AddCommand(NewBuildCmd(deps))
 }
 
 func initDependencies() {
-	deps.NitricApiClient = api.NewNitricApiClient(config.GetNitricServerUrl())
+	deps.NitricApiClient = api.NewNitricApiClient(config.GetNitricServerUrl(), nil)
 
 	workosDetails, err := deps.NitricApiClient.GetWorkOSPublicDetails()
 	if err != nil {
@@ -60,6 +61,7 @@ func initDependencies() {
 	}
 
 	deps.WorkOSAuth = workos.NewWorkOSAuth(workos.NewKeyringTokenStore("nitric.v2.cli"), workosDetails.ClientID, workosDetails.ApiHostname)
+	deps.NitricApiClient.SetTokenProvider(deps.WorkOSAuth)
 }
 
 // initConfig reads in config file and ENV variables if set.

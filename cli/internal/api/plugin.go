@@ -11,7 +11,7 @@ import (
 // FIXME: Because of the difference in fields between identity and resource plugins we need to return an interface
 func (c *NitricApiClient) GetPluginManifest(team, lib, version, name string) (interface{}, error) {
 	fmt.Println("Getting plugin manifest for", team, lib, version, name)
-	response, err := c.get(fmt.Sprintf("/api/plugin_libraries/%s/%s/versions/%s/plugins/%s", team, lib, version, name))
+	response, err := c.get(fmt.Sprintf("/api/plugin_libraries/%s/%s/versions/%s/plugins/%s", team, lib, version, name), true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to nitric auth details endpoint: %v", err)
 	}

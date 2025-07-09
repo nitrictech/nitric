@@ -1,23 +1,35 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 
-	"github.com/nitrictech/nitric/cli/internal/api/transformer"
+	"github.com/pkg/errors"
 )
 
-type NitricApiClient struct {
-	apiUrl *url.URL
+type TokenProvider interface {
+	// GetAccessToken returns the access token for the user
+	GetAccessToken() (string, error)
 }
 
-func NewNitricApiClient(apiUrl *url.URL) *NitricApiClient {
+type NitricApiClient struct {
+	tokenProvider TokenProvider
+	apiUrl        *url.URL
+}
+
+func NewNitricApiClient(apiUrl *url.URL, tokenProvider TokenProvider) *NitricApiClient {
 	return &NitricApiClient{
-		apiUrl: apiUrl,
+		apiUrl:        apiUrl,
+		tokenProvider: tokenProvider,
 	}
 }
 
-func (c *NitricApiClient) get(path string, transformers ...transformer.RequestTransformer) (*http.Response, error) {
+func (c *NitricApiClient) SetTokenProvider(tokenProvider TokenProvider) {
+	c.tokenProvider = tokenProvider
+}
+
+func (c *NitricApiClient) get(path string, requiresAuth bool) (*http.Response, error) {
 	apiUrl, err := url.JoinPath(c.apiUrl.String(), path)
 	if err != nil {
 		return nil, err
@@ -30,11 +42,16 @@ func (c *NitricApiClient) get(path string, transformers ...transformer.RequestTr
 
 	req.Header.Set("Accept", "application/json")
 
-	for _, transformer := range transformers {
-		err := transformer(req)
-		if err != nil {
-			return nil, err
+	if requiresAuth {
+		if c.tokenProvider == nil {
+			return nil, errors.Wrap(ErrPreconditionFailed, "no token provider provided")
 		}
+
+		token, err := c.tokenProvider.GetAccessToken()
+		if err != nil {
+			return nil, errors.Wrap(ErrUnauthenticated, err.Error())
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
 	return http.DefaultClient.Do(req)

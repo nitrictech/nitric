@@ -16,7 +16,7 @@ type WorkOSDetails struct {
 }
 
 func (c *NitricApiClient) GetWorkOSPublicDetails() (*WorkOSDetails, error) {
-	response, err := c.get("/auth/details")
+	response, err := c.get("/auth/details", false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to nitric auth details endpoint: %v", err)
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 func (c *NitricApiClient) GetTemplates() ([]Template, error) {
-	response, err := c.get("/api/templates")
+	response, err := c.get("/api/templates", true)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +37,13 @@ func (c *NitricApiClient) GetTemplate(teamSlug string, templateName string, vers
 	// latest version URL is /api/templates/{teamSlug}/{templateName}
 	// specific version URL is /api/templates/{teamSlug}/{templateName}/v/{version}
 
-	url := fmt.Sprintf("/api/templates/%s/%s", teamSlug, templateName)
+	templatePath := fmt.Sprintf("/api/templates/%s/%s", teamSlug, templateName)
 
 	if version != "" {
-		url = fmt.Sprintf("%s/v/%s", url, version)
+		templatePath = fmt.Sprintf("%s/v/%s", templatePath, version)
 	}
 
-	response, err := c.get(url)
+	response, err := c.get(templatePath, true)
 	if err != nil {
 		return nil, err
 	}
