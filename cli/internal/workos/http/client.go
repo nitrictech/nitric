@@ -1,10 +1,13 @@
-package workos
+package http
 
 import (
 	"bytes"
+	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"net/url"
 	"path"
@@ -145,6 +148,35 @@ func WithScheme(scheme string) ClientOption {
 	return func(c *clientConfig) {
 		c.scheme = scheme
 	}
+}
+
+func jwkToRSAPublicKey(jwk JWK) (*rsa.PublicKey, error) {
+	// Decode the modulus (n)
+	nBytes, err := base64.RawURLEncoding.DecodeString(jwk.N)
+	if err != nil {
+		return nil, err
+	}
+
+	// Decode the exponent (e)
+	eBytes, err := base64.RawURLEncoding.DecodeString(jwk.E)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the RSA public key
+	return &rsa.PublicKey{
+		N: new(big.Int).SetBytes(nBytes),
+		E: int(new(big.Int).SetBytes(eBytes).Int64()),
+	}, nil
+}
+
+// GetRSAPublicKey gets the RSA public key for a given JWT kid
+func (h *HttpClient) GetRSAPublicKey(kid string) (*rsa.PublicKey, error) {
+	jwk, err := h.GetJWK(kid)
+	if err != nil {
+		return nil, err
+	}
+	return jwkToRSAPublicKey(jwk)
 }
 
 func (h *HttpClient) GetJWK(kid string) (JWK, error) {

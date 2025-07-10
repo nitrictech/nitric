@@ -5,46 +5,40 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
+	"strings"
 
+	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-const (
-	ConfigFile         = "config"
-	NitricServerUrlKey = "nitric.url"
-	EnvPrefix          = "NITRIC"
-)
-
-var allConfigKeys = []string{NitricServerUrlKey}
-
-func GetAllConfigItems() map[string]string {
-	items := make(map[string]string)
-	for _, key := range allConfigKeys {
-		items[key] = viper.GetString(key)
-	}
-	return items
+type Config struct {
+	v               *viper.Viper
+	NitricServerUrl string `mapstructure:"url"`
 }
 
-func GetValue(key string) (string, error) {
-	if slices.Contains(allConfigKeys, key) {
-		return viper.GetString(key), nil
-	}
-
-	return "", fmt.Errorf("invalid config option %s", key)
+func (c *Config) FileUsed() string {
+	return c.v.ConfigFileUsed()
 }
 
-func SetValue(key string, value string) error {
-	if slices.Contains(allConfigKeys, key) {
-		viper.Set(key, value)
-		return nil
+func (c *Config) Dump() string {
+	all := c.v.AllSettings()
+
+	allLines := []string{}
+
+	for key, value := range all {
+		allLines = append(allLines, fmt.Sprintf("%s: %v", key, value))
 	}
 
-	return fmt.Errorf("invalid config option %s", key)
+	return strings.Join(allLines, "\n")
 }
 
-func GetNitricServerUrl() *url.URL {
-	nitricUrl, err := url.Parse(viper.GetString(NitricServerUrlKey))
+func (c *Config) SetValue(key, value string) error {
+	return mapstructure.Decode(map[string]interface{}{key: value}, c)
+}
+
+func (c *Config) GetNitricServerUrl() *url.URL {
+	nitricUrl, err := url.Parse(c.NitricServerUrl)
 	if err != nil {
 		fmt.Printf("Error parsing nitric server url from config, using default: %v\n", err)
 		return &url.URL{
@@ -56,62 +50,62 @@ func GetNitricServerUrl() *url.URL {
 	return nitricUrl
 }
 
-func SetNitricServerUrl(newUrl string) error {
+func (c *Config) SetNitricServerUrl(newUrl string) error {
 	nitricUrl, err := url.Parse(newUrl)
 	if err != nil {
 		return err
 	}
 
-	viper.Set(NitricServerUrlKey, nitricUrl.String())
+	c.NitricServerUrl = nitricUrl.String()
 	return nil
 }
 
-func Save() error {
-	if err := viper.WriteConfig(); err != nil {
-		// If config file doesn't exist, create it
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			if err := viper.SafeWriteConfig(); err != nil {
-				return fmt.Errorf("error creating config file: %v", err)
-			}
-		} else {
-			return fmt.Errorf("error writing config: %v", err)
-		}
+func (c *Config) Save() error {
+	var configMap map[string]interface{}
+	err := mapstructure.Decode(c, &configMap)
+	if err != nil {
+		return fmt.Errorf("failed to decode config struct: %w", err)
+	}
+
+	for key, value := range configMap {
+		c.v.Set(key, value)
+	}
+
+	err = c.v.WriteConfig()
+	if err != nil {
+		return fmt.Errorf("failed to write config: %w", err)
 	}
 
 	return nil
 }
 
-func setDefaults() {
-	viper.SetDefault(NitricServerUrlKey, "https://app.nitric.io/")
-}
+func Load(cmd *cobra.Command) (*Config, error) {
+	v := viper.New()
+	v.SetDefault("url", "https://app.nitric.io/")
 
-// Load loads the config from the file or the home directory
-func Load(file string) error {
-	if file != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(file)
+	v.SetConfigType("yaml")
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
 	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		configDir := filepath.Join(home, ".nitric")
-
-		// Search config in home directory with name ".nitric" (without extension).
-		viper.AddConfigPath(configDir)
-		// Search config in the current directory
-		viper.AddConfigPath(".")
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(ConfigFile)
+		v.AddConfigPath(filepath.Join(home, ".nitric"))
 	}
 
-	setDefaults()
+	// Search the current .nitric directory first
+	v.AddConfigPath(".nitric")
 
-	viper.SetEnvPrefix(EnvPrefix)
-	viper.AutomaticEnv() // read in environment variables that match
+	err = v.ReadInConfig()
+	if err != nil {
+		return nil, err
+	}
 
-	return viper.ReadInConfig()
+	c := &Config{v: v}
+
+	err = v.Unmarshal(c)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
