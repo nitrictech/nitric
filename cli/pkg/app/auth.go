@@ -1,4 +1,4 @@
-package cli
+package app
 
 import (
 	"errors"
@@ -7,14 +7,14 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/internal/workos"
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 )
 
 type AuthApp struct {
 	auth *workos.WorkOSAuth
 }
 
-func NewAuthApp(injector *do.Injector) (*AuthApp, error) {
+func NewAuthApp(injector do.Injector) (*AuthApp, error) {
 	auth := do.MustInvoke[*workos.WorkOSAuth](injector)
 	return &AuthApp{auth: auth}, nil
 }

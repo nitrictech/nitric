@@ -2,55 +2,37 @@ package main
 
 import (
 	"os"
-	"strings"
 
 	"github.com/nitrictech/nitric/cli/cmd"
 	"github.com/nitrictech/nitric/cli/internal/api"
 	"github.com/nitrictech/nitric/cli/internal/config"
+	details_service "github.com/nitrictech/nitric/cli/internal/details/service"
 	"github.com/nitrictech/nitric/cli/internal/workos"
-	"github.com/nitrictech/nitric/cli/pkg/cli"
-	"github.com/samber/do"
-	"github.com/spf13/cobra"
+	"github.com/nitrictech/nitric/cli/pkg/app"
+	"github.com/samber/do/v2"
 )
+
+func createTokenStore(inj do.Injector) (*workos.KeyringTokenStore, error) {
+	config := do.MustInvoke[*config.Config](inj)
+	apiUrl := config.GetNitricServerUrl()
+
+	tokenStore, err := workos.NewKeyringTokenStore("nitric.v2.cli", apiUrl.String())
+	if err != nil {
+		return nil, err
+	}
+	return tokenStore, nil
+}
 
 func main() {
 
 	injector := do.New()
 
-	do.Provide(injector, func(inj *do.Injector) (workos.TokenStore, error) {
-		config := do.MustInvoke[*config.Config](inj)
-		apiUrl := config.GetNitricServerUrl()
-
-		tokenStore, err := workos.NewKeyringTokenStore("nitric.v2.cli", apiUrl.String())
-		if err != nil {
-			return nil, err
-		}
-		return tokenStore, nil
-	})
-
+	do.Provide(injector, createTokenStore)
 	do.Provide(injector, api.NewNitricApiClient)
-
-	do.Provide(injector, func(inj *do.Injector) (*workos.WorkOSAuth, error) {
-		tokenStore := do.MustInvoke[workos.TokenStore](inj)
-
-		apiClient := do.MustInvoke[*api.NitricApiClient](inj)
-		workosDetails, err := apiClient.GetWorkOSPublicDetails()
-		if err != nil {
-			if strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "connection reset by peer") {
-				cobra.CheckErr("failed to connect to the Nitric API. Please check your connection and try again. If the problem persists, please contact support.")
-			}
-
-			cobra.CheckErr(err)
-		}
-		return workos.NewWorkOSAuth(tokenStore, workosDetails.ClientID, workosDetails.ApiHostname), nil
-	})
-
-	do.Provide(injector, func(inj *do.Injector) (api.TokenProvider, error) {
-		return do.Invoke[*workos.WorkOSAuth](inj)
-	})
-
-	do.Provide(injector, cli.NewCLI)
-	do.Provide(injector, cli.NewAuthApp)
+	do.Provide(injector, details_service.NewService)
+	do.Provide(injector, workos.NewWorkOSAuth)
+	do.Provide(injector, app.NewNitricApp)
+	do.Provide(injector, app.NewAuthApp)
 
 	rootCmd := cmd.NewRootCmd(injector)
 

@@ -3,10 +3,13 @@ package workos
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/nitrictech/nitric/cli/internal/details"
 	"github.com/nitrictech/nitric/cli/internal/workos/http"
+	"github.com/samber/do/v2"
 )
 
 var (
@@ -30,17 +33,24 @@ type Tokens struct {
 }
 
 type WorkOSAuth struct {
-	tokenStore TokenStore
-	tokens     *Tokens
-	httpClient *http.HttpClient
+	nitricBackendUrl *url.URL
+	tokenStore       TokenStore
+	tokens           *Tokens
+	httpClient       *http.HttpClient
 }
 
-func NewWorkOSAuth(tokenStore TokenStore, clientID string, endpoint string) *WorkOSAuth {
-	httpClient := http.NewHttpClient(clientID, http.WithHostname(endpoint))
+func NewWorkOSAuth(inj do.Injector) (*WorkOSAuth, error) {
+	details, err := do.MustInvokeAs[details.AuthDetailsService](inj).GetWorkOSDetails()
+	if err != nil {
+		return nil, err
+	}
 
+	httpClient := http.NewHttpClient(details.ClientID, http.WithHostname(details.ApiHostname))
+
+	tokenStore := do.MustInvokeAs[TokenStore](inj)
 	tokens, _ := tokenStore.GetTokens()
 
-	return &WorkOSAuth{tokenStore: tokenStore, httpClient: httpClient, tokens: tokens}
+	return &WorkOSAuth{tokenStore: tokenStore, httpClient: httpClient, tokens: tokens}, nil
 }
 
 func (a *WorkOSAuth) Login() (*http.User, error) {

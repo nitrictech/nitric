@@ -7,12 +7,12 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 )
 
 // NewConfigCmd creates the config command
-func NewConfigCmd(injector *do.Injector) *cobra.Command {
+func NewConfigCmd(injector do.Injector) *cobra.Command {
 	configCmd := &cobra.Command{
 		Use:   "config",
 		Short: "Manage CLI configuration",

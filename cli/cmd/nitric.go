@@ -1,26 +1,29 @@
 package cmd
 
 import (
-	"github.com/nitrictech/nitric/cli/pkg/cli"
-	"github.com/samber/do"
+	"github.com/nitrictech/nitric/cli/pkg/app"
+	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 )
 
 // NewTemplatesCmd creates the templates command
-func NewTemplatesCmd(injector *do.Injector) *cobra.Command {
+func NewTemplatesCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "templates",
 		Short: "List available templates",
 		Long:  `List all available templates for creating new projects.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
+			app, err := do.Invoke[*app.NitricApp](injector)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
 			cobra.CheckErr(app.Templates())
 		},
 	}
 }
 
 // NewNewCmd creates the new command
-func NewNewCmd(injector *do.Injector) *cobra.Command {
+func NewNewCmd(injector do.Injector) *cobra.Command {
 	var force bool
 
 	cmd := &cobra.Command{
@@ -32,7 +35,10 @@ func NewNewCmd(injector *do.Injector) *cobra.Command {
 			if len(args) > 0 {
 				projectName = args[0]
 			}
-			app := do.MustInvoke[*cli.CLI](injector)
+			app, err := do.Invoke[*app.NitricApp](injector)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
 			cobra.CheckErr(app.New(projectName, force))
 		},
 	}
@@ -42,20 +48,23 @@ func NewNewCmd(injector *do.Injector) *cobra.Command {
 }
 
 // NewBuildCmd creates the build command
-func NewBuildCmd(injector *do.Injector) *cobra.Command {
+func NewBuildCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "build",
 		Short: "Builds the nitric application",
 		Long:  `Builds an application using the nitric.yaml application spec and referenced platform.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
+			app, err := do.Invoke[*app.NitricApp](injector)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
 			cobra.CheckErr(app.Build())
 		},
 	}
 }
 
 // NewGenerateCmd creates the generate command
-func NewGenerateCmd(injector *do.Injector) *cobra.Command {
+func NewGenerateCmd(injector do.Injector) *cobra.Command {
 	var (
 		goFlag, pythonFlag, javascriptFlag, typescriptFlag                                    bool
 		goOutputDir, goPackageName, pythonOutputDir, javascriptOutputDir, typescriptOutputDir string
@@ -66,7 +75,10 @@ func NewGenerateCmd(injector *do.Injector) *cobra.Command {
 		Short: "Generate client libraries",
 		Long:  `Generate client libraries for different programming languages based on the Nitric application specification.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
+			app, err := do.Invoke[*app.NitricApp](injector)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
 			cobra.CheckErr(app.Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag, goOutputDir, goPackageName, pythonOutputDir, javascriptOutputDir, typescriptOutputDir))
 		},
 	}
@@ -89,26 +101,28 @@ func NewGenerateCmd(injector *do.Injector) *cobra.Command {
 }
 
 // NewEditCmd creates the edit command
-func NewEditCmd(injector *do.Injector) *cobra.Command {
+func NewEditCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "edit",
 		Short: "Edit the nitric application",
 		Long:  `Edits an application using the nitric.yaml application spec and referenced platform.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
+			app, err := do.Invoke[*app.NitricApp](injector)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
 			cobra.CheckErr(app.Edit())
 		},
 	}
 }
 
 // NewDevCmd creates the dev command
-func NewDevCmd(injector *do.Injector) *cobra.Command {
+func NewDevCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dev",
 		Short: "Run the Nitric application in development mode",
 		Long:  `Run the Nitric application in development mode, allowing local testing of resources.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
 			cobra.CheckErr(app.Dev())
 		},
 	}

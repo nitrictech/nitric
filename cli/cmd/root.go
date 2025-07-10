@@ -1,13 +1,16 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/config"
-	"github.com/nitrictech/nitric/cli/pkg/cli"
-	"github.com/samber/do"
+	"github.com/nitrictech/nitric/cli/internal/version"
+	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 )
 
-func NewRootCmd(injector *do.Injector) *cobra.Command {
+func NewRootCmd(injector do.Injector) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "nitric",
 		Short: "Nitric CLI - The command line interface for Nitric",
@@ -42,14 +45,14 @@ test, and deploy your Nitric applications.`,
 }
 
 // NewVersionCmd creates the version command
-func NewVersionCmd(injector *do.Injector) *cobra.Command {
+func NewVersionCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print the CLI version",
 		Long:  `Display the version number of the Nitric CLI.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
-			cobra.CheckErr(app.Version())
+			highlight := lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
+			fmt.Printf("nitric cli version %s\n", highlight.Render(version.Version))
 		},
 	}
 }

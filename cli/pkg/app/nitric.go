@@ -1,4 +1,4 @@
-package cli
+package app
 
 import (
 	"context"
@@ -21,37 +21,29 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
-	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/client"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/cli/pkg/tui"
 	"github.com/nitrictech/nitric/engines/terraform"
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 	"github.com/spf13/afero"
 )
 
-type CLI struct {
+type NitricApp struct {
 	config    *config.Config
 	apiClient *api.NitricApiClient
 }
 
-func NewCLI(injector *do.Injector) (*CLI, error) {
+func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 	config := do.MustInvoke[*config.Config](injector)
 	apiClient := do.MustInvoke[*api.NitricApiClient](injector)
 
-	return &CLI{config: config, apiClient: apiClient}, nil
-}
-
-// Version handles the version command logic
-func (c *CLI) Version() error {
-	highlight := lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
-	fmt.Printf("nitric cli version %s\n", highlight.Render(version.Version))
-	return nil
+	return &NitricApp{config: config, apiClient: apiClient}, nil
 }
 
 // Templates handles the templates command logic
-func (c *CLI) Templates() error {
+func (c *NitricApp) Templates() error {
 	templates, err := c.apiClient.GetTemplates()
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
@@ -78,7 +70,7 @@ func (c *CLI) Templates() error {
 }
 
 // New handles the new project creation command logic
-func (c *CLI) New(projectName string, force bool) error {
+func (c *NitricApp) New(projectName string, force bool) error {
 	templates, err := c.apiClient.GetTemplates()
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
@@ -225,7 +217,7 @@ func (c *CLI) New(projectName string, force bool) error {
 }
 
 // Build handles the build command logic
-func (c *CLI) Build() error {
+func (c *NitricApp) Build() error {
 	// Read the nitric.yaml file
 	fs := afero.NewOsFs()
 
@@ -262,7 +254,7 @@ func (c *CLI) Build() error {
 }
 
 // Generate handles the generate command logic
-func (c *CLI) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag bool, goOutputDir, goPackageName, pythonOutputDir, javascriptOutputDir, typescriptOutputDir string) error {
+func (c *NitricApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag bool, goOutputDir, goPackageName, pythonOutputDir, javascriptOutputDir, typescriptOutputDir string) error {
 	// Check if at least one language flag is provided
 	if !goFlag && !pythonFlag && !javascriptFlag && !typescriptFlag {
 		return fmt.Errorf("at least one language flag must be specified")
@@ -311,7 +303,7 @@ func (c *CLI) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag bool, 
 }
 
 // Edit handles the edit command logic
-func (c *CLI) Edit() error {
+func (c *NitricApp) Edit() error {
 	const fileName = "nitric.yaml"
 
 	listener, err := net.Listen("tcp", "localhost:0")
@@ -367,7 +359,7 @@ func (c *CLI) Edit() error {
 }
 
 // Dev handles the dev command logic
-func (c *CLI) Dev() error {
+func Dev() error {
 	// 1. Load the App Spec
 	// Read the nitric.yaml file
 	fs := afero.NewOsFs()
