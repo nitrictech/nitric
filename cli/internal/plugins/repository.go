@@ -39,8 +39,8 @@ func (r *PluginRepository) GetIdentityPlugin(team, libname, version, name string
 	return identityPluginManifest, nil
 }
 
-func NewPluginRepository(client *api.NitricApiClient) *PluginRepository {
+func NewPluginRepository(apiClient *api.NitricApiClient) *PluginRepository {
 	return &PluginRepository{
-		apiClient: client,
+		apiClient: apiClient,
 	}
 }

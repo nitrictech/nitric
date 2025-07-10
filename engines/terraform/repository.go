@@ -3,7 +3,7 @@ package terraform
 import "fmt"
 
 type PlatformRepository interface {
-	// terraform/nitric-aws
+	// <team>/<platform>/<revision>
 	GetPlatform(string) (*PlatformSpec, error)
 }
 

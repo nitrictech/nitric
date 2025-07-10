@@ -18,6 +18,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/browser"
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/devserver"
+	"github.com/nitrictech/nitric/cli/internal/platforms"
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
@@ -226,12 +227,12 @@ func (c *NitricApp) Build() error {
 		return err
 	}
 
-	mockPlatformRepository := terraform.NewMockPlatformRepository()
+	platformRepository := platforms.NewPlatformRepository(c.apiClient)
 
 	// TODO:prompt for platform selection if multiple targets are specified
 	targetPlatform := appSpec.Targets[0]
 
-	platform, err := terraform.PlatformFromId(fs, targetPlatform, mockPlatformRepository)
+	platform, err := terraform.PlatformFromId(fs, targetPlatform, platformRepository)
 	if err != nil {
 		return err
 	}
