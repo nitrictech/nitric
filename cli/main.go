@@ -45,7 +45,12 @@ func main() {
 		return workos.NewWorkOSAuth(tokenStore, workosDetails.ClientID, workosDetails.ApiHostname), nil
 	})
 
+	do.Provide(injector, func(inj *do.Injector) (api.TokenProvider, error) {
+		return do.Invoke[*workos.WorkOSAuth](inj)
+	})
+
 	do.Provide(injector, cli.NewCLI)
+	do.Provide(injector, cli.NewAuthApp)
 
 	rootCmd := cmd.NewRootCmd(injector)
 

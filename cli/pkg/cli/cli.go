@@ -20,11 +20,8 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/devserver"
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
-	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
-	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/internal/version"
-	"github.com/nitrictech/nitric/cli/internal/workos"
 	"github.com/nitrictech/nitric/cli/pkg/client"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
@@ -37,55 +34,13 @@ import (
 type CLI struct {
 	config    *config.Config
 	apiClient *api.NitricApiClient
-	auth      *workos.WorkOSAuth
 }
 
 func NewCLI(injector *do.Injector) (*CLI, error) {
 	config := do.MustInvoke[*config.Config](injector)
 	apiClient := do.MustInvoke[*api.NitricApiClient](injector)
-	auth := do.MustInvoke[*workos.WorkOSAuth](injector)
 
-	return &CLI{config: config, apiClient: apiClient, auth: auth}, nil
-}
-
-// Login handles the login command logic
-func (c *CLI) Login() error {
-	fmt.Printf("\n%s Logging in...\n", style.Purple(icons.Lightning+" Nitric"))
-
-	user, err := c.auth.Login()
-	if err != nil {
-		fmt.Printf("\n%s Error logging in: %s\n", style.Red(icons.Cross), err)
-		return err
-	}
-
-	fmt.Printf("\n%s Logged in as %s\n", style.Green(icons.Check), style.Teal(user.FirstName))
-	return nil
-}
-
-// Logout handles the logout command logic
-func (c *CLI) Logout() error {
-	fmt.Printf("\n%s Logging out...\n", style.Purple(icons.Lightning+" Nitric"))
-
-	err := c.auth.Logout()
-	if err != nil {
-		fmt.Printf("\n%s Error logging out: %s\n", style.Red(icons.Cross), err)
-		return err
-	}
-
-	fmt.Printf("\n%s Logged out successfully\n", style.Green(icons.Check))
-	return nil
-}
-
-// AccessToken handles the access token command logic
-func (c *CLI) AccessToken() error {
-	token, err := c.auth.GetAccessToken()
-	if err != nil {
-		fmt.Printf("\n%s Error getting access token: %s\n", style.Red(icons.Cross), err)
-		return err
-	}
-
-	fmt.Printf("\n%s Access token: %s\n", style.Green(icons.Check), token)
-	return nil
+	return &CLI{config: config, apiClient: apiClient}, nil
 }
 
 // Version handles the version command logic
@@ -101,6 +56,7 @@ func (c *CLI) Templates() error {
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
 			fmt.Println("Please login first, using the `login` command")
+			fmt.Printf("%+v\n", err)
 			return nil
 		}
 

@@ -13,8 +13,8 @@ func NewLoginCmd(injector *do.Injector) *cobra.Command {
 		Short: "Login to Nitric",
 		Long:  `Login to the Nitric CLI.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
-			cobra.CheckErr(app.Login())
+			app := do.MustInvoke[*cli.AuthApp](injector)
+			app.Login()
 		},
 	}
 }
@@ -26,8 +26,8 @@ func NewLogoutCmd(injector *do.Injector) *cobra.Command {
 		Short: "Logout from Nitric",
 		Long:  `Logout from the Nitric CLI.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
-			cobra.CheckErr(app.Logout())
+			app := do.MustInvoke[*cli.AuthApp](injector)
+			app.Logout()
 		},
 	}
 }
@@ -39,8 +39,8 @@ func NewAccessTokenCmd(injector *do.Injector) *cobra.Command {
 		Short: "Get access token",
 		Long:  `Get the current access token.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app := do.MustInvoke[*cli.CLI](injector)
-			cobra.CheckErr(app.AccessToken())
+			app := do.MustInvoke[*cli.AuthApp](injector)
+			app.AccessToken()
 		},
 	}
 }
