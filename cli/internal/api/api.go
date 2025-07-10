@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/pkg/errors"
+	"github.com/samber/do"
 )
 
 type TokenProvider interface {
@@ -14,19 +16,22 @@ type TokenProvider interface {
 }
 
 type NitricApiClient struct {
-	tokenProvider TokenProvider
+	tokenProvider func() (TokenProvider, error)
 	apiUrl        *url.URL
 }
 
-func NewNitricApiClient(apiUrl *url.URL, tokenProvider TokenProvider) *NitricApiClient {
+func NewNitricApiClient(injector *do.Injector) (*NitricApiClient, error) {
+	config := do.MustInvoke[*config.Config](injector)
+	apiUrl := config.GetNitricServerUrl()
+
+	tokenProvider := func() (TokenProvider, error) {
+		return do.Invoke[TokenProvider](injector)
+	}
+
 	return &NitricApiClient{
 		apiUrl:        apiUrl,
 		tokenProvider: tokenProvider,
-	}
-}
-
-func (c *NitricApiClient) SetTokenProvider(tokenProvider TokenProvider) {
-	c.tokenProvider = tokenProvider
+	}, nil
 }
 
 func (c *NitricApiClient) get(path string, requiresAuth bool) (*http.Response, error) {
@@ -47,7 +52,12 @@ func (c *NitricApiClient) get(path string, requiresAuth bool) (*http.Response, e
 			return nil, errors.Wrap(ErrPreconditionFailed, "no token provider provided")
 		}
 
-		token, err := c.tokenProvider.GetAccessToken()
+		tokenProvider, err := c.tokenProvider()
+		if err != nil {
+			return nil, errors.Wrap(ErrUnauthenticated, err.Error())
+		}
+
+		token, err := tokenProvider.GetAccessToken()
 		if err != nil {
 			return nil, errors.Wrap(ErrUnauthenticated, err.Error())
 		}

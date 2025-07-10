@@ -5,29 +5,36 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/zalando/go-keyring"
 )
 
-// Store 1 token per API
-var WORKOS_TOKEN_KEY = getWorkosTokenKey(config.GetNitricServerUrl().String())
-
-func getWorkosTokenKey(apiUrl string) string {
-	// Hash the API URL for a consistent length. We don't use the scheme or host, just the path
-	hash := sha256.Sum256([]byte(apiUrl + ".workos"))
+func hashTokenKey(tokenKey string) string {
+	// Hash the token key for a consistent length.
+	hash := sha256.Sum256([]byte(tokenKey))
 	return fmt.Sprintf("%x", hash)
 }
 
 type KeyringTokenStore struct {
-	service string
+	service  string
+	tokenKey string
 }
 
-func NewKeyringTokenStore(service string) *KeyringTokenStore {
-	return &KeyringTokenStore{service: service}
+func NewKeyringTokenStore(serviceName, tokenKey string) (*KeyringTokenStore, error) {
+	if serviceName == "" {
+		return nil, fmt.Errorf("service name is required")
+	}
+
+	if tokenKey == "" {
+		return nil, fmt.Errorf("token key is required")
+	}
+
+	hashedTokenKey := hashTokenKey(tokenKey)
+
+	return &KeyringTokenStore{service: serviceName, tokenKey: hashedTokenKey}, nil
 }
 
 func (s *KeyringTokenStore) GetTokens() (*Tokens, error) {
-	token, err := keyring.Get(s.service, WORKOS_TOKEN_KEY)
+	token, err := keyring.Get(s.service, s.tokenKey)
 	if err != nil {
 		if err == keyring.ErrNotFound {
 			return nil, ErrNotFound
@@ -50,11 +57,11 @@ func (s *KeyringTokenStore) SaveTokens(tokens *Tokens) error {
 		return fmt.Errorf("failed to marshal token: %w", err)
 	}
 
-	return keyring.Set(s.service, WORKOS_TOKEN_KEY, string(json))
+	return keyring.Set(s.service, s.tokenKey, string(json))
 }
 
 func (s *KeyringTokenStore) Clear() error {
-	err := keyring.Delete(s.service, WORKOS_TOKEN_KEY)
+	err := keyring.Delete(s.service, s.tokenKey)
 	if err != nil {
 		if err == keyring.ErrNotFound {
 			return ErrNotFound
