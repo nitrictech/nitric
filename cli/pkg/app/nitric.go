@@ -105,7 +105,6 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		})
 		if err != nil || projectName == "" {
 			fmt.Println(err)
-			fmt.Println("+" + projectName + "+")
 			return nil
 		}
 	}
