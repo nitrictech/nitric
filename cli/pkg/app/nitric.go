@@ -312,16 +312,15 @@ func (c *NitricApp) Build() error {
 	targetPlatform := appSpec.Targets[0]
 
 	platform, err := terraform.PlatformFromId(c.fs, targetPlatform, platformRepository)
-	if err != nil {
+	if errors.Is(err, terraform.ErrUnauthenticated) {
+		fmt.Println("Please login first, using the `login` command")
+		return nil
+	} else if err != nil {
 		return err
 	}
 
 	repo := plugins.NewPluginRepository(c.apiClient)
-	engine := terraform.New(platform, terraform.WithRepository(repo))
-	// Parse the application spec
-	// Validate the application spec
-	// Build the application using the specified platform
-	// Handle any errors that occur during the build process
+	engine := terraform.New(platform, terraform.WithRepository(repo), terraform.WithOutput(os.Stdout))
 
 	err = engine.Apply(appSpec)
 	if err != nil {
@@ -329,7 +328,6 @@ func (c *NitricApp) Build() error {
 		return err
 	}
 
-	fmt.Println("Build completed successfully.")
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -21,6 +22,9 @@ import (
 type TerraformEngine struct {
 	platform   *PlatformSpec
 	repository PluginRepository
+	output     io.Writer
+
+	outputDir string
 }
 
 type TerraformDeployment struct {
@@ -221,7 +225,9 @@ func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resourc
 }
 
 func NewTerraformDeployment(engine *TerraformEngine, stackName string) *TerraformDeployment {
-	app := cdktf.NewApp(&cdktf.AppConfig{})
+	app := cdktf.NewApp(&cdktf.AppConfig{
+		Outdir: jsii.String(engine.outputDir),
+	})
 	stack := cdktf.NewTerraformStack(app, jsii.String(stackName))
 
 	random.NewRandomProvider(stack, jsii.String("random"), &random.RandomProviderConfig{})
@@ -717,6 +723,9 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 
 	tfDeployment.app.Synth()
 
+	fmt.Fprintf(e.output, "Terraform successfully output to %s\n", filepath.Join(e.outputDir, "stacks", appSpec.Name))
+	fmt.Fprintf(e.output, "Run `cd %s && terraform init` to initialize the stack\n", filepath.Join(e.outputDir, "stacks", appSpec.Name))
+
 	return nil
 }
 
@@ -730,6 +739,18 @@ func WithRepository(repository PluginRepository) terraformEngineOption {
 	}
 }
 
+func WithOutputDir(outputDir string) terraformEngineOption {
+	return func(engine *TerraformEngine) {
+		engine.outputDir = outputDir
+	}
+}
+
+func WithOutput(output io.Writer) terraformEngineOption {
+	return func(engine *TerraformEngine) {
+		engine.output = output
+	}
+}
+
 func NewFromFile(platformFile io.Reader, opts ...terraformEngineOption) *TerraformEngine {
 	platform := &PlatformSpec{}
 
@@ -740,7 +761,9 @@ func NewFromFile(platformFile io.Reader, opts ...terraformEngineOption) *Terrafo
 
 func New(platformSpec *PlatformSpec, opts ...terraformEngineOption) *TerraformEngine {
 	engine := &TerraformEngine{
-		platform: platformSpec,
+		platform:  platformSpec,
+		outputDir: "terraform",
+		output:    io.Discard,
 	}
 
 	for _, opt := range opts {

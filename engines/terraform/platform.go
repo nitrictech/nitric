@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -180,8 +182,12 @@ func PlatformFromId(fs afero.Fs, platformId string, repositories ...PlatformRepo
 
 	for _, repository := range repositories {
 		platform, err := repository.GetPlatform(platformId)
-		if err != nil {
+		if errors.Is(err, ErrUnauthenticated) {
+			return nil, errors.Wrap(err, "unable to authenticate with platform repository, please make sure you are logged in with `nitric login`")
+		} else if errors.Is(err, ErrPlatformNotFound) {
 			continue
+		} else if err != nil {
+			return nil, fmt.Errorf("an unknown error occurred while fetching platform %s from platform repository, please try again later: %w", platformId, err)
 		}
 
 		return platform, nil
