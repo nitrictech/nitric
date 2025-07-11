@@ -99,8 +99,6 @@ func (c *NitricApp) Init() error {
 	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", emphasize.Render("nitric edit"))
 	fmt.Println()
 
-	fmt.Println("Press esc or ctrl+c to quit")
-
 	// Project Name Prompt
 	name, err := tui.RunTextInput("Project name:", func(input string) error {
 		if input == "" {
@@ -140,8 +138,8 @@ func (c *NitricApp) Init() error {
 	successStyle := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
 	faint := lipgloss.NewStyle().Faint(true)
 
-	fmt.Println(successStyle.Render("\n " + icons.Check + " Project initialized!"))
-	fmt.Println(faint.Render("nitric project written to " + nitricYamlPath))
+	fmt.Println(successStyle.Render(" " + icons.Check + " Project initialized!"))
+	fmt.Println(faint.Render("   nitric project written to " + nitricYamlPath))
 
 	fmt.Println()
 	fmt.Println("Next steps:")
