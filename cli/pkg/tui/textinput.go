@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -15,6 +14,8 @@ type textInputModel struct {
 	title     string
 	style     textInputStyle
 	showError bool
+
+	quit bool
 
 	value string
 }
@@ -39,8 +40,10 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc", "ctrl+\\":
+			m.quit = true
 			return m, tea.Quit
 		case "enter":
+			m.textinput, _ = m.textinput.Update(msg)
 			if m.textinput.Err != nil {
 				m.showError = true
 				return m, nil
@@ -107,8 +110,11 @@ func RunTextInput(title string, validate func(string) error) (string, error) {
 	p := tea.NewProgram(model)
 	m, err := p.Run()
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
 		return "", err
+	}
+
+	if m.(textInputModel).quit {
+		return "", ErrUserAborted
 	}
 
 	return m.(textInputModel).value, nil
