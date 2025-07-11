@@ -327,9 +327,10 @@ func (c *NitricApp) Build() error {
 	} else {
 		targetPlatform, _, err = tui.RunSelect(appSpec.Targets, "Select a build target")
 		if err != nil {
-			fmt.Println(err)
-			fmt.Println()
-			return nil
+			if errors.Is(err, tui.ErrUserAborted) {
+				return nil
+			}
+			return err
 		}
 	}
 
