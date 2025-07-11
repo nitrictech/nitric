@@ -22,6 +22,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/platforms"
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
+	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/pkg/client"
@@ -311,7 +312,9 @@ func (c *NitricApp) Build() error {
 
 	// TODO:prompt for platform selection if multiple targets are specified
 	if len(appSpec.Targets) == 0 {
-		return fmt.Errorf("no targets specified in nitric.yaml")
+		nitricEdit := style.Teal("nitric edit")
+		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
+		return nil
 	}
 
 	options := []huh.Option[string]{}
