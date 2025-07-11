@@ -22,6 +22,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
+	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/pkg/client"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
@@ -125,13 +126,6 @@ func (c *NitricApp) Init() error {
 		return nil
 	}
 
-	// Load Editor Prompt
-	_, loadEditRespIndex, err := tui.RunToggleSelect([]string{"Yes", "No"}, "Do you want to run the nitric editor after initializing the project?")
-	if err != nil {
-		return nil
-	}
-	runEditor := loadEditRespIndex == 0
-
 	newProject := &schema.Application{
 		Name:        name,
 		Description: description,
@@ -146,32 +140,18 @@ func (c *NitricApp) Init() error {
 	successStyle := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
 	faint := lipgloss.NewStyle().Faint(true)
 
-	fmt.Println(successStyle.Render("\nProject initialized!"))
+	fmt.Println(successStyle.Render("\n " + icons.Check + " Project initialized!"))
 	fmt.Println(faint.Render("nitric project written to " + nitricYamlPath))
 
-	if runEditor {
-		err := c.Edit()
-		if err != nil {
-			fmt.Printf("An error occurred while running the nitric editor: %w\n", err)
-			return nil
-		}
-
-		fmt.Println("Next steps:")
-		fmt.Println("1. Finish editing your project in the nitric editor")
-		fmt.Println("2. Run", emphasize.Render("nitric build"), "to build the project for a specific platform")
-		fmt.Println()
-		fmt.Println("For more information, see the", emphasize.Render("nitric docs"), "at", emphasize.Render("https://nitric.io/docs"))
-
-	} else {
-		fmt.Println("Next steps:")
-		fmt.Println("1. Run", emphasize.Render("nitric edit"), "to start the nitric editor")
-		fmt.Println("2. Design your app's resources and deployment targets")
-		fmt.Println("3. Optionally, use", emphasize.Render("nitric generate"), "to generate the client libraries for your app")
-		fmt.Println("4. Run", emphasize.Render("nitric dev"), "to start the development server")
-		fmt.Println("5. Run", emphasize.Render("nitric build"), "to build the project for a specific platform")
-		fmt.Println()
-		fmt.Println("For more information, see the", emphasize.Render("nitric docs"), "at", emphasize.Render("https://nitric.io/docs"))
-	}
+	fmt.Println()
+	fmt.Println("Next steps:")
+	fmt.Println("1. Run", emphasize.Render("nitric edit"), "to start the nitric editor")
+	fmt.Println("2. Design your app's resources and deployment targets")
+	fmt.Println("3. Optionally, use", emphasize.Render("nitric generate"), "to generate the client libraries for your app")
+	fmt.Println("4. Run", emphasize.Render("nitric dev"), "to start the development server")
+	fmt.Println("5. Run", emphasize.Render("nitric build"), "to build the project for a specific platform")
+	fmt.Println()
+	fmt.Println("For more information, see the", emphasize.Render("nitric docs"), "at", emphasize.Render("https://nitric.io/docs"))
 
 	return nil
 }
