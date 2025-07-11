@@ -145,6 +145,7 @@ func (c *NitricApp) Init() error {
 		return err
 	}
 
+	fmt.Println()
 	fmt.Println(c.styles.success.Render(" " + icons.Check + " Project initialized!"))
 	fmt.Println(c.styles.faint.Render("   nitric project written to " + nitricYamlPath))
 
