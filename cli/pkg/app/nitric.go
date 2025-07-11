@@ -345,6 +345,8 @@ func (c *NitricApp) Build() error {
 		return err
 	}
 
+	fmt.Fprintf(os.Stdout, "\nBuilding application for %s\n\n", targetPlatform)
+
 	repo := plugins.NewPluginRepository(c.apiClient)
 	engine := terraform.New(platform, terraform.WithRepository(repo), terraform.WithOutput(os.Stdout))
 

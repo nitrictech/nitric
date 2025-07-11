@@ -723,8 +723,14 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) error {
 
 	tfDeployment.app.Synth()
 
-	fmt.Fprintf(e.output, "Terraform successfully output to %s\n", filepath.Join(e.outputDir, "stacks", appSpec.Name))
-	fmt.Fprintf(e.output, "Run `cd %s && terraform init` to initialize the stack\n", filepath.Join(e.outputDir, "stacks", appSpec.Name))
+	fmt.Fprintf(e.output, "✔ Terraform successfully output to %s\n", filepath.Join(e.outputDir, "stacks", appSpec.Name))
+
+	stackPath := filepath.Join(e.outputDir, "stacks", appSpec.Name)
+
+	fmt.Fprintf(e.output, "\nNext steps:\n")
+	fmt.Fprintf(e.output, "1. Run `cd %s && terraform init` to initialize the stack\n", stackPath)
+	fmt.Fprintf(e.output, "2. Run `terraform plan` to preview the stack\n")
+	fmt.Fprintf(e.output, "3. Run `terraform apply` to deploy the stack\n\n")
 
 	return nil
 }
