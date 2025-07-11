@@ -22,6 +22,22 @@ func NewTemplatesCmd(injector do.Injector) *cobra.Command {
 	}
 }
 
+// NewInitCmd creates the init command
+func NewInitCmd(injector do.Injector) *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "Setup a new Nitric project",
+		Long:  `Setup a new Nitric project, including within existing applications`,
+		Run: func(cmd *cobra.Command, args []string) {
+			app, err := do.Invoke[*app.NitricApp](injector)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+			cobra.CheckErr(app.Init())
+		},
+	}
+}
+
 // NewNewCmd creates the new command
 func NewNewCmd(injector do.Injector) *cobra.Command {
 	var force bool

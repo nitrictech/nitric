@@ -23,6 +23,7 @@ type Select struct {
 	style        SelectStyle
 	maxDisplayed int
 	viewCursor   int
+	quit         bool
 }
 
 const TitleAndHelpHeight = 3
@@ -103,6 +104,7 @@ func (s *Select) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s.selected = s.cursor
 			return s, tea.Quit
 		case "q", "ctrl+c", "ctrl+\\", "esc":
+			s.quit = true
 			return s, tea.Quit
 		}
 	case tea.WindowSizeMsg:
@@ -222,6 +224,10 @@ func RunSelect(items []string, title string) (string, int, error) {
 	_, err := p.Run()
 	if err != nil {
 		return "", -1, err
+	}
+
+	if s.quit {
+		return "", -1, ErrUserAborted
 	}
 
 	selected, index := s.GetSelected()

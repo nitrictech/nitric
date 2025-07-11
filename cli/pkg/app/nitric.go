@@ -22,6 +22,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
+	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/pkg/client"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
@@ -34,13 +35,18 @@ import (
 type NitricApp struct {
 	config    *config.Config
 	apiClient *api.NitricApiClient
+	fs        afero.Fs
 }
 
 func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 	config := do.MustInvoke[*config.Config](injector)
 	apiClient := do.MustInvoke[*api.NitricApiClient](injector)
+	fs, err := do.Invoke[afero.Fs](injector)
+	if err != nil {
+		fs = afero.NewOsFs()
+	}
 
-	return &NitricApp{config: config, apiClient: apiClient}, nil
+	return &NitricApp{config: config, apiClient: apiClient, fs: fs}, nil
 }
 
 // Templates handles the templates command logic
@@ -70,6 +76,84 @@ func (c *NitricApp) Templates() error {
 	return nil
 }
 
+// Init initializes nitric for an existing project, creating a nitric.yaml file if it doesn't exist
+func (c *NitricApp) Init() error {
+	emphasize := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
+
+	nitricYamlPath := filepath.Join(".", "nitric.yaml")
+	exists, _ := afero.Exists(c.fs, nitricYamlPath)
+
+	// Read the nitric.yaml file
+	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
+	if err == nil {
+		fmt.Printf("Project already initialized, run %s to edit the project\n", emphasize.Render("nitric edit"))
+		return nil
+	} else if exists {
+		fmt.Printf("Project already initialized, but an error occurred loading %s\n", emphasize.Render("nitric.yaml"))
+		return err
+	}
+
+	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", emphasize.Render("Nitric"))
+	fmt.Printf("This file is used to define your app's infrastructure, resources and deployment targets.\n")
+	fmt.Println()
+	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", emphasize.Render("nitric edit"))
+	fmt.Println()
+
+	// Project Name Prompt
+	name, err := tui.RunTextInput("Project name:", func(input string) error {
+		if input == "" {
+			return errors.New("project name is required")
+		}
+
+		// Must be kebab-case
+		if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(input) {
+			return errors.New("project name must start with a letter and be lower kebab-case")
+		}
+
+		return nil
+	})
+	if err != nil || name == "" {
+		return nil
+	}
+
+	// Project Description Prompt
+	description, err := tui.RunTextInput("Project description:", func(input string) error {
+		return nil
+	})
+	if err != nil {
+		return nil
+	}
+
+	newProject := &schema.Application{
+		Name:        name,
+		Description: description,
+	}
+
+	err = schema.SaveToYaml(c.fs, nitricYamlPath, newProject)
+	if err != nil {
+		fmt.Println("Failed to save nitric.yaml file")
+		return err
+	}
+
+	successStyle := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
+	faint := lipgloss.NewStyle().Faint(true)
+
+	fmt.Println(successStyle.Render(" " + icons.Check + " Project initialized!"))
+	fmt.Println(faint.Render("   nitric project written to " + nitricYamlPath))
+
+	fmt.Println()
+	fmt.Println("Next steps:")
+	fmt.Println("1. Run", emphasize.Render("nitric edit"), "to start the nitric editor")
+	fmt.Println("2. Design your app's resources and deployment targets")
+	fmt.Println("3. Optionally, use", emphasize.Render("nitric generate"), "to generate the client libraries for your app")
+	fmt.Println("4. Run", emphasize.Render("nitric dev"), "to start the development server")
+	fmt.Println("5. Run", emphasize.Render("nitric build"), "to build the project for a specific platform")
+	fmt.Println()
+	fmt.Println("For more information, see the", emphasize.Render("nitric docs"), "at", emphasize.Render("https://nitric.io/docs"))
+
+	return nil
+}
+
 // New handles the new project creation command logic
 func (c *NitricApp) New(projectName string, force bool) error {
 	templates, err := c.apiClient.GetTemplates()
@@ -82,8 +166,6 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		fmt.Printf("Failed to get templates: %v\n", err)
 		return nil
 	}
-
-	fs := afero.NewOsFs()
 
 	if projectName == "" {
 		fmt.Println()
@@ -102,14 +184,13 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		})
 		if err != nil || projectName == "" {
 			fmt.Println(err)
-			fmt.Println("+" + projectName + "+")
 			return nil
 		}
 	}
 
 	projectDir := filepath.Join(".", projectName)
 	if !force {
-		projectExists, err := projectExists(fs, projectDir)
+		projectExists, err := projectExists(c.fs, projectDir)
 		if err != nil {
 			fmt.Println(err.Error())
 			return nil
@@ -151,7 +232,7 @@ func (c *NitricApp) New(projectName string, force bool) error {
 
 	templateDir := filepath.Join(home, ".nitric", "templates", template.TeamSlug, template.TemplateSlug, template.Version)
 
-	templateCached, err := afero.Exists(fs, filepath.Join(templateDir, "nitric.yaml"))
+	templateCached, err := afero.Exists(c.fs, filepath.Join(templateDir, "nitric.yaml"))
 	if err != nil {
 		fmt.Printf("Failed read template cache directory: %v\n", err)
 		return err
@@ -180,7 +261,7 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		return err
 	}
 
-	err = files.CopyDir(fs, templateDir, projectDir)
+	err = files.CopyDir(c.fs, templateDir, projectDir)
 	if err != nil {
 		fmt.Printf("Failed to copy template directory: %v\n", err)
 		return err
@@ -188,14 +269,14 @@ func (c *NitricApp) New(projectName string, force bool) error {
 
 	nitricYamlPath := filepath.Join(projectDir, "nitric.yaml")
 
-	appSpec, err := schema.LoadFromFile(fs, nitricYamlPath, false)
+	appSpec, err := schema.LoadFromFile(c.fs, nitricYamlPath, false)
 	if err != nil {
 		return err
 	}
 
 	appSpec.Name = projectName
 
-	err = schema.SaveToYaml(fs, nitricYamlPath, appSpec)
+	err = schema.SaveToYaml(c.fs, nitricYamlPath, appSpec)
 	if err != nil {
 		return err
 	}
@@ -220,9 +301,7 @@ func (c *NitricApp) New(projectName string, force bool) error {
 // Build handles the build command logic
 func (c *NitricApp) Build() error {
 	// Read the nitric.yaml file
-	fs := afero.NewOsFs()
-
-	appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
+	appSpec, err := schema.LoadFromFile(c.fs, "nitric.yaml", true)
 	if err != nil {
 		return err
 	}
@@ -232,7 +311,7 @@ func (c *NitricApp) Build() error {
 	// TODO:prompt for platform selection if multiple targets are specified
 	targetPlatform := appSpec.Targets[0]
 
-	platform, err := terraform.PlatformFromId(fs, targetPlatform, platformRepository)
+	platform, err := terraform.PlatformFromId(c.fs, targetPlatform, platformRepository)
 	if err != nil {
 		return err
 	}
@@ -261,9 +340,7 @@ func (c *NitricApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag 
 		return fmt.Errorf("at least one language flag must be specified")
 	}
 
-	fs := afero.NewOsFs()
-
-	appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
+	appSpec, err := schema.LoadFromFile(c.fs, "nitric.yaml", true)
 	if err != nil {
 		return err
 	}
@@ -277,7 +354,7 @@ func (c *NitricApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag 
 	if goFlag {
 		fmt.Println("Generating Go client...")
 		// TODO: add flags for output directory and package name
-		err = client.GenerateGo(fs, *appSpec, goOutputDir, goPackageName)
+		err = client.GenerateGo(c.fs, *appSpec, goOutputDir, goPackageName)
 		if err != nil {
 			return err
 		}
@@ -285,7 +362,7 @@ func (c *NitricApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag 
 
 	if pythonFlag {
 		fmt.Println("Generating Python client...")
-		err = client.GeneratePython(fs, *appSpec, pythonOutputDir)
+		err = client.GeneratePython(c.fs, *appSpec, pythonOutputDir)
 		if err != nil {
 			return err
 		}
@@ -293,7 +370,7 @@ func (c *NitricApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag 
 
 	if typescriptFlag {
 		fmt.Println("Generating NodeJS client...")
-		err = client.GenerateTypeScript(fs, *appSpec, typescriptOutputDir)
+		err = client.GenerateTypeScript(c.fs, *appSpec, typescriptOutputDir)
 		if err != nil {
 			return err
 		}
