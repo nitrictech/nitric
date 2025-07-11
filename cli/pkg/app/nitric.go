@@ -28,6 +28,7 @@ import (
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/cli/pkg/tui"
+	"github.com/nitrictech/nitric/cli/pkg/tui/ask"
 	"github.com/nitrictech/nitric/engines/terraform"
 	"github.com/samber/do/v2"
 	"github.com/spf13/afero"
@@ -110,7 +111,7 @@ func (c *NitricApp) Init() error {
 	fmt.Println()
 
 	// Project Name Prompt
-	name, err := tui.RunTextInput("Project name:", func(input string) error {
+	name, err := ask.RunTextInput("Project name:", func(input string) error {
 		if input == "" {
 			return errors.New("project name is required")
 		}
@@ -127,7 +128,7 @@ func (c *NitricApp) Init() error {
 	}
 
 	// Project Description Prompt
-	description, err := tui.RunTextInput("Project description:", func(input string) error {
+	description, err := ask.RunTextInput("Project description:", func(input string) error {
 		return nil
 	})
 	if err != nil {
@@ -178,7 +179,7 @@ func (c *NitricApp) New(projectName string, force bool) error {
 	if projectName == "" {
 		fmt.Println()
 		var err error
-		projectName, err = tui.RunTextInput("Project name:", func(input string) error {
+		projectName, err = ask.RunTextInput("Project name:", func(input string) error {
 			if input == "" {
 				return errors.New("project name is required")
 			}
@@ -221,7 +222,7 @@ func (c *NitricApp) New(projectName string, force bool) error {
 
 	// Prompt the user to select one of the templates
 	fmt.Println("")
-	_, index, err := tui.RunSelect(templateNames, "Template:")
+	_, index, err := ask.RunSelect(templateNames, "Template:")
 	if err != nil || index == -1 {
 		return err
 	}
@@ -326,9 +327,9 @@ func (c *NitricApp) Build() error {
 	if len(appSpec.Targets) == 1 {
 		targetPlatform = appSpec.Targets[0]
 	} else {
-		targetPlatform, _, err = tui.RunSelect(appSpec.Targets, "Select a build target")
+		targetPlatform, _, err = ask.RunSelect(appSpec.Targets, "Select a build target")
 		if err != nil {
-			if errors.Is(err, tui.ErrUserAborted) {
+			if errors.Is(err, ask.ErrUserAborted) {
 				return nil
 			}
 			return err
