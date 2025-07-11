@@ -75,6 +75,75 @@ func (c *NitricApp) Templates() error {
 	return nil
 }
 
+// Init initializes nitric for an existing project, creating a nitric.yaml file if it doesn't exist
+func (c *NitricApp) Init() error {
+	nitricYamlPath := filepath.Join(".", "nitric.yaml")
+	exists, _ := afero.Exists(c.fs, nitricYamlPath)
+
+	// Read the nitric.yaml file
+	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
+	if err == nil {
+		fmt.Println("Project already initialized, use the `edit` command to edit the project")
+		return nil
+	} else if exists {
+		fmt.Println("Project already initialized, but an error occurred loading nitric.yaml")
+		return err
+	}
+
+	fmt.Println()
+	name, err := tui.RunTextInput("Project name:", func(input string) error {
+		if input == "" {
+			return errors.New("project name is required")
+		}
+
+		// Must be kebab-case
+		if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(input) {
+			return errors.New("project name must start with a letter and be lower kebab-case")
+		}
+
+		return nil
+	})
+	if err != nil || name == "" {
+		fmt.Println(err)
+		return nil
+	}
+
+	fmt.Println()
+	description, err := tui.RunTextInput("Project description (optional):", func(input string) error {
+		return nil
+	})
+
+	newProject := &schema.Application{
+		Name:        name,
+		Description: description,
+	}
+
+	err = schema.SaveToYaml(c.fs, nitricYamlPath, newProject)
+	if err != nil {
+		fmt.Println("Failed to save nitric.yaml file")
+		return err
+	}
+
+	successStyle := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
+	faint := lipgloss.NewStyle().Faint(true)
+
+	fmt.Println(successStyle.Render("\nProject initialized!"))
+	fmt.Println(faint.Render("nitric project written to " + nitricYamlPath))
+
+	fmt.Println()
+	_, loadEditRespIndex, err := tui.RunToggleSelect([]string{"Yes", "No"}, "Start editing in the nitric editor?")
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	if loadEditRespIndex == 0 {
+		return c.Edit()
+	}
+
+	return nil
+}
+
 // New handles the new project creation command logic
 func (c *NitricApp) New(projectName string, force bool) error {
 	templates, err := c.apiClient.GetTemplates()

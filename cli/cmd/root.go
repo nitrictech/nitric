@@ -34,6 +34,7 @@ test, and deploy your Nitric applications.`,
 	rootCmd.AddCommand(NewAccessTokenCmd(injector))
 	rootCmd.AddCommand(NewVersionCmd(injector))
 	rootCmd.AddCommand(NewTemplatesCmd(injector))
+	rootCmd.AddCommand(NewInitCmd(injector))
 	rootCmd.AddCommand(NewNewCmd(injector))
 	rootCmd.AddCommand(NewBuildCmd(injector))
 	rootCmd.AddCommand(NewGenerateCmd(injector))
