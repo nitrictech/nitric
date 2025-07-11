@@ -22,6 +22,8 @@ type NitricFileSync struct {
 	lastSyncContents []byte
 }
 
+type FileSyncError Message[[]schema.ValidationError]
+
 type FileSyncMessage Message[schema.Application]
 
 type FileSyncOption func(*NitricFileSync)
@@ -65,11 +67,30 @@ func (fs *NitricFileSync) setFileContents(contents []byte) error {
 	return err
 }
 
-func (fs *NitricFileSync) OnConnect(send SendFunc) {
-	application, _, err := fs.getFileContents()
+func (fs *NitricFileSync) getValidationErrors(contents []byte) ([]schema.ValidationError, error) {
+	_, schemaResult, err := schema.ApplicationFromYaml(string(contents))
 	if err != nil {
+		return nil, err
+	}
+
+	return schema.GetSchemaValidationErrors(schemaResult), nil
+}
+
+func (fs *NitricFileSync) OnConnect(send SendFunc) {
+	application, contents, err := fs.getFileContents()
+	if err != nil {
+		validationErrors, err := fs.getValidationErrors(contents)
+		if err != nil {
+			return
+		}
+
+		send(Message[any]{
+			Type:    "nitricSyncError",
+			Payload: validationErrors,
+		})
 		return
 	}
+
 	// Send initial state to a newly connected client
 	send(Message[any]{
 		Type:    "nitricSync",

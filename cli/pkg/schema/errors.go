@@ -7,22 +7,22 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-type FieldPath struct {
+type fieldPath struct {
 	IsRoot       bool
 	ResourceType string
 	ResourceName string
 	Property     string
-	Value        string
+	SubProperty  string
 }
 
-func ParseFieldPath(field string) *FieldPath {
+func parseFieldPath(field string) *fieldPath {
 	splits := strings.Split(field, ".")
 
 	if len(splits) < 2 {
-		return &FieldPath{IsRoot: true}
+		return &fieldPath{IsRoot: true}
 	}
 
-	path := &FieldPath{
+	path := &fieldPath{
 		ResourceType: strings.TrimSuffix(splits[0], "s"),
 		ResourceName: splits[1],
 	}
@@ -34,29 +34,29 @@ func ParseFieldPath(field string) *FieldPath {
 		path.Property = splits[2]
 	case 4:
 		path.Property = splits[2]
-		path.Value = splits[3]
+		path.SubProperty = splits[3]
 	default:
 		// For longer paths, take the last two elements
 		if len(splits) > 3 {
 			path.Property = splits[len(splits)-2]
-			path.Value = splits[len(splits)-1]
+			path.SubProperty = splits[len(splits)-1]
 		}
 	}
 
 	return path
 }
 
-type ErrorFormatter struct {
-	path *FieldPath
+type errorFormatter struct {
+	path *fieldPath
 }
 
-func NewErrorFormatter(field string) *ErrorFormatter {
-	return &ErrorFormatter{
-		path: ParseFieldPath(field),
+func newErrorFormatter(field string) *errorFormatter {
+	return &errorFormatter{
+		path: parseFieldPath(field),
 	}
 }
 
-func (ef *ErrorFormatter) FormatErrorPrefix() string {
+func (ef *errorFormatter) FormatErrorPrefix() string {
 	path := ef.path
 
 	if path.IsRoot {
@@ -67,24 +67,14 @@ func (ef *ErrorFormatter) FormatErrorPrefix() string {
 		return fmt.Sprintf("%s %s has an invalid config", path.ResourceType, path.ResourceName)
 	}
 
-	if path.Value == "" {
+	if path.SubProperty == "" {
 		return fmt.Sprintf("%s %s has an invalid %s property", path.ResourceType, path.ResourceName, path.Property)
 	}
 
-	return fmt.Sprintf("%s %s has an invalid %s property (%s)", path.ResourceType, path.ResourceName, path.Property, path.Value)
+	return fmt.Sprintf("%s %s has an invalid %s property (%s)", path.ResourceType, path.ResourceName, path.Property, path.SubProperty)
 }
 
-func (ef *ErrorFormatter) FormatNumberOneOf() string {
-	path := ef.path
-
-	if path.ResourceType == "service" && path.Property == "container" {
-		return "Must provide either a valid docker or image configuration. But not both."
-	}
-
-	return "Must validate one and only one schema"
-}
-
-func (ef *ErrorFormatter) FormatInvalidProperty() string {
+func (ef *errorFormatter) FormatInvalidProperty() string {
 	path := ef.path
 
 	if path.ResourceType == "entrypoint" && path.Property == "routes" {
@@ -94,7 +84,18 @@ func (ef *ErrorFormatter) FormatInvalidProperty() string {
 	return path.ResourceName
 }
 
-func (ef *ErrorFormatter) ShouldSkipError(errType string) bool {
+func (ef *errorFormatter) FormatNumberOneOf() string {
+	path := ef.path
+	schemas := []string{}
+
+	if path.ResourceType == "service" && path.Property == "container" {
+		schemas = append(schemas, "docker", "image")
+	}
+
+	return fmt.Sprintf("Must provide exactly one of: %s", strings.Join(schemas, " OR "))
+}
+
+func (ef *errorFormatter) ShouldSkipError(errType string) bool {
 	return errType == "pattern" && ef.path.ResourceType == "entrypoint" && ef.path.Property == "routes"
 }
 
@@ -107,7 +108,7 @@ func (t *NitricErrorTemplate) ErrorFormat() string {
 }
 
 func (t *NitricErrorTemplate) NumberOneOf() string {
-	return "{{ one_of .field}}"
+	return "{{one_of .field}}"
 }
 
 func (t *NitricErrorTemplate) InvalidPropertyName() string {
@@ -119,39 +120,80 @@ func (t *NitricErrorTemplate) RegexPattern() string {
 }
 
 func (t *NitricErrorTemplate) Required() string {
-	return "The `{{.property}}` property is required"
+	return "The {{.property}} property is required"
 }
 
 func ErrorTemplateFunc() map[string]interface{} {
 	return map[string]interface{}{
 		"error_prefix": func(field string) string {
-			formatter := NewErrorFormatter(field)
+			formatter := newErrorFormatter(field)
 			return formatter.FormatErrorPrefix()
 		},
-		"one_of": func(field string) string {
-			formatter := NewErrorFormatter(field)
-			return formatter.FormatNumberOneOf()
-		},
 		"invalid_property_name": func(field string) string {
-			formatter := NewErrorFormatter(field)
+			formatter := newErrorFormatter(field)
 			return formatter.FormatInvalidProperty()
+		},
+		"one_of": func(field string) string {
+			formatter := newErrorFormatter(field)
+			return formatter.FormatNumberOneOf()
 		},
 	}
 }
 
-func FormatErrors(results *gojsonschema.Result) string {
-	var errs strings.Builder
+type ValidationError struct {
+	Path        string `json:"path"`
+	Message     string `json:"message"`
+	ErrorType   string `json:"errorType"`
+	YamlContext string `json:"yamlContext"`
+}
+
+func GetSchemaValidationErrors(results *gojsonschema.Result) []ValidationError {
+	errs := []ValidationError{}
 
 	for _, err := range results.Errors() {
-		formatter := NewErrorFormatter(err.Field())
+		formatter := newErrorFormatter(err.Field())
 
 		// Skip certain errors based on context
 		if formatter.ShouldSkipError(err.Type()) {
 			continue
 		}
 
-		errs.WriteString(fmt.Sprintf(" - %s\n", err))
+		yamlContext := GenerateYamlContext(err)
+
+		errs = append(errs, ValidationError{
+			Path:        err.Field(),
+			Message:     err.String(),
+			ErrorType:   err.Type(),
+			YamlContext: yamlContext,
+		})
 	}
 
-	return errs.String()
+	return errs
+}
+
+/*
+	Formats the error messages like this:
+
+---> Error Message
+
+	|
+	| YAML Context
+	|
+*/
+func FormatValidationErrors(results *gojsonschema.Result) string {
+	errs := GetSchemaValidationErrors(results)
+
+	arrow := "--->"
+	linePrefix := "  |"
+	var errsStr strings.Builder
+	for _, err := range errs {
+		lines := strings.Split(err.YamlContext, "\n")
+		errsStr.WriteString(fmt.Sprintf("%s %s\n%s\n", arrow, err.Message, linePrefix))
+		for _, line := range lines {
+			errsStr.WriteString(fmt.Sprintf("%s %s\n", linePrefix, line))
+		}
+		errsStr.WriteString(fmt.Sprintf("%s\n\n", linePrefix))
+	}
+
+	return errsStr.String()
 }

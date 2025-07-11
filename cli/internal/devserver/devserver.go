@@ -2,6 +2,7 @@ package devserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -73,6 +74,8 @@ func (fw *DevWebsockerServer) sendToClient(client *websocket.Conn) SendFunc {
 			log.Printf("Error marshaling message: %v", err)
 			return
 		}
+
+		fmt.Println(string(messageJSON))
 		client.Write(messageJSON)
 	}
 }

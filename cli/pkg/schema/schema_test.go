@@ -52,7 +52,7 @@ func TestApplicationSchemaValidationErrors(t *testing.T) {
 				assert.NotNil(t, result.Errors())
 				assert.False(t, result.Valid())
 
-				errorStr := FormatErrors(result)
+				errorStr := FormatValidationErrors(result)
 				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
@@ -181,7 +181,7 @@ func TestServiceSchemaValidationErrors(t *testing.T) {
 				assert.NotNil(t, result.Errors())
 				assert.False(t, result.Valid())
 
-				errorStr := FormatErrors(result)
+				errorStr := FormatValidationErrors(result)
 				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
@@ -306,7 +306,7 @@ func TestServiceTriggerValidationErrors(t *testing.T) {
 				assert.NotNil(t, result.Errors())
 				assert.False(t, result.Valid())
 
-				errorStr := FormatErrors(result)
+				errorStr := FormatValidationErrors(result)
 				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
@@ -402,7 +402,7 @@ func TestEntrypointValidationErrors(t *testing.T) {
 				assert.NotNil(t, result.Errors())
 				assert.False(t, result.Valid())
 
-				errorStr := FormatErrors(result)
+				errorStr := FormatValidationErrors(result)
 				assert.Contains(t, errorStr, tt.err)
 			} else {
 				assert.NoError(t, err)
