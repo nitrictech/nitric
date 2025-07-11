@@ -77,20 +77,30 @@ func (c *NitricApp) Templates() error {
 
 // Init initializes nitric for an existing project, creating a nitric.yaml file if it doesn't exist
 func (c *NitricApp) Init() error {
+	emphasize := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
+
 	nitricYamlPath := filepath.Join(".", "nitric.yaml")
 	exists, _ := afero.Exists(c.fs, nitricYamlPath)
 
 	// Read the nitric.yaml file
 	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
 	if err == nil {
-		fmt.Println("Project already initialized, use the `edit` command to edit the project")
+		fmt.Printf("Project already initialized, run %s to edit the project\n", emphasize.Render("nitric edit"))
 		return nil
 	} else if exists {
-		fmt.Println("Project already initialized, but an error occurred loading nitric.yaml")
+		fmt.Printf("Project already initialized, but an error occurred loading %s\n", emphasize.Render("nitric.yaml"))
 		return err
 	}
 
+	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", emphasize.Render("Nitric"))
+	fmt.Printf("This file is used to define your app's infrastructure, resources and deployment targets.\n")
 	fmt.Println()
+	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", emphasize.Render("nitric edit"))
+	fmt.Println()
+
+	fmt.Println("Press esc or ctrl+c to quit")
+
+	// Project Name Prompt
 	name, err := tui.RunTextInput("Project name:", func(input string) error {
 		if input == "" {
 			return errors.New("project name is required")
@@ -104,14 +114,23 @@ func (c *NitricApp) Init() error {
 		return nil
 	})
 	if err != nil || name == "" {
-		fmt.Println(err)
 		return nil
 	}
 
-	fmt.Println()
-	description, err := tui.RunTextInput("Project description (optional):", func(input string) error {
+	// Project Description Prompt
+	description, err := tui.RunTextInput("Project description:", func(input string) error {
 		return nil
 	})
+	if err != nil {
+		return nil
+	}
+
+	// Load Editor Prompt
+	_, loadEditRespIndex, err := tui.RunToggleSelect([]string{"Yes", "No"}, "Do you want to run the nitric editor after initializing the project?")
+	if err != nil {
+		return nil
+	}
+	runEditor := loadEditRespIndex == 0
 
 	newProject := &schema.Application{
 		Name:        name,
@@ -130,15 +149,28 @@ func (c *NitricApp) Init() error {
 	fmt.Println(successStyle.Render("\nProject initialized!"))
 	fmt.Println(faint.Render("nitric project written to " + nitricYamlPath))
 
-	fmt.Println()
-	_, loadEditRespIndex, err := tui.RunToggleSelect([]string{"Yes", "No"}, "Start editing in the nitric editor?")
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
+	if runEditor {
+		err := c.Edit()
+		if err != nil {
+			fmt.Printf("An error occurred while running the nitric editor: %w\n", err)
+			return nil
+		}
 
-	if loadEditRespIndex == 0 {
-		return c.Edit()
+		fmt.Println("Next steps:")
+		fmt.Println("1. Finish editing your project in the nitric editor")
+		fmt.Println("2. Run", emphasize.Render("nitric build"), "to build the project for a specific platform")
+		fmt.Println()
+		fmt.Println("For more information, see the", emphasize.Render("nitric docs"), "at", emphasize.Render("https://nitric.io/docs"))
+
+	} else {
+		fmt.Println("Next steps:")
+		fmt.Println("1. Run", emphasize.Render("nitric edit"), "to start the nitric editor")
+		fmt.Println("2. Design your app's resources and deployment targets")
+		fmt.Println("3. Optionally, use", emphasize.Render("nitric generate"), "to generate the client libraries for your app")
+		fmt.Println("4. Run", emphasize.Render("nitric dev"), "to start the development server")
+		fmt.Println("5. Run", emphasize.Render("nitric build"), "to build the project for a specific platform")
+		fmt.Println()
+		fmt.Println("For more information, see the", emphasize.Render("nitric docs"), "at", emphasize.Render("https://nitric.io/docs"))
 	}
 
 	return nil
