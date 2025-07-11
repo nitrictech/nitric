@@ -301,6 +301,8 @@ func (c *NitricApp) New(projectName string, force bool) error {
 
 // Build handles the build command logic
 func (c *NitricApp) Build() error {
+	emphasize := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
+
 	// Read the nitric.yaml file
 	appSpec, err := schema.LoadFromFile(c.fs, "nitric.yaml", true)
 	if err != nil {
@@ -309,7 +311,6 @@ func (c *NitricApp) Build() error {
 
 	platformRepository := platforms.NewPlatformRepository(c.apiClient)
 
-	// TODO:prompt for platform selection if multiple targets are specified
 	if len(appSpec.Targets) == 0 {
 		nitricEdit := style.Teal("nitric edit")
 		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
