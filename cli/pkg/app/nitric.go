@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-getter"
 	"github.com/nitrictech/nitric/cli/internal/api"
@@ -309,7 +310,32 @@ func (c *NitricApp) Build() error {
 	platformRepository := platforms.NewPlatformRepository(c.apiClient)
 
 	// TODO:prompt for platform selection if multiple targets are specified
-	targetPlatform := appSpec.Targets[0]
+	if len(appSpec.Targets) == 0 {
+		return fmt.Errorf("no targets specified in nitric.yaml")
+	}
+
+	options := []huh.Option[string]{}
+	for _, target := range appSpec.Targets {
+		options = append(options, huh.NewOption(target, target))
+	}
+
+	var targetPlatform string
+
+	// use a tui selector
+	err = huh.NewSelect[string]().
+		Title("Select a build target").
+		Options(
+			options...,
+		).
+		Value(&targetPlatform).
+		Run()
+	if errors.Is(err, huh.ErrUserAborted) {
+		return nil
+	}
+
+	if targetPlatform == "" {
+		return fmt.Errorf("no target platform selected")
+	}
 
 	platform, err := terraform.PlatformFromId(c.fs, targetPlatform, platformRepository)
 	if errors.Is(err, terraform.ErrUnauthenticated) {
