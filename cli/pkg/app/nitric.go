@@ -21,6 +21,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/platforms"
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
+	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/pkg/client"
@@ -36,6 +37,13 @@ type NitricApp struct {
 	config    *config.Config
 	apiClient *api.NitricApiClient
 	fs        afero.Fs
+	styles    Styles
+}
+
+type Styles struct {
+	emphasize lipgloss.Style
+	faint     lipgloss.Style
+	success   lipgloss.Style
 }
 
 func NewNitricApp(injector do.Injector) (*NitricApp, error) {
@@ -46,7 +54,11 @@ func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 		fs = afero.NewOsFs()
 	}
 
-	return &NitricApp{config: config, apiClient: apiClient, fs: fs}, nil
+	return &NitricApp{config: config, apiClient: apiClient, fs: fs, styles: Styles{
+		emphasize: lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
+		faint:     lipgloss.NewStyle().Faint(true),
+		success:   lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
+	}}, nil
 }
 
 // Templates handles the templates command logic
@@ -78,25 +90,23 @@ func (c *NitricApp) Templates() error {
 
 // Init initializes nitric for an existing project, creating a nitric.yaml file if it doesn't exist
 func (c *NitricApp) Init() error {
-	emphasize := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
-
 	nitricYamlPath := filepath.Join(".", "nitric.yaml")
 	exists, _ := afero.Exists(c.fs, nitricYamlPath)
 
 	// Read the nitric.yaml file
 	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
 	if err == nil {
-		fmt.Printf("Project already initialized, run %s to edit the project\n", emphasize.Render("nitric edit"))
+		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.emphasize.Render("nitric edit"))
 		return nil
 	} else if exists {
-		fmt.Printf("Project already initialized, but an error occurred loading %s\n", emphasize.Render("nitric.yaml"))
+		fmt.Printf("Project already initialized, but an error occurred loading %s\n", c.styles.emphasize.Render("nitric.yaml"))
 		return err
 	}
 
-	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", emphasize.Render("Nitric"))
+	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.emphasize.Render("Nitric"))
 	fmt.Printf("This file is used to define your app's infrastructure, resources and deployment targets.\n")
 	fmt.Println()
-	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", emphasize.Render("nitric edit"))
+	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.emphasize.Render("nitric edit"))
 	fmt.Println()
 
 	// Project Name Prompt
@@ -135,21 +145,19 @@ func (c *NitricApp) Init() error {
 		return err
 	}
 
-	successStyle := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
-	faint := lipgloss.NewStyle().Faint(true)
-
-	fmt.Println(successStyle.Render(" " + icons.Check + " Project initialized!"))
-	fmt.Println(faint.Render("   nitric project written to " + nitricYamlPath))
+	fmt.Println()
+	fmt.Println(c.styles.success.Render(" " + icons.Check + " Project initialized!"))
+	fmt.Println(c.styles.faint.Render("   nitric project written to " + nitricYamlPath))
 
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("1. Run", emphasize.Render("nitric edit"), "to start the nitric editor")
+	fmt.Println("1. Run", c.styles.emphasize.Render("nitric edit"), "to start the nitric editor")
 	fmt.Println("2. Design your app's resources and deployment targets")
-	fmt.Println("3. Optionally, use", emphasize.Render("nitric generate"), "to generate the client libraries for your app")
-	fmt.Println("4. Run", emphasize.Render("nitric dev"), "to start the development server")
-	fmt.Println("5. Run", emphasize.Render("nitric build"), "to build the project for a specific platform")
+	fmt.Println("3. Optionally, use", c.styles.emphasize.Render("nitric generate"), "to generate the client libraries for your app")
+	fmt.Println("4. Run", c.styles.emphasize.Render("nitric dev"), "to start the development server")
+	fmt.Println("5. Run", c.styles.emphasize.Render("nitric build"), "to build the project for a specific platform")
 	fmt.Println()
-	fmt.Println("For more information, see the", emphasize.Render("nitric docs"), "at", emphasize.Render("https://nitric.io/docs"))
+	fmt.Println("For more information, see the", c.styles.emphasize.Render("nitric docs"), "at", c.styles.emphasize.Render("https://nitric.io/docs"))
 
 	return nil
 }
@@ -300,7 +308,6 @@ func (c *NitricApp) New(projectName string, force bool) error {
 
 // Build handles the build command logic
 func (c *NitricApp) Build() error {
-	// Read the nitric.yaml file
 	appSpec, err := schema.LoadFromFile(c.fs, "nitric.yaml", true)
 	if err != nil {
 		return err
@@ -308,28 +315,59 @@ func (c *NitricApp) Build() error {
 
 	platformRepository := platforms.NewPlatformRepository(c.apiClient)
 
-	// TODO:prompt for platform selection if multiple targets are specified
-	targetPlatform := appSpec.Targets[0]
+	if len(appSpec.Targets) == 0 {
+		nitricEdit := style.Teal("nitric edit")
+		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
+		return nil
+	}
+
+	var targetPlatform string
+
+	if len(appSpec.Targets) == 1 {
+		targetPlatform = appSpec.Targets[0]
+	} else {
+		targetPlatform, _, err = tui.RunSelect(appSpec.Targets, "Select a build target")
+		if err != nil {
+			if errors.Is(err, tui.ErrUserAborted) {
+				return nil
+			}
+			return err
+		}
+	}
+
+	if targetPlatform == "" {
+		return fmt.Errorf("no target platform selected")
+	}
 
 	platform, err := terraform.PlatformFromId(c.fs, targetPlatform, platformRepository)
-	if err != nil {
+	if errors.Is(err, terraform.ErrUnauthenticated) {
+		fmt.Printf("Please login first, using the %s command\n", c.styles.emphasize.Render("nitric login"))
+		return nil
+	} else if err != nil {
 		return err
 	}
 
+	fmt.Fprintf(os.Stdout, "\nBuilding application for %s\n\n", c.styles.emphasize.Render(targetPlatform))
+
 	repo := plugins.NewPluginRepository(c.apiClient)
 	engine := terraform.New(platform, terraform.WithRepository(repo))
-	// Parse the application spec
-	// Validate the application spec
-	// Build the application using the specified platform
-	// Handle any errors that occur during the build process
 
-	err = engine.Apply(appSpec)
+	stackPath, err := engine.Apply(appSpec)
 	if err != nil {
 		fmt.Print("Error applying platform: ", err)
 		return err
 	}
 
-	fmt.Println("Build completed successfully.")
+	fmt.Println(c.styles.success.Render(" " + icons.Check + " Terraform generated successfully"))
+	fmt.Println(c.styles.faint.Render("   output written to " + stackPath))
+
+	fmt.Println()
+	fmt.Println("Next steps:")
+	fmt.Println("1. Run", c.styles.emphasize.Render(fmt.Sprintf("cd %s", stackPath)), "to move to the stack directory")
+	fmt.Println("2. Initialize the stack", c.styles.emphasize.Render("terraform init -upgrade"))
+	fmt.Println("3. Optionally, preview with", c.styles.emphasize.Render("terraform plan"))
+	fmt.Println("4. Deploy with", c.styles.emphasize.Render("terraform apply"))
+
 	return nil
 }
 

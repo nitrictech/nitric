@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -36,7 +37,15 @@ func (r *PlatformRepository) GetPlatform(name string) (*terraform.PlatformSpec, 
 	}
 
 	platformSpec, err := r.apiClient.GetPlatform(team, platform, revision)
+	// If its a 404, then return platform not found error
 	if err != nil {
+		if errors.Is(err, api.ErrNotFound) {
+			return nil, terraform.ErrPlatformNotFound
+		} else if errors.Is(err, api.ErrUnauthenticated) {
+			return nil, terraform.ErrUnauthenticated
+		}
+
+		// return the original error to the engine
 		return nil, err
 	}
 

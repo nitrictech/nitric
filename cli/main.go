@@ -24,7 +24,6 @@ func createTokenStore(inj do.Injector) (*workos.KeyringTokenStore, error) {
 }
 
 func main() {
-
 	injector := do.New()
 
 	do.Provide(injector, createTokenStore)

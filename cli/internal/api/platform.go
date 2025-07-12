@@ -16,10 +16,14 @@ type PlatformRevisionResponse struct {
 func (c *NitricApiClient) GetPlatform(team, name string, revision int) (*terraform.PlatformSpec, error) {
 	response, err := c.get(fmt.Sprintf("/api/platforms/%s/%s/revisions/%d", team, name, revision), true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to nitric auth details endpoint: %v", err)
+		return nil, err
 	}
 
 	if response.StatusCode != 200 {
+		if response.StatusCode == 404 {
+			return nil, ErrNotFound
+		}
+
 		return nil, fmt.Errorf("received non 200 response from nitric plugin details endpoint: %d", response.StatusCode)
 	}
 
