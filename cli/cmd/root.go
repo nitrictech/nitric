@@ -13,10 +13,8 @@ import (
 func NewRootCmd(injector do.Injector) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "nitric",
-		Short: "Nitric CLI - The command line interface for Nitric",
-		Long: `Nitric CLI is a command line interface for managing and deploying
-Nitric applications. It provides a set of commands to help you develop,
-test, and deploy your Nitric applications.`,
+		Short: fmt.Sprintf("%s CLI - The command line interface for %s", version.ProductName, version.ProductName),
+		Long:  fmt.Sprintf("%s CLI is a command line interface for managing and deploying %s applications. It provides a set of commands to help you develop, test, and deploy your %s applications.", version.ProductName, version.ProductName, version.ProductName),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			conf, err := config.Load(cmd)
 			if err != nil {
@@ -49,11 +47,11 @@ test, and deploy your Nitric applications.`,
 func NewVersionCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Print the CLI version",
-		Long:  `Display the version number of the Nitric CLI.`,
+		Short: fmt.Sprintf("Print the %s CLI version", version.ProductName),
+		Long:  fmt.Sprintf("Display the version number of the %s CLI.", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
 			highlight := lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
-			fmt.Printf("nitric cli version %s\n", highlight.Render(version.Version))
+			fmt.Printf("%s cli version %s\n", version.ProductName, highlight.Render(version.Version))
 		},
 	}
 }

@@ -2,10 +2,17 @@ package version
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
 var (
+	// Name of the product
+	ProductName = "Nitric"
+
+	// The name of the command that this process was executed as
+	CommandName = os.Args[0]
+
 	// Raw is the string representation of the version. This will be replaced
 	// with the calculated version at build time.
 	// set in the Makefile.
@@ -19,6 +26,10 @@ var (
 	// Set via LDFLAGS in Makefile.
 	BuildTime = "unknown"
 )
+
+func GetCommand(suffix string) string {
+	return fmt.Sprintf("%s %s", CommandName, suffix)
+}
 
 func GetShortVersion() string {
 	if strings.HasSuffix(Version, "dirty") {

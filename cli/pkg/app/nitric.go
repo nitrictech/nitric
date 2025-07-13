@@ -22,9 +22,9 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/platforms"
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
-	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/client"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
@@ -98,17 +98,17 @@ func (c *NitricApp) Init() error {
 	// Read the nitric.yaml file
 	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
 	if err == nil {
-		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.emphasize.Render("nitric edit"))
+		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.emphasize.Render(version.GetCommand("edit")))
 		return nil
 	} else if exists {
 		fmt.Printf("Project already initialized, but an error occurred loading %s\n", c.styles.emphasize.Render("nitric.yaml"))
 		return err
 	}
 
-	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.emphasize.Render("Nitric"))
+	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.emphasize.Render(version.ProductName))
 	fmt.Printf("This file is used to define your app's infrastructure, resources and deployment targets.\n")
 	fmt.Println()
-	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.emphasize.Render("nitric edit"))
+	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.emphasize.Render(version.GetCommand("edit")))
 	fmt.Println()
 
 	// Project Name Prompt
@@ -163,13 +163,13 @@ func (c *NitricApp) Init() error {
 
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("1. Run", c.styles.emphasize.Render("nitric edit"), "to start the nitric editor")
+	fmt.Println("1. Run", c.styles.emphasize.Render(version.GetCommand("edit")), "to start the nitric editor")
 	fmt.Println("2. Design your app's resources and deployment targets")
-	fmt.Println("3. Optionally, use", c.styles.emphasize.Render("nitric generate"), "to generate the client libraries for your app")
-	fmt.Println("4. Run", c.styles.emphasize.Render("nitric dev"), "to start the development server")
-	fmt.Println("5. Run", c.styles.emphasize.Render("nitric build"), "to build the project for a specific platform")
+	fmt.Println("3. Optionally, use", c.styles.emphasize.Render(version.GetCommand("generate")), "to generate the client libraries for your app")
+	fmt.Println("4. Run", c.styles.emphasize.Render(version.GetCommand("dev")), "to start the development server")
+	fmt.Println("5. Run", c.styles.emphasize.Render(version.GetCommand("build")), "to build the project for a specific platform")
 	fmt.Println()
-	fmt.Println("For more information, see the", c.styles.emphasize.Render("nitric docs"), "at", c.styles.emphasize.Render("https://nitric.io/docs"))
+	fmt.Println("For more information, see the", c.styles.emphasize.Render(version.ProductName+" docs"), "at", c.styles.emphasize.Render("https://nitric.io/docs"))
 
 	return nil
 }
@@ -192,15 +192,15 @@ func (c *NitricApp) New(projectName string, force bool) error {
 	templates, err := c.apiClient.GetTemplates()
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
-			fmt.Println("Please login first, using the `login` command")
+			fmt.Println("Please login first, using", c.styles.emphasize.Render(version.GetCommand("login")))
 			return nil
 		}
 
 		return fmt.Errorf("failed to get templates: %v", err)
 	}
 
-	fmt.Printf("Welcome to %s, this command will help you create a project from a template.\n", c.styles.emphasize.Render("Nitric"))
-	fmt.Printf("If you already have a project, run %s instead.\n", c.styles.emphasize.Render("nitric init"))
+	fmt.Printf("Welcome to %s, this command will help you create a project from a template.\n", c.styles.emphasize.Render(version.ProductName))
+	fmt.Printf("If you already have a project, run %s instead.\n", c.styles.emphasize.Render(version.GetCommand("init")))
 	fmt.Println()
 
 	if projectName == "" {
@@ -331,10 +331,10 @@ func (c *NitricApp) New(projectName string, force bool) error {
 	b.WriteString("\n")
 	b.WriteString("Next steps:\n")
 	b.WriteString("1. Run " + c.styles.emphasize.Render("cd ./"+projectDir) + " to move to the project directory\n")
-	b.WriteString("2. Run " + c.styles.emphasize.Render("nitric edit") + " to start the nitric editor\n")
+	b.WriteString("2. Run " + c.styles.emphasize.Render(version.GetCommand("edit")) + " to start the nitric editor\n")
 	b.WriteString("3. Design your app's resources and deployment targets\n")
-	b.WriteString("4. Run " + c.styles.emphasize.Render("nitric dev") + " to start the development server\n")
-	b.WriteString("5. Run " + c.styles.emphasize.Render("nitric build") + " to build the project for a specific platform\n")
+	b.WriteString("4. Run " + c.styles.emphasize.Render(version.GetCommand("dev")) + " to start the development server\n")
+	b.WriteString("5. Run " + c.styles.emphasize.Render(version.GetCommand("build")) + " to build the project for a specific platform\n")
 	b.WriteString("\n")
 	b.WriteString("For more information, see the " + c.styles.emphasize.Render("nitric docs") + " at " + c.styles.emphasize.Render("https://nitric.io/docs"))
 
@@ -352,7 +352,7 @@ func (c *NitricApp) Build() error {
 	platformRepository := platforms.NewPlatformRepository(c.apiClient)
 
 	if len(appSpec.Targets) == 0 {
-		nitricEdit := style.Teal("nitric edit")
+		nitricEdit := c.styles.emphasize.Render(version.GetCommand("edit"))
 		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
 		return nil
 	}
@@ -390,7 +390,7 @@ func (c *NitricApp) Build() error {
 
 	platform, err := terraform.PlatformFromId(c.fs, targetPlatform, platformRepository)
 	if errors.Is(err, terraform.ErrUnauthenticated) {
-		fmt.Printf("Please login first, using the %s command\n", c.styles.emphasize.Render("nitric login"))
+		fmt.Printf("Please login first, using the %s command\n", c.styles.emphasize.Render(version.GetCommand("login")))
 		return nil
 	} else if err != nil {
 		return err
