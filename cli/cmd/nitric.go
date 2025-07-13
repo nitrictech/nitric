@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/app"
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
@@ -26,8 +29,8 @@ func NewTemplatesCmd(injector do.Injector) *cobra.Command {
 func NewInitCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
-		Short: "Setup a new Nitric project",
-		Long:  `Setup a new Nitric project, including within existing applications`,
+		Short: fmt.Sprintf("Setup a new %s project", version.ProductName),
+		Long:  fmt.Sprintf("Setup a new %s project, including within existing applications", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
 			app, err := do.Invoke[*app.NitricApp](injector)
 			if err != nil {
@@ -44,8 +47,8 @@ func NewNewCmd(injector do.Injector) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "new [project-name]",
-		Short: "Create a new Nitric project",
-		Long:  `Create a new Nitric project from a template.`,
+		Short: fmt.Sprintf("Create a new %s project", version.ProductName),
+		Long:  fmt.Sprintf("Create a new %s project from a template.", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
 			projectName := ""
 			if len(args) > 0 {
@@ -67,8 +70,8 @@ func NewNewCmd(injector do.Injector) *cobra.Command {
 func NewBuildCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "build",
-		Short: "Builds the nitric application",
-		Long:  `Builds an application using the nitric.yaml application spec and referenced platform.`,
+		Short: fmt.Sprintf("Builds the %s application", version.ProductName),
+		Long:  "Builds an application using the nitric.yaml application spec and referenced platform.",
 		Run: func(cmd *cobra.Command, args []string) {
 			app, err := do.Invoke[*app.NitricApp](injector)
 			if err != nil {
@@ -88,8 +91,8 @@ func NewGenerateCmd(injector do.Injector) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate client libraries",
-		Long:  `Generate client libraries for different programming languages based on the Nitric application specification.`,
+		Short: fmt.Sprintf("Generate client libraries for %s", version.ProductName),
+		Long:  fmt.Sprintf("Generate client libraries for different programming languages based on the %s application specification.", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
 			app, err := do.Invoke[*app.NitricApp](injector)
 			if err != nil {
@@ -120,7 +123,7 @@ func NewGenerateCmd(injector do.Injector) *cobra.Command {
 func NewEditCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "edit",
-		Short: "Edit the nitric application",
+		Short: fmt.Sprintf("Edit the %s application", version.ProductName),
 		Long:  `Edits an application using the nitric.yaml application spec and referenced platform.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			app, err := do.Invoke[*app.NitricApp](injector)
@@ -136,8 +139,8 @@ func NewEditCmd(injector do.Injector) *cobra.Command {
 func NewDevCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dev",
-		Short: "Run the Nitric application in development mode",
-		Long:  `Run the Nitric application in development mode, allowing local testing of resources.`,
+		Short: fmt.Sprintf("Run the %s application in development mode", version.ProductName),
+		Long:  fmt.Sprintf("Run the %s application in development mode, allowing local testing of resources.", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
 			cobra.CheckErr(app.Dev())
 		},

@@ -9,7 +9,7 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/version"
 )
 
-var nitric = style.Purple(icons.Lightning + " Nitric")
+var nitric = style.Purple(icons.Lightning + " " + version.ProductName)
 var ver = style.Gray(version.GetShortVersion())
 
 func NitricIntro(elements ...string) string {

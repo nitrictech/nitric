@@ -8,6 +8,7 @@ import (
 
 	_ "embed"
 
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/spf13/afero"
 )
@@ -50,7 +51,7 @@ func GenerateTypeScript(fs afero.Fs, appSpec schema.Application, outputDir strin
 	tmpl := template.Must(template.New("client").Parse(tsClientTemplate))
 	data, err := AppSpecToTSTemplateData(appSpec)
 	if err != nil {
-		return fmt.Errorf("failed to convert nitric application spec into TypeScript SDK template data: %w", err)
+		return fmt.Errorf("failed to convert %s application spec into TypeScript SDK template data: %w", version.ProductName, err)
 	}
 
 	var buf bytes.Buffer

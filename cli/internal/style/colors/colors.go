@@ -1,6 +1,10 @@
 package colors
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/nitrictech/nitric/cli/internal/style/icons"
+)
 
 //
 
@@ -48,3 +52,99 @@ var (
 // 		Dark:  AdaptiveBlue,
 // 	}
 // )
+
+var Theme = huh.Theme{
+	Form: huh.FormStyles{
+		Base: lipgloss.NewStyle(),
+	},
+	Group: huh.GroupStyles{
+		Base:        lipgloss.NewStyle(),
+		Title:       lipgloss.NewStyle(),
+		Description: lipgloss.NewStyle(),
+	},
+	FieldSeparator: lipgloss.NewStyle(),
+	Blurred: huh.FieldStyles{
+		Base:           lipgloss.NewStyle(),
+		Title:          lipgloss.NewStyle().Faint(true),
+		Description:    lipgloss.NewStyle().Faint(true),
+		ErrorIndicator: lipgloss.NewStyle(),
+		ErrorMessage:   lipgloss.NewStyle(),
+
+		// Select styles.
+		SelectSelector: lipgloss.NewStyle(), // Selection indicator
+		Option:         lipgloss.NewStyle(), // Select options
+		NextIndicator:  lipgloss.NewStyle(),
+		PrevIndicator:  lipgloss.NewStyle(),
+
+		// FilePicker styles.
+		Directory: lipgloss.NewStyle(),
+		File:      lipgloss.NewStyle(),
+
+		// Multi-select styles.
+		MultiSelectSelector: lipgloss.NewStyle(),
+		SelectedOption:      lipgloss.NewStyle(),
+		SelectedPrefix:      lipgloss.NewStyle(),
+		UnselectedOption:    lipgloss.NewStyle(),
+		UnselectedPrefix:    lipgloss.NewStyle(),
+
+		// Textinput and teatarea styles.
+		TextInput: huh.TextInputStyles{
+			Cursor:      lipgloss.NewStyle(),
+			CursorText:  lipgloss.NewStyle(),
+			Placeholder: lipgloss.NewStyle(),
+			Prompt:      lipgloss.NewStyle(),
+			Text:        lipgloss.NewStyle(),
+		},
+
+		// Confirm styles.
+		FocusedButton: lipgloss.NewStyle(),
+		BlurredButton: lipgloss.NewStyle(),
+
+		// Card styles.
+		Card:      lipgloss.NewStyle(),
+		NoteTitle: lipgloss.NewStyle(),
+		Next:      lipgloss.NewStyle(),
+	},
+	Focused: huh.FieldStyles{
+		Base:           lipgloss.NewStyle(),
+		Title:          lipgloss.NewStyle().Foreground(Teal).Bold(true),
+		Description:    lipgloss.NewStyle().Faint(true),
+		ErrorIndicator: lipgloss.NewStyle(),
+		ErrorMessage:   lipgloss.NewStyle(),
+
+		// Select styles.
+		SelectSelector: lipgloss.NewStyle().SetString(icons.RightArrow + " ").Foreground(Teal).Bold(true), // Selection indicator
+		Option:         lipgloss.NewStyle(),                                                               // Select options
+		NextIndicator:  lipgloss.NewStyle(),
+		PrevIndicator:  lipgloss.NewStyle(),
+
+		// FilePicker styles.
+		Directory: lipgloss.NewStyle(),
+		File:      lipgloss.NewStyle(),
+
+		// Multi-select styles.
+		MultiSelectSelector: lipgloss.NewStyle(),
+		SelectedOption:      lipgloss.NewStyle().Foreground(Teal).Bold(true),
+		SelectedPrefix:      lipgloss.NewStyle().SetString(icons.RightArrow).Foreground(Teal).Bold(true),
+		UnselectedOption:    lipgloss.NewStyle(),
+		UnselectedPrefix:    lipgloss.NewStyle(),
+
+		// Textinput and teatarea styles.
+		TextInput: huh.TextInputStyles{
+			Cursor:      lipgloss.NewStyle(),
+			CursorText:  lipgloss.NewStyle(),
+			Placeholder: lipgloss.NewStyle(),
+			Prompt:      lipgloss.NewStyle(),
+			Text:        lipgloss.NewStyle(),
+		},
+
+		// Confirm styles.
+		FocusedButton: lipgloss.NewStyle(),
+		BlurredButton: lipgloss.NewStyle(),
+
+		// Card styles.
+		Card:      lipgloss.NewStyle(),
+		NoteTitle: lipgloss.NewStyle(),
+		Next:      lipgloss.NewStyle(),
+	},
+}

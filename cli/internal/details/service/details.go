@@ -10,6 +10,7 @@ import (
 
 	"github.com/nitrictech/nitric/cli/internal/config"
 	detail "github.com/nitrictech/nitric/cli/internal/details"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/samber/do/v2"
 )
 
@@ -45,20 +46,20 @@ func (s *Service) GetWorkOSDetails() (*detail.WorkOSDetails, error) {
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "connection reset by peer") {
-			return nil, fmt.Errorf("failed to connect to the Nitric API. Please check your connection and try again. If the problem persists, please contact support.")
+			return nil, fmt.Errorf("failed to connect to the %s API. Please check your connection and try again. If the problem persists, please contact support.", version.ProductName)
 		}
-		return nil, fmt.Errorf("failed to connect to nitric auth details endpoint: %v", err)
+		return nil, fmt.Errorf("failed to connect to %s auth details endpoint: %v", version.ProductName, err)
 	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response from nitric auth details endpoint: %v", err)
+		return nil, fmt.Errorf("failed to read response from %s auth details endpoint: %v", version.ProductName, err)
 	}
 
 	var authDetails AuthDetails
 	err = json.Unmarshal(body, &authDetails)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected response from nitric auth details endpoint: %v", err)
+		return nil, fmt.Errorf("unexpected response from %s auth details endpoint: %v", version.ProductName, err)
 	}
 
 	return &authDetails.WorkOS, nil

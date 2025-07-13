@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/engines/terraform"
 )
 
@@ -24,18 +25,18 @@ func (c *NitricApiClient) GetPlatform(team, name string, revision int) (*terrafo
 			return nil, ErrNotFound
 		}
 
-		return nil, fmt.Errorf("received non 200 response from nitric plugin details endpoint: %d", response.StatusCode)
+		return nil, fmt.Errorf("received non 200 response from %s plugin details endpoint: %d", version.ProductName, response.StatusCode)
 	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response from nitric auth details endpoint: %v", err)
+		return nil, fmt.Errorf("failed to read response from %s plugin details endpoint: %v", version.ProductName, err)
 	}
 
 	var platformSpec PlatformRevisionResponse
 	err = json.Unmarshal(body, &platformSpec)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected response from nitric plugin details endpoint: %v", err)
+		return nil, fmt.Errorf("unexpected response from %s plugin details endpoint: %v", version.ProductName, err)
 	}
 	return &platformSpec.Content, nil
 }

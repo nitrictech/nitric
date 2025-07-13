@@ -41,7 +41,7 @@ type SimulationServer struct {
 
 const DEFAULT_SERVER_PORT = "50051"
 
-var nitric = style.Purple(icons.Lightning + " Nitric")
+var nitric = style.Purple(icons.Lightning + " " + version.ProductName)
 
 func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) string {
 	version := version.GetShortVersion()

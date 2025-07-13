@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-getter"
 	"github.com/nitrictech/nitric/cli/internal/api"
@@ -21,13 +22,14 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/platforms"
 	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
-	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/client"
 	"github.com/nitrictech/nitric/cli/pkg/files"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/cli/pkg/tui"
+	"github.com/nitrictech/nitric/cli/pkg/tui/ask"
 	"github.com/nitrictech/nitric/engines/terraform"
 	"github.com/samber/do/v2"
 	"github.com/spf13/afero"
@@ -96,43 +98,53 @@ func (c *NitricApp) Init() error {
 	// Read the nitric.yaml file
 	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
 	if err == nil {
-		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.emphasize.Render("nitric edit"))
+		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.emphasize.Render(version.GetCommand("edit")))
 		return nil
 	} else if exists {
 		fmt.Printf("Project already initialized, but an error occurred loading %s\n", c.styles.emphasize.Render("nitric.yaml"))
 		return err
 	}
 
-	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.emphasize.Render("Nitric"))
+	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.emphasize.Render(version.ProductName))
 	fmt.Printf("This file is used to define your app's infrastructure, resources and deployment targets.\n")
 	fmt.Println()
-	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.emphasize.Render("nitric edit"))
+	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.emphasize.Render(version.GetCommand("edit")))
 	fmt.Println()
 
 	// Project Name Prompt
-	name, err := tui.RunTextInput("Project name:", func(input string) error {
-		if input == "" {
-			return errors.New("project name is required")
-		}
+	var name string
+	err = ask.NewInput().
+		Title("Project name:").
+		Value(&name).
+		Validate(validateProjName).
+		Run()
 
-		// Must be kebab-case
-		if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(input) {
-			return errors.New("project name must start with a letter and be lower kebab-case")
-		}
-
-		return nil
-	})
-	if err != nil || name == "" {
+	if errors.Is(err, huh.ErrUserAborted) {
 		return nil
 	}
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Project name: %s\n", name)
 
 	// Project Description Prompt
-	description, err := tui.RunTextInput("Project description:", func(input string) error {
-		return nil
-	})
-	if err != nil {
+	var description string
+	err = ask.NewInput().
+		Title("Project description:").
+		Value(&description).
+		Run()
+
+	if errors.Is(err, huh.ErrUserAborted) {
 		return nil
 	}
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Project description: %s\n", description)
 
 	newProject := &schema.Application{
 		Name:        name,
@@ -147,17 +159,30 @@ func (c *NitricApp) Init() error {
 
 	fmt.Println()
 	fmt.Println(c.styles.success.Render(" " + icons.Check + " Project initialized!"))
-	fmt.Println(c.styles.faint.Render("   nitric project written to " + nitricYamlPath))
+	fmt.Println(c.styles.faint.Render("   " + version.ProductName + " project written to " + nitricYamlPath))
 
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("1. Run", c.styles.emphasize.Render("nitric edit"), "to start the nitric editor")
+	fmt.Println("1. Run", c.styles.emphasize.Render(version.GetCommand("edit")), "to start the", version.ProductName, "editor")
 	fmt.Println("2. Design your app's resources and deployment targets")
-	fmt.Println("3. Optionally, use", c.styles.emphasize.Render("nitric generate"), "to generate the client libraries for your app")
-	fmt.Println("4. Run", c.styles.emphasize.Render("nitric dev"), "to start the development server")
-	fmt.Println("5. Run", c.styles.emphasize.Render("nitric build"), "to build the project for a specific platform")
+	fmt.Println("3. Optionally, use", c.styles.emphasize.Render(version.GetCommand("generate")), "to generate the client libraries for your app")
+	fmt.Println("4. Run", c.styles.emphasize.Render(version.GetCommand("dev")), "to start the development server")
+	fmt.Println("5. Run", c.styles.emphasize.Render(version.GetCommand("build")), "to build the project for a specific platform")
 	fmt.Println()
-	fmt.Println("For more information, see the", c.styles.emphasize.Render("nitric docs"), "at", c.styles.emphasize.Render("https://nitric.io/docs"))
+	fmt.Println("For more information, see the", c.styles.emphasize.Render(version.ProductName+" docs"), "at", c.styles.emphasize.Render("https://nitric.io/docs"))
+
+	return nil
+}
+
+func validateProjName(name string) error {
+	if name == "" {
+		return errors.New("project name is required")
+	}
+
+	// Must be kebab-case
+	if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(name) {
+		return errors.New("project name must start with a letter and be lower kebab-case")
+	}
 
 	return nil
 }
@@ -167,112 +192,122 @@ func (c *NitricApp) New(projectName string, force bool) error {
 	templates, err := c.apiClient.GetTemplates()
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
-			fmt.Println("Please login first, using the `login` command")
+			fmt.Println("Please login first, using", c.styles.emphasize.Render(version.GetCommand("login")))
 			return nil
 		}
 
-		fmt.Printf("Failed to get templates: %v\n", err)
-		return nil
+		return fmt.Errorf("failed to get templates: %v", err)
 	}
+
+	fmt.Printf("Welcome to %s, this command will help you create a project from a template.\n", c.styles.emphasize.Render(version.ProductName))
+	fmt.Printf("If you already have a project, run %s instead.\n", c.styles.emphasize.Render(version.GetCommand("init")))
+	fmt.Println()
 
 	if projectName == "" {
-		fmt.Println()
-		var err error
-		projectName, err = tui.RunTextInput("Project name:", func(input string) error {
-			if input == "" {
-				return errors.New("project name is required")
-			}
+		err := ask.NewInput().
+			Title("Project name:").
+			Value(&projectName).
+			Validate(validateProjName).
+			Run()
 
-			// Must be kebab-case
-			if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(input) {
-				return errors.New("project name must start with a letter and be lower kebab-case")
-			}
-
-			return nil
-		})
-		if err != nil || projectName == "" {
-			fmt.Println(err)
+		if errors.Is(err, huh.ErrUserAborted) {
 			return nil
 		}
+
+		if err != nil {
+			return err
+		}
 	}
+
+	fmt.Printf("Project name: %s\n", projectName)
 
 	projectDir := filepath.Join(".", projectName)
 	if !force {
 		projectExists, err := projectExists(c.fs, projectDir)
 		if err != nil {
-			fmt.Println(err.Error())
-			return nil
+			return fmt.Errorf("failed to check if project directory exists: %v", err)
 		}
 		if projectExists {
-			fmt.Printf("\nDirectory ./%s already exists and is not empty\n", projectDir)
-			return errors.New("project directory already exists")
+			return fmt.Errorf("project directory %s already exists, use --force to overwrite", projectDir)
 		}
 	}
 
 	if len(templates) == 0 {
-		fmt.Println("No templates found")
-		return errors.New("no templates available")
+		return errors.New("no templates found")
 	}
 
-	templateNames := make([]string, len(templates))
+	templateNames := make([]huh.Option[*api.Template], len(templates))
 	for i, template := range templates {
-		templateNames[i] = template.String()
+		templateNames[i] = huh.NewOption(template.String(), &template)
 	}
 
 	// Prompt the user to select one of the templates
-	fmt.Println("")
-	_, index, err := tui.RunSelect(templateNames, "Template:")
-	if err != nil || index == -1 {
+	var template *api.Template
+	err = ask.NewSelect[*api.Template]().
+		Title("Template:").
+		Validate(func(template *api.Template) error {
+			if template == nil {
+				return errors.New("template is required")
+			}
+
+			return nil
+		}).
+		Options(templateNames...).
+		Value(&template).
+		Run()
+
+	if errors.Is(err, huh.ErrUserAborted) {
+		return nil
+	}
+
+	if err != nil {
 		return err
 	}
 
-	template, err := c.apiClient.GetTemplate(templates[index].TeamSlug, templates[index].Slug, "")
+	fmt.Printf("Template: %s\n", template.String())
+
+	latestVersion, err := c.apiClient.GetTemplate(template.TeamSlug, template.Slug, "")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get template: %v", err)
 	}
 
 	// Find home directory.
 	home, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println(err)
-		return err
+		return fmt.Errorf("failed to get home directory: %v", err)
 	}
 
-	templateDir := filepath.Join(home, ".nitric", "templates", template.TeamSlug, template.TemplateSlug, template.Version)
+	templateDir := filepath.Join(home, ".nitric", "templates", latestVersion.TeamSlug, latestVersion.TemplateSlug, latestVersion.Version)
 
 	templateCached, err := afero.Exists(c.fs, filepath.Join(templateDir, "nitric.yaml"))
 	if err != nil {
-		fmt.Printf("Failed read template cache directory: %v\n", err)
-		return err
+		return fmt.Errorf("failed read template cache directory: %v", err)
 	}
 
 	if !templateCached {
 		goGetter := &getter.Client{
 			Ctx:             context.Background(),
 			Dst:             templateDir,
-			Src:             template.GitSource,
+			Src:             latestVersion.GitSource,
 			Mode:            getter.ClientModeAny,
 			DisableSymlinks: true,
 		}
 
 		err = goGetter.Get()
 		if err != nil {
-			fmt.Printf("Failed to get template: %v\n", err)
-			return err
+			return fmt.Errorf("failed to get template: %v", err)
 		}
 	}
 
 	// Copy the template dir contents into a new project dir
 	err = os.MkdirAll(projectDir, 0755)
 	if err != nil {
-		fmt.Printf("Failed to create project directory: %v\n", err)
-		return err
+		return fmt.Errorf("failed to create project directory: %v", err)
 	}
 
 	err = files.CopyDir(c.fs, templateDir, projectDir)
 	if err != nil {
-		fmt.Printf("Failed to copy template directory: %v\n", err)
-		return err
+		return fmt.Errorf("failed to copy template directory: %v", err)
 	}
 
 	nitricYamlPath := filepath.Join(projectDir, "nitric.yaml")
@@ -289,20 +324,21 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		return err
 	}
 
-	successStyle := lipgloss.NewStyle().MarginLeft(3)
-	highlight := lipgloss.NewStyle().Foreground(colors.Teal).Bold(true)
-
 	var b strings.Builder
 
 	b.WriteString("\n")
-	b.WriteString("Project created!")
-	b.WriteString("\n\n")
-	b.WriteString("Navigate to your project with ")
-	b.WriteString(highlight.Render("cd ./" + projectDir))
+	b.WriteString(c.styles.emphasize.Render(icons.Check + " Project created!\n"))
 	b.WriteString("\n")
-	b.WriteString("Install dependencies and you're ready to rock! 🪨")
+	b.WriteString("Next steps:\n")
+	b.WriteString("1. Run " + c.styles.emphasize.Render("cd ./"+projectDir) + " to move to the project directory\n")
+	b.WriteString("2. Run " + c.styles.emphasize.Render(version.GetCommand("edit")) + " to start the " + version.ProductName + " editor\n")
+	b.WriteString("3. Design your app's resources and deployment targets\n")
+	b.WriteString("4. Run " + c.styles.emphasize.Render(version.GetCommand("dev")) + " to start the development server\n")
+	b.WriteString("5. Run " + c.styles.emphasize.Render(version.GetCommand("build")) + " to build the project for a specific platform\n")
+	b.WriteString("\n")
+	b.WriteString("For more information, see the " + c.styles.emphasize.Render(version.ProductName+" docs") + " at " + c.styles.emphasize.Render("https://nitric.io/docs"))
 
-	fmt.Println(successStyle.Render(b.String()))
+	fmt.Println(b.String())
 	return nil
 }
 
@@ -316,7 +352,7 @@ func (c *NitricApp) Build() error {
 	platformRepository := platforms.NewPlatformRepository(c.apiClient)
 
 	if len(appSpec.Targets) == 0 {
-		nitricEdit := style.Teal("nitric edit")
+		nitricEdit := c.styles.emphasize.Render(version.GetCommand("edit"))
 		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
 		return nil
 	}
@@ -326,11 +362,24 @@ func (c *NitricApp) Build() error {
 	if len(appSpec.Targets) == 1 {
 		targetPlatform = appSpec.Targets[0]
 	} else {
-		targetPlatform, _, err = tui.RunSelect(appSpec.Targets, "Select a build target")
-		if err != nil {
-			if errors.Is(err, tui.ErrUserAborted) {
+		err := ask.NewSelect[string]().
+			Title("Select a build target").
+			Options(huh.NewOptions(appSpec.Targets...)...).
+			Value(&targetPlatform).
+			Validate(func(targetPlatform string) error {
+				if targetPlatform == "" {
+					return errors.New("target platform is required")
+				}
+
 				return nil
-			}
+			}).
+			Run()
+
+		if errors.Is(err, huh.ErrUserAborted) {
+			return nil
+		}
+
+		if err != nil {
 			return err
 		}
 	}
@@ -341,7 +390,7 @@ func (c *NitricApp) Build() error {
 
 	platform, err := terraform.PlatformFromId(c.fs, targetPlatform, platformRepository)
 	if errors.Is(err, terraform.ErrUnauthenticated) {
-		fmt.Printf("Please login first, using the %s command\n", c.styles.emphasize.Render("nitric login"))
+		fmt.Printf("Please login first, using the %s command\n", c.styles.emphasize.Render(version.GetCommand("login")))
 		return nil
 	} else if err != nil {
 		return err
