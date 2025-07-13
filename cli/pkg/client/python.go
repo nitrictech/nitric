@@ -8,6 +8,7 @@ import (
 
 	_ "embed"
 
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/spf13/afero"
 )
@@ -49,7 +50,7 @@ func GeneratePython(fs afero.Fs, appSpec schema.Application, outputDir string) e
 	tmpl := template.Must(template.New("client").Parse(pyClientTemplate))
 	data, err := AppSpecToPyTemplateData(appSpec)
 	if err != nil {
-		return fmt.Errorf("failed to convert nitric application spec into Python SDK template data: %w", err)
+		return fmt.Errorf("failed to convert %s application spec into Python SDK template data: %w", version.ProductName, err)
 	}
 
 	var buf bytes.Buffer

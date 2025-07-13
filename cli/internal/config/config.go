@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -40,7 +41,7 @@ func (c *Config) SetValue(key, value string) error {
 func (c *Config) GetNitricServerUrl() *url.URL {
 	nitricUrl, err := url.Parse(c.NitricServerUrl)
 	if err != nil {
-		fmt.Printf("Error parsing nitric server url from config, using default: %v\n", err)
+		fmt.Printf("Error parsing %s server url from config, using default: %v\n", version.ProductName, err)
 		return &url.URL{
 			Scheme: "https",
 			Host:   "app.nitric.io",

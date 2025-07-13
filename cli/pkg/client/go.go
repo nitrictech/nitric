@@ -9,6 +9,7 @@ import (
 
 	_ "embed"
 
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/spf13/afero"
 )
@@ -57,7 +58,7 @@ func GenerateGo(fs afero.Fs, appSpec schema.Application, outputDir string, goPac
 	tmpl := template.Must(template.New("client").Parse(clientTemplate))
 	data, err := AppSpecToGoTemplateData(appSpec, goPackageName)
 	if err != nil {
-		return fmt.Errorf("failed to convert nitric application spec into Go SDK template data: %w", err)
+		return fmt.Errorf("failed to convert %s application spec into Go SDK template data: %w", version.ProductName, err)
 	}
 
 	var buf bytes.Buffer

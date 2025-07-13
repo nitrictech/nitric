@@ -159,11 +159,11 @@ func (c *NitricApp) Init() error {
 
 	fmt.Println()
 	fmt.Println(c.styles.success.Render(" " + icons.Check + " Project initialized!"))
-	fmt.Println(c.styles.faint.Render("   nitric project written to " + nitricYamlPath))
+	fmt.Println(c.styles.faint.Render("   " + version.ProductName + " project written to " + nitricYamlPath))
 
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("1. Run", c.styles.emphasize.Render(version.GetCommand("edit")), "to start the nitric editor")
+	fmt.Println("1. Run", c.styles.emphasize.Render(version.GetCommand("edit")), "to start the", version.ProductName, "editor")
 	fmt.Println("2. Design your app's resources and deployment targets")
 	fmt.Println("3. Optionally, use", c.styles.emphasize.Render(version.GetCommand("generate")), "to generate the client libraries for your app")
 	fmt.Println("4. Run", c.styles.emphasize.Render(version.GetCommand("dev")), "to start the development server")
@@ -331,12 +331,12 @@ func (c *NitricApp) New(projectName string, force bool) error {
 	b.WriteString("\n")
 	b.WriteString("Next steps:\n")
 	b.WriteString("1. Run " + c.styles.emphasize.Render("cd ./"+projectDir) + " to move to the project directory\n")
-	b.WriteString("2. Run " + c.styles.emphasize.Render(version.GetCommand("edit")) + " to start the nitric editor\n")
+	b.WriteString("2. Run " + c.styles.emphasize.Render(version.GetCommand("edit")) + " to start the " + version.ProductName + " editor\n")
 	b.WriteString("3. Design your app's resources and deployment targets\n")
 	b.WriteString("4. Run " + c.styles.emphasize.Render(version.GetCommand("dev")) + " to start the development server\n")
 	b.WriteString("5. Run " + c.styles.emphasize.Render(version.GetCommand("build")) + " to build the project for a specific platform\n")
 	b.WriteString("\n")
-	b.WriteString("For more information, see the " + c.styles.emphasize.Render("nitric docs") + " at " + c.styles.emphasize.Render("https://nitric.io/docs"))
+	b.WriteString("For more information, see the " + c.styles.emphasize.Render(version.ProductName+" docs") + " at " + c.styles.emphasize.Render("https://nitric.io/docs"))
 
 	fmt.Println(b.String())
 	return nil
