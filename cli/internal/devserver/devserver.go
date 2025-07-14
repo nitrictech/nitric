@@ -2,7 +2,6 @@ package devserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -75,7 +74,6 @@ func (fw *DevWebsockerServer) sendToClient(client *websocket.Conn) SendFunc {
 			return
 		}
 
-		fmt.Println(string(messageJSON))
 		client.Write(messageJSON)
 	}
 }
