@@ -41,15 +41,15 @@ func LoadFromFile(fs afero.Fs, path string, validate bool) (*Application, error)
 		return appSpec, nil
 	}
 
-	errorFormat := "Your Nitric application file '%s' is invalid. It has the following issues:\n%s"
+	errorFormat := "Your %s application file '%s' is invalid. It has the following issues:\n%s"
 	if results != nil && !results.Valid() {
 		errs := FormatValidationErrors(results)
-		return nil, fmt.Errorf(errorFormat, path, errs)
+		return nil, fmt.Errorf(errorFormat, version.ProductName, path, errs)
 	}
 
 	// Perform additional validation checks on the application
 	if err := appSpec.IsValid(); err != nil {
-		return nil, fmt.Errorf(errorFormat, path, err)
+		return nil, fmt.Errorf(errorFormat, version.ProductName, path, err)
 	}
 
 	return appSpec, nil
