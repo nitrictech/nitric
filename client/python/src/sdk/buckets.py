@@ -19,42 +19,42 @@ class Bucket:
         self.name = bucket_name
         self.storage_client = storage_client
 
-    async def read(self, key: str) -> bytes:
+    def read(self, key: str) -> bytes:
         request = storage_pb2.StorageReadRequest(bucket_name=self.name, key=key)
-        response = await self.storage_client.Read(request)
+        response = self.storage_client.Read(request)
         return response.body
 
-    async def write(self, key: str, data: bytes) -> None:
+    def write(self, key: str, data: bytes) -> None:
         request = storage_pb2.StorageWriteRequest(
             bucket_name=self.name,
             key=key,
             body=data,
         )
-        await self.storage_client.Write(request)
+        self.storage_client.Write(request)
 
-    async def delete(self, key: str) -> None:
+    def delete(self, key: str) -> None:
         request = storage_pb2.StorageDeleteRequest(bucket_name=self.name, key=key)
-        await self.storage_client.Delete(request)
+        self.storage_client.Delete(request)
 
-    async def list(self, prefix: str = "") -> List[str]:
+    def list(self, prefix: str = "") -> List[str]:
         request = storage_pb2.StorageListBlobsRequest(bucket_name=self.name, prefix=prefix)
-        response = await self.storage_client.ListBlobs(request)
+        response = self.storage_client.ListBlobs(request)
         return [blob.key for blob in response.blobs]
 
-    async def exists(self, key: str) -> bool:
+    def exists(self, key: str) -> bool:
         request = storage_pb2.StorageExistsRequest(bucket_name=self.name, key=key)
-        response = await self.storage_client.Exists(request)
+        response = self.storage_client.Exists(request)
         return response.exists
 
-    async def get_download_url(self, key: str, options: Optional[PresignUrlOptions] = None) -> str:
+    def get_download_url(self, key: str, options: Optional[PresignUrlOptions] = None) -> str:
         opts = options or PresignUrlOptions(mode=Mode.READ, expiry=300)
-        return await self._pre_sign_url(key, opts)
+        return self._pre_sign_url(key, opts)
 
-    async def get_upload_url(self, key: str, options: Optional[PresignUrlOptions] = None) -> str:
+    def get_upload_url(self, key: str, options: Optional[PresignUrlOptions] = None) -> str:
         opts = options or PresignUrlOptions(mode=Mode.WRITE, expiry=300)
-        return await self._pre_sign_url(key, opts)
+        return self._pre_sign_url(key, opts)
 
-    async def _pre_sign_url(self, key: str, options: PresignUrlOptions) -> str:
+    def _pre_sign_url(self, key: str, options: PresignUrlOptions) -> str:
         operation = (
             storage_pb2.StoragePreSignUrlRequest.READ
             if options.mode == Mode.READ
@@ -68,5 +68,5 @@ class Bucket:
             expiry=Duration(seconds=options.expiry),
         )
 
-        response = await self.storage_client.PreSignUrl(request)
+        response = self.storage_client.PreSignUrl(request)
         return response.url
