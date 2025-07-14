@@ -63,10 +63,6 @@ func GenerateYamlContext(err gojsonschema.ResultError) string {
 	return yaml.String()
 }
 
-func writeValue(contextBuilder *YamlContextBuilder, err gojsonschema.ResultError, indent int) {
-
-}
-
 func writeMapValue(contextBuilder *YamlContextBuilder, errMap map[string]interface{}, indent int) {
 	// Only print if the value is not a map (i.e. a primitive type)
 	if len(errMap) > 0 {
