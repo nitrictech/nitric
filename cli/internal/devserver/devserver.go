@@ -2,6 +2,7 @@ package devserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -46,6 +47,7 @@ type BroadcastFunc func(Message[any])
 
 // Broadcast a message to connected clients
 func (fw *DevWebsockerServer) Broadcast(message Message[any]) {
+	fmt.Println("Broadcasting message", message)
 	fw.broadcast <- message
 }
 
@@ -60,6 +62,7 @@ func (fw *DevWebsockerServer) notify(message json.RawMessage) {
 	fw.mutex.RLock()
 	defer fw.mutex.RUnlock()
 	for _, subscriber := range fw.subscribers {
+		fmt.Println("Notifying subscriber", subscriber)
 		subscriber.OnMessage(message)
 	}
 }
@@ -138,14 +141,17 @@ func (fw *DevWebsockerServer) run() {
 			// log.Printf("Client disconnected. Total clients: %d", len(fw.clients))
 
 		case message := <-fw.broadcast:
+			fmt.Println("got message", message)
 			messageJSON, err := json.Marshal(message)
 			if err != nil {
 				log.Printf("Error marshaling message: %v", err)
 				continue
 			}
 
+			fmt.Println("Getting lock", message)
 			fw.mutex.RLock()
 			for client := range fw.clients {
+				log.Printf("Broadcasting message to client %v", client)
 				_, err := client.Write(messageJSON)
 				if err != nil {
 					log.Printf("Error broadcasting message: %v", err)

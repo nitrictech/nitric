@@ -482,8 +482,15 @@ func (c *NitricApp) Edit() error {
 	}
 	defer fileSync.Close()
 
+	buildServer, err := devserver.NewProjectBuild(c.fs, c.apiClient, devwsServer.Broadcast)
+	if err != nil {
+		return err
+	}
+
 	// subscribe the file sync to the websocket server
 	devwsServer.Subscribe(fileSync)
+	// subscribe the build server to the websocket server
+	devwsServer.Subscribe(buildServer)
 
 	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 
