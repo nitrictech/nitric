@@ -89,7 +89,6 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 
 	stackPath, err := engine.Apply(appSpec)
 	if err != nil {
-		fmt.Print("Error applying platform: ", err)
 		n.broadcast(Message[any]{
 			Type: "nitricBuildError",
 			Payload: ProjectBuildError{
