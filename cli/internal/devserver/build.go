@@ -35,8 +35,6 @@ func (n *NitricProjectBuild) OnConnect(send SendFunc) {
 }
 
 func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
-
-	fmt.Println("Received message", string(message))
 	var buildMessage Message[ProjectBuild]
 	err := json.Unmarshal(message, &buildMessage)
 	if err != nil {
@@ -46,13 +44,9 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 
 	// Not the right message type continue
 	if buildMessage.Type != "nitricBuild" {
-		fmt.Println("Received message of type", buildMessage.Type, "expected nitricBuild")
 		return
 	}
 
-	fmt.Println("Received build message for target", buildMessage.Payload.Target)
-
-	fmt.Println("Loading Spec")
 	// If we're sent a build command then start building the project
 	appSpec, err := schema.LoadFromFile(n.fs, "nitric.yaml", true)
 	if err != nil {
@@ -79,7 +73,6 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 	// 	return
 	// }
 
-	fmt.Println("Loading Platform")
 	platform, err := terraform.PlatformFromId(n.fs, buildMessage.Payload.Target, platformRepository)
 	if err != nil {
 		n.broadcast(Message[any]{
@@ -88,12 +81,12 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 				Message: err.Error(),
 			},
 		})
+		return
 	}
 
 	repo := plugins.NewPluginRepository(n.apiClient)
 	engine := terraform.New(platform, terraform.WithRepository(repo))
 
-	fmt.Println("Applying Platform")
 	stackPath, err := engine.Apply(appSpec)
 	if err != nil {
 		fmt.Print("Error applying platform: ", err)
@@ -105,10 +98,6 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 		})
 		return
 	}
-
-	fmt.Println("Build success")
-
-	// broadcast build success message
 
 	n.broadcast(Message[any]{
 		Type: "nitricBuildSuccess",
