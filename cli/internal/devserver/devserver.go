@@ -2,7 +2,6 @@ package devserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -47,8 +46,10 @@ type BroadcastFunc func(Message[any])
 
 // Broadcast a message to connected clients
 func (fw *DevWebsockerServer) Broadcast(message Message[any]) {
-	fmt.Println("Broadcasting message", message)
-	fw.broadcast <- message
+	// Don't block as processes may want to broadcast on their own on message thread
+	go func() {
+		fw.broadcast <- message
+	}()
 }
 
 func (fw *DevWebsockerServer) unsubscribe(subscriberId string) {
@@ -62,7 +63,6 @@ func (fw *DevWebsockerServer) notify(message json.RawMessage) {
 	fw.mutex.RLock()
 	defer fw.mutex.RUnlock()
 	for _, subscriber := range fw.subscribers {
-		fmt.Println("Notifying subscriber", subscriber)
 		subscriber.OnMessage(message)
 	}
 }
@@ -123,6 +123,7 @@ func (fw *DevWebsockerServer) run() {
 	for {
 		select {
 		case client := <-fw.register:
+
 			fw.mutex.Lock()
 			fw.clients[client] = true
 			fw.mutex.Unlock()
@@ -131,27 +132,20 @@ func (fw *DevWebsockerServer) run() {
 			for _, subscriber := range fw.subscribers {
 				subscriber.OnConnect(send)
 			}
-			// log.Printf("Client connected. Total clients: %d", len(fw.clients))
-
 		case client := <-fw.unregister:
 			fw.mutex.Lock()
 			delete(fw.clients, client)
 			fw.mutex.Unlock()
 			client.Close()
-			// log.Printf("Client disconnected. Total clients: %d", len(fw.clients))
-
 		case message := <-fw.broadcast:
-			fmt.Println("got message", message)
 			messageJSON, err := json.Marshal(message)
 			if err != nil {
 				log.Printf("Error marshaling message: %v", err)
 				continue
 			}
 
-			fmt.Println("Getting lock", message)
 			fw.mutex.RLock()
 			for client := range fw.clients {
-				log.Printf("Broadcasting message to client %v", client)
 				_, err := client.Write(messageJSON)
 				if err != nil {
 					log.Printf("Error broadcasting message: %v", err)

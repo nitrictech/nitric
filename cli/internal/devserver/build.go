@@ -109,6 +109,7 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 	fmt.Println("Build success")
 
 	// broadcast build success message
+
 	n.broadcast(Message[any]{
 		Type: "nitricBuildSuccess",
 		Payload: ProjectBuildSuccess{
