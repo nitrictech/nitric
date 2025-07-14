@@ -150,14 +150,14 @@ func Load(cmd *cobra.Command) (*Config, error) {
 
 	v.SetConfigType("yaml")
 
+	// Search the current .nitric directory first
+	v.AddConfigPath(LocalConfigPath())
+
 	homeConfigPath, err := HomeConfigPath()
 	if err != nil {
 		return nil, err
 	}
 	v.AddConfigPath(homeConfigPath)
-
-	// Search the current .nitric directory first
-	v.AddConfigPath(LocalConfigPath())
 
 	c := Config{
 		v: v,
