@@ -2,12 +2,30 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 )
+
+func makeRelativeIfInCurrentDir(file string) string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return file
+	}
+	rel, err := filepath.Rel(wd, file)
+	if err != nil {
+		return file
+	}
+	if strings.HasPrefix(rel, "..") {
+		return file
+	}
+	return rel
+}
 
 // NewConfigCmd creates the config command
 func NewConfigCmd(injector do.Injector) *cobra.Command {
@@ -42,7 +60,9 @@ nitric config --list
 			}
 
 			file := conf.FileUsed()
-			if file == "" {
+			if file != "" {
+				file = makeRelativeIfInCurrentDir(file)
+			} else {
 				file = "none (using defaults)"
 			}
 
