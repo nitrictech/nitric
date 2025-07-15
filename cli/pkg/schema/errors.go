@@ -9,6 +9,34 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+type NitricErrorTemplate struct {
+	gojsonschema.DefaultLocale
+}
+
+type validationError struct {
+	gojsonschema.ResultErrorFields
+}
+
+var _ gojsonschema.ResultError = &validationError{}
+
+func newValidationError(field string, description string) gojsonschema.ResultError {
+	e := &validationError{}
+
+	e.SetDescription(description)
+	e.SetType("invalid_property")
+	e.SetContext(gojsonschema.NewJsonContext(field, nil))
+	e.SetValue(map[string]interface{}{})
+
+	return e
+}
+
+type ValidationError struct {
+	Path        string `json:"path"`
+	Message     string `json:"message"`
+	ErrorType   string `json:"errorType"`
+	YamlContext string `json:"yamlContext"`
+}
+
 type fieldPath struct {
 	IsRoot       bool
 	ResourceType string
@@ -70,7 +98,7 @@ func (ef *errorFormatter) FormatErrorPrefix() string {
 	}
 
 	if path.Property == "" {
-		return fmt.Sprintf("%s %s has an invalid config", path.ResourceType, path.ResourceName)
+		return fmt.Sprintf("%s %s has an invalid property", path.ResourceType, path.ResourceName)
 	}
 
 	if path.SubProperty == "" {
@@ -107,7 +135,7 @@ func (ef *errorFormatter) ShouldSkipError(errType string) bool {
 
 func PrettyPrintPattern(pattern *regexp.Regexp) string {
 	patterns := map[string]string{
-		`^(([a-z]+)/([a-z]+)@(\d+)|file:([^\s]+))$`: "Must be in the format: `<source>/<destination>@<version>` or `file:<path>`",
+		`^(([a-z]+)/([a-z]+)@(\d+)|file:([^\s]+))$`: "Must be in the format: `<team>/<platform>@<revision>` or `file:<path>`",
 	}
 
 	plainTextPattern, ok := patterns[pattern.String()]
@@ -116,10 +144,6 @@ func PrettyPrintPattern(pattern *regexp.Regexp) string {
 	}
 
 	return plainTextPattern
-}
-
-type NitricErrorTemplate struct {
-	gojsonschema.DefaultLocale
 }
 
 func (t *NitricErrorTemplate) ErrorFormat() string {
@@ -162,17 +186,10 @@ func ErrorTemplateFunc() map[string]interface{} {
 	}
 }
 
-type ValidationError struct {
-	Path        string `json:"path"`
-	Message     string `json:"message"`
-	ErrorType   string `json:"errorType"`
-	YamlContext string `json:"yamlContext"`
-}
+func GetSchemaValidationErrors(errs []gojsonschema.ResultError) []ValidationError {
+	validationErrors := []ValidationError{}
 
-func GetSchemaValidationErrors(results *gojsonschema.Result) []ValidationError {
-	errs := []ValidationError{}
-
-	for _, err := range results.Errors() {
+	for _, err := range errs {
 		formatter := newErrorFormatter(err.Field())
 
 		// Skip certain errors based on context
@@ -182,7 +199,7 @@ func GetSchemaValidationErrors(results *gojsonschema.Result) []ValidationError {
 
 		yamlContext := GenerateYamlContext(err, err.Description())
 
-		errs = append(errs, ValidationError{
+		validationErrors = append(validationErrors, ValidationError{
 			Path:        err.Field(),
 			Message:     err.String(),
 			ErrorType:   err.Type(),
@@ -190,11 +207,11 @@ func GetSchemaValidationErrors(results *gojsonschema.Result) []ValidationError {
 		})
 	}
 
-	slices.SortFunc(errs, func(a, b ValidationError) int {
+	slices.SortFunc(validationErrors, func(a, b ValidationError) int {
 		return strings.Compare(a.Path, b.Path)
 	})
 
-	return errs
+	return validationErrors
 }
 
 /*
@@ -206,8 +223,10 @@ func GetSchemaValidationErrors(results *gojsonschema.Result) []ValidationError {
 	| YAML Context
 	|
 */
-func FormatValidationErrors(results *gojsonschema.Result) string {
-	errs := GetSchemaValidationErrors(results)
+func FormatValidationErrors(errs []ValidationError) string {
+	if len(errs) == 0 {
+		return ""
+	}
 
 	arrow := "--->"
 	linePrefix := "  |"
