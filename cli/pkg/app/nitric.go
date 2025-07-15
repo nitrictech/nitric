@@ -68,8 +68,7 @@ func (c *NitricApp) Templates() error {
 	templates, err := c.apiClient.GetTemplates()
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
-			fmt.Println("Please login first, using the `login` command")
-			fmt.Printf("%+v\n", err)
+			fmt.Println("Please login first, using the", c.styles.emphasize.Render(version.GetCommand("login")), "command")
 			return nil
 		}
 
