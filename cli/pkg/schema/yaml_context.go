@@ -41,8 +41,15 @@ func (b *YamlContextBuilder) String() string {
 func GenerateYamlContext(err gojsonschema.ResultError, updatedDescription string) string {
 	path := err.Field()
 	yaml := YamlContextBuilder{}
-
 	parts := strings.Split(path, ".")
+
+	// Handle missing root properties
+	if parts[0] == "(root)" {
+		yaml.WriteYamlKey(err.Details()["property"], 0)
+		yaml.WriteError(updatedDescription)
+		return yaml.String()
+	}
+
 	if len(parts) > 0 {
 		for i, part := range parts {
 			yaml.WriteYamlKey(part, i)
