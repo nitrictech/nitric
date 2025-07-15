@@ -39,8 +39,6 @@ type SimulationServer struct {
 	services       map[string]*service.ServiceSimulation
 }
 
-const DEFAULT_SERVER_PORT = "50051"
-
 var nitric = style.Purple(icons.Lightning + " " + version.ProductName)
 
 func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) string {
@@ -50,6 +48,13 @@ func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) strin
 
 	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder(), false, true).Render(intro)
 }
+
+const (
+	NITRIC_SERVICE_MIN_PORT = 50051
+	NITRIC_SERVICE_MAX_PORT = 50999
+	ENTRYPOINT_MIN_PORT     = 3000
+	ENTRYPOINT_MAX_PORT     = 3999
+)
 
 func (s *SimulationServer) startNitricApis() error {
 	srv := grpc.NewServer()
@@ -61,9 +66,16 @@ func (s *SimulationServer) startNitricApis() error {
 	port := os.Getenv("NITRIC_PORT")
 	if port == "" {
 		port = DEFAULT_SERVER_PORT
+		openPort, err := netx.GetNextPort(netx.MinPort(NITRIC_SERVICE_MIN_PORT), netx.MaxPort(NITRIC_SERVICE_MAX_PORT))
+		if err != nil {
+			return fmt.Errorf("failed to find open port: %v", err)
+		}
+
+		port = fmt.Sprintf("%d", openPort)
 	}
 
 	addr := net.JoinHostPort(host, port)
+	os.Setenv("NITRIC_SERVICE_ADDRESS", addr)
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -75,11 +87,6 @@ func (s *SimulationServer) startNitricApis() error {
 
 	return nil
 }
-
-const (
-	ENTRYPOINT_MIN_PORT = 3000
-	ENTRYPOINT_MAX_PORT = 3999
-)
 
 var greenCheck = style.Green(icons.Check)
 
