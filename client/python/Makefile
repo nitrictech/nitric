@@ -11,8 +11,9 @@ BUILD_DIR := dist
 generate-proto:
 	@echo "Ensuring virtual environment exists..."
 	@test -d $(VENV) || python3 -m venv $(VENV)
-	@$(PYTHON) -m pip install -q -U pip grpcio-tools
-	@$(VENV)/bin/python -m ensurepip --upgrade
+	@echo "Ensuring uv is installed in the virtual environment..."
+	@$(PYTHON) -m pip install -q -U uv || $(PYTHON) -m ensurepip --upgrade && $(PYTHON) -m pip install -q -U uv
+	@$(VENV)/bin/uv pip install -q -U grpcio-tools
 
 	@echo "Cleaning old generated files..."
 	@rm -rf $(OUTPUT)
@@ -34,11 +35,11 @@ generate-proto:
 
 install:
 	@echo "Installing module in editable mode..."
-	@$(PYTHON) -m pip install -e .
+	@$(VENV)/bin/uv pip install -e .
 
 build:
 	@echo "Building Python package..."
-	@$(PYTHON) -m pip install -q build
+	@$(VENV)/bin/uv pip install -q build
 	@$(PYTHON) -m build
 
 clean:
@@ -48,11 +49,11 @@ clean:
 
 publish-test: build
 	@echo "Publishing to Test PyPI..."
-	@$(PYTHON) -m pip install -q twine
+	@$(VENV)/bin/uv pip install -q twine
 	@$(PYTHON) -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*.tar.gz dist/*.whl
 
 publish-prod: build
 	@echo "Publishing to PyPI..."
-	@$(PYTHON) -m pip install -q twine
+	@$(VENV)/bin/uv pip install -q twine
 	@$(PYTHON) -m twine upload dist/*.tar.gz dist/*.whl
 

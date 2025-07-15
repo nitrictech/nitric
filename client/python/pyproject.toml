@@ -1,5 +1,5 @@
 [project]
-name = "veetwo-client"
+name = "nitric-client"
 version = "0.1.0"
 description = "Nitric Python Client"
 dependencies = [
