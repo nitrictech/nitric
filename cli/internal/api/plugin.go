@@ -16,6 +16,10 @@ func (c *NitricApiClient) GetPluginManifest(team, lib, libVersion, name string) 
 		return nil, fmt.Errorf("failed to connect to %s plugin details endpoint: %v", version.ProductName, err)
 	}
 
+	if response.StatusCode == 404 {
+		return nil, ErrNotFound
+	}
+
 	if response.StatusCode != 200 {
 		return nil, fmt.Errorf("received non 200 response from %s plugin details endpoint: %d", version.ProductName, response.StatusCode)
 	}
