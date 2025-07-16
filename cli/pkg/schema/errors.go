@@ -146,6 +146,8 @@ func PrettyPrintPattern(pattern *regexp.Regexp) string {
 	return plainTextPattern
 }
 
+// These are used to format the error messages in the gojsonschema Locale
+// Unused here, but used when gojsonschema validates the schema
 func (t *NitricErrorTemplate) ErrorFormat() string {
 	return "{{ error_prefix .field}}: {{.description}}"
 }
@@ -166,24 +168,23 @@ func (t *NitricErrorTemplate) Required() string {
 	return "The {{.property}} property is required"
 }
 
-func ErrorTemplateFunc() map[string]interface{} {
-	return map[string]interface{}{
-		"error_prefix": func(field string) string {
-			formatter := newErrorFormatter(field)
-			return formatter.FormatErrorPrefix()
-		},
-		"invalid_property_name": func(field string) string {
-			formatter := newErrorFormatter(field)
-			return formatter.FormatInvalidProperty()
-		},
-		"one_of": func(field string) string {
-			formatter := newErrorFormatter(field)
-			return formatter.FormatNumberOneOf()
-		},
-		"pretty_print_pattern": func(pattern *regexp.Regexp) string {
-			return PrettyPrintPattern(pattern)
-		},
-	}
+// Used as function map that can be used when templating the error messages
+var ErrorTemplateFunc = map[string]interface{}{
+	"error_prefix": func(field string) string {
+		formatter := newErrorFormatter(field)
+		return formatter.FormatErrorPrefix()
+	},
+	"invalid_property_name": func(field string) string {
+		formatter := newErrorFormatter(field)
+		return formatter.FormatInvalidProperty()
+	},
+	"one_of": func(field string) string {
+		formatter := newErrorFormatter(field)
+		return formatter.FormatNumberOneOf()
+	},
+	"pretty_print_pattern": func(pattern *regexp.Regexp) string {
+		return PrettyPrintPattern(pattern)
+	},
 }
 
 func GetSchemaValidationErrors(errs []gojsonschema.ResultError) []ValidationError {
@@ -228,17 +229,19 @@ func FormatValidationErrors(errs []ValidationError) string {
 		return ""
 	}
 
-	arrow := "--->"
-	linePrefix := "  |"
 	var errsStr strings.Builder
+
+	const arrow = "--->"
+	const linePrefix = "  |"
+
 	for _, err := range errs {
-		errsStr.WriteString(fmt.Sprintf("%s %s\n", arrow, err.Message))
+		fmt.Fprintf(&errsStr, "%s %s\n", arrow, err.Message)
 
 		for _, line := range strings.Split(err.YamlContext, "\n") {
-			errsStr.WriteString(fmt.Sprintf("%s %s\n", linePrefix, line))
+			fmt.Fprintf(&errsStr, "%s %s\n", linePrefix, line)
 		}
 
-		errsStr.WriteString(fmt.Sprintf("%s\n\n", linePrefix))
+		fmt.Fprintf(&errsStr, "%s\n\n", linePrefix)
 	}
 
 	return errsStr.String()

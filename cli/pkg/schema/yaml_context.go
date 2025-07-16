@@ -2,7 +2,6 @@ package schema
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -21,12 +20,16 @@ func (b *YamlContextBuilder) WriteError(s string) (int, error) {
 
 func (b *YamlContextBuilder) WriteYamlKey(s interface{}, indent int) (int, error) {
 	indentStr := strings.Repeat("  ", indent)
-	// If the key is an integer, it means its an array index, replace it with a dash.
 	keyStr := ""
-	if _, err := strconv.Atoi(fmt.Sprintf("%v", s)); err == nil {
+
+	switch s.(type) {
+	case int:
+		// If the key is an integer, it means its an array index, replace it with a dash.
 		keyStr = fmt.Sprintf("\n%s-", indentStr)
-	} else {
+	case string:
 		keyStr = fmt.Sprintf("\n%s%s:", indentStr, s)
+	default:
+		keyStr = fmt.Sprintf("\n%s%v:", indentStr, s)
 	}
 
 	styledKeyStr := lipgloss.NewStyle().Foreground(colors.Blue).Render(keyStr)
@@ -68,7 +71,7 @@ func GenerateYamlContext(err gojsonschema.ResultError, updatedDescription string
 						yaml.WriteError(updatedDescription)
 					}
 				} else {
-					yaml.WriteString(fmt.Sprintf(" %v", err.Value()))
+					fmt.Fprintf(&yaml, " %v", err.Value())
 					yaml.WriteError(updatedDescription)
 				}
 			}
@@ -87,7 +90,7 @@ func writeMapValue(contextBuilder *YamlContextBuilder, errMap map[string]interfa
 			if _, ok := value.(map[string]interface{}); ok {
 				writeMapValue(contextBuilder, value.(map[string]interface{}), indent+1)
 			} else {
-				contextBuilder.WriteString(fmt.Sprintf(" %v", value))
+				fmt.Fprintf(contextBuilder, " %v", value)
 			}
 		}
 	} else {
