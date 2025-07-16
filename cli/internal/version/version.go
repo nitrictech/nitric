@@ -2,7 +2,6 @@ package version
 
 import (
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -10,8 +9,8 @@ var (
 	// Name of the product
 	ProductName = "Nitric"
 
-	// The name of the command that this process was executed as
-	CommandName = os.Args[0]
+	// The name of the binary/command, for use in help messages, e.g. "nitric version"
+	CommandName = "nitric"
 
 	// Raw is the string representation of the version. This will be replaced
 	// with the calculated version at build time.
