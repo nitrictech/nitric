@@ -5,17 +5,13 @@ import (
 	"fmt"
 
 	"github.com/nitrictech/nitric/cli/internal/api"
-	"github.com/nitrictech/nitric/cli/internal/platforms"
-	"github.com/nitrictech/nitric/cli/internal/plugins"
-	"github.com/nitrictech/nitric/cli/pkg/schema"
-	"github.com/nitrictech/nitric/engines/terraform"
-	"github.com/spf13/afero"
+	"github.com/nitrictech/nitric/cli/internal/build"
 )
 
 type NitricProjectBuild struct {
-	fs        afero.Fs
 	apiClient *api.NitricApiClient
 	broadcast BroadcastFunc
+	builder   *build.BuilderService
 }
 
 type ProjectBuild struct {
@@ -47,47 +43,7 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 		return
 	}
 
-	// If we're sent a build command then start building the project
-	appSpec, err := schema.LoadFromFile(n.fs, "nitric.yaml", true)
-	if err != nil {
-		// TODO: Log/Broadcast the error
-		n.broadcast(Message[any]{
-			Type: "nitricBuildError",
-			Payload: ProjectBuildError{
-				Message: err.Error(),
-			},
-		})
-		return
-	}
-
-	platformRepository := platforms.NewPlatformRepository(n.apiClient)
-
-	if len(appSpec.Targets) == 0 {
-		// Just in case there is some kind of desync between the client and server
-		n.broadcast(Message[any]{
-			Type: "nitricBuildError",
-			Payload: ProjectBuildError{
-				Message: "No targets specified in nitric.yaml",
-			},
-		})
-		return
-	}
-
-	platform, err := terraform.PlatformFromId(n.fs, buildMessage.Payload.Target, platformRepository)
-	if err != nil {
-		n.broadcast(Message[any]{
-			Type: "nitricBuildError",
-			Payload: ProjectBuildError{
-				Message: err.Error(),
-			},
-		})
-		return
-	}
-
-	repo := plugins.NewPluginRepository(n.apiClient)
-	engine := terraform.New(platform, terraform.WithRepository(repo))
-
-	stackPath, err := engine.Apply(appSpec)
+	stackPath, err := n.builder.BuildProjectFromFileForTarget("nitric.yaml", buildMessage.Payload.Target)
 	if err != nil {
 		n.broadcast(Message[any]{
 			Type: "nitricBuildError",
@@ -106,11 +62,11 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 	})
 }
 
-func NewProjectBuild(fs afero.Fs, apiClient *api.NitricApiClient, broadcast BroadcastFunc) (*NitricProjectBuild, error) {
+func NewProjectBuild(apiClient *api.NitricApiClient, builder *build.BuilderService, broadcast BroadcastFunc) (*NitricProjectBuild, error) {
 	buildServer := &NitricProjectBuild{
-		fs:        fs,
 		apiClient: apiClient,
 		broadcast: broadcast,
+		builder:   builder,
 	}
 
 	return buildServer, nil

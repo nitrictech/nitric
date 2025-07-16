@@ -17,10 +17,9 @@ import (
 	"github.com/hashicorp/go-getter"
 	"github.com/nitrictech/nitric/cli/internal/api"
 	"github.com/nitrictech/nitric/cli/internal/browser"
+	"github.com/nitrictech/nitric/cli/internal/build"
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/devserver"
-	"github.com/nitrictech/nitric/cli/internal/platforms"
-	"github.com/nitrictech/nitric/cli/internal/plugins"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
 	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
@@ -30,7 +29,6 @@ import (
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/nitrictech/nitric/cli/pkg/tui"
 	"github.com/nitrictech/nitric/cli/pkg/tui/ask"
-	"github.com/nitrictech/nitric/engines/terraform"
 	"github.com/samber/do/v2"
 	"github.com/spf13/afero"
 )
@@ -40,6 +38,7 @@ type NitricApp struct {
 	apiClient *api.NitricApiClient
 	fs        afero.Fs
 	styles    Styles
+	builder   *build.BuilderService
 }
 
 type Styles struct {
@@ -51,12 +50,13 @@ type Styles struct {
 func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 	config := do.MustInvoke[*config.Config](injector)
 	apiClient := do.MustInvoke[*api.NitricApiClient](injector)
+	builder := do.MustInvoke[*build.BuilderService](injector)
 	fs, err := do.Invoke[afero.Fs](injector)
 	if err != nil {
 		fs = afero.NewOsFs()
 	}
 
-	return &NitricApp{config: config, apiClient: apiClient, fs: fs, styles: Styles{
+	return &NitricApp{config: config, apiClient: apiClient, fs: fs, builder: builder, styles: Styles{
 		emphasize: lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
 		faint:     lipgloss.NewStyle().Faint(true),
 		success:   lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
@@ -348,8 +348,6 @@ func (c *NitricApp) Build() error {
 		return err
 	}
 
-	platformRepository := platforms.NewPlatformRepository(c.apiClient)
-
 	if len(appSpec.Targets) == 0 {
 		nitricEdit := c.styles.emphasize.Render(version.GetCommand("edit"))
 		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
@@ -383,26 +381,8 @@ func (c *NitricApp) Build() error {
 		}
 	}
 
-	if targetPlatform == "" {
-		return fmt.Errorf("no target platform selected")
-	}
-
-	platform, err := terraform.PlatformFromId(c.fs, targetPlatform, platformRepository)
-	if errors.Is(err, terraform.ErrUnauthenticated) {
-		fmt.Printf("Please login first, using the %s command\n", c.styles.emphasize.Render(version.GetCommand("login")))
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	fmt.Fprintf(os.Stdout, "\nBuilding application for %s\n\n", c.styles.emphasize.Render(targetPlatform))
-
-	repo := plugins.NewPluginRepository(c.apiClient)
-	engine := terraform.New(platform, terraform.WithRepository(repo))
-
-	stackPath, err := engine.Apply(appSpec)
+	stackPath, err := c.builder.BuildProjectForTarget(appSpec, targetPlatform)
 	if err != nil {
-		fmt.Print("Error applying platform: ", err)
 		return err
 	}
 
@@ -482,7 +462,7 @@ func (c *NitricApp) Edit() error {
 	}
 	defer fileSync.Close()
 
-	buildServer, err := devserver.NewProjectBuild(c.fs, c.apiClient, devwsServer.Broadcast)
+	buildServer, err := devserver.NewProjectBuild(c.apiClient, c.builder, devwsServer.Broadcast)
 	if err != nil {
 		return err
 	}
