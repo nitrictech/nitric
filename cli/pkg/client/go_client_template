@@ -4,6 +4,7 @@ package {{.Package}}
 
 import (
 	"fmt"
+	"os"
 
 	{{ if .Buckets }}
 	storagepb "github.com/nitrictech/nitric/proto/storage/v2"
@@ -22,7 +23,12 @@ type Client struct {
 
 // NewClient creates a new set of all bucket clients
 func NewClient() (*Client, error) {
-	cc, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	address := os.Getenv("NITRIC_SERVICE_ADDRESS")
+	if address == "" {
+		address = "localhost:50051"
+	}
+
+	cc, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to nitric runtime server: %w", err)
 	}

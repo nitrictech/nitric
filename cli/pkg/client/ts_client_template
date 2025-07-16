@@ -1,13 +1,15 @@
 import { grpc, {{if .Buckets}} StorageClient, Bucket {{end}}} from "@nitric/client";
 
+const SERVICE_ADDRESS = `${process.env.NITRIC_SERVICE_ADDRESS || "localhost:50051"}`;
+
 export class NitricClient {
   private storageClient: InstanceType<typeof StorageClient>;
   {{range .Buckets}}
   public {{.CamelCase}}: Bucket;
   {{end}}
 
-  constructor(address: string = "localhost:50051", credentials: grpc.ChannelCredentials = grpc.credentials.createInsecure()) {
-    this.storageClient = new StorageClient(address, credentials);
+  constructor(credentials: grpc.ChannelCredentials = grpc.credentials.createInsecure()) {
+    this.storageClient = new StorageClient(SERVICE_ADDRESS, credentials);
     {{range .Buckets}}
     this.{{.CamelCase}} = new Bucket(this.storageClient, "{{.Unmodified}}");
     {{end}}

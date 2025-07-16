@@ -58,9 +58,15 @@ func (r ReservedPort) Release() {
 	portReservationsLock.Lock()
 	defer portReservationsLock.Unlock()
 
-	if _, ok := portReservations[r]; ok {
-		delete(portReservations, r)
-	}
+	delete(portReservations, r)
+}
+
+func (r ReservedPort) String() string {
+	return fmt.Sprintf("%d", r)
+}
+
+func ReservePort(port int) (ReservedPort, error) {
+	return GetNextPort(MinPort(port), MaxPort(port))
 }
 
 func GetNextPort(opts ...getNextListenerOption) (ReservedPort, error) {

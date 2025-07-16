@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -35,11 +36,10 @@ type SimulationServer struct {
 	storagepb.UnimplementedStorageServer
 	pubsubpb.UnimplementedPubsubServer
 
+	apiPort        netx.ReservedPort
 	fileServerPort int
 	services       map[string]*service.ServiceSimulation
 }
-
-const DEFAULT_SERVER_PORT = "50051"
 
 var nitric = style.Purple(icons.Lightning + " " + version.ProductName)
 
@@ -51,6 +51,13 @@ func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) strin
 	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder(), false, true).Render(intro)
 }
 
+const (
+	NITRIC_SERVICE_MIN_PORT = 50051
+	NITRIC_SERVICE_MAX_PORT = 50999
+	ENTRYPOINT_MIN_PORT     = 3000
+	ENTRYPOINT_MAX_PORT     = 3999
+)
+
 func (s *SimulationServer) startNitricApis() error {
 	srv := grpc.NewServer()
 
@@ -58,12 +65,28 @@ func (s *SimulationServer) startNitricApis() error {
 	pubsubpb.RegisterPubsubServer(srv, s)
 
 	host := os.Getenv("NITRIC_HOST")
-	port := os.Getenv("NITRIC_PORT")
-	if port == "" {
-		port = DEFAULT_SERVER_PORT
+	portEnv := os.Getenv("NITRIC_PORT")
+
+	if portEnv != "" {
+		portInt, err := strconv.Atoi(portEnv)
+		if err != nil {
+			return fmt.Errorf("failed to parse port: %v", err)
+		}
+
+		s.apiPort, err = netx.ReservePort(portInt)
+		if err != nil {
+			return err
+		}
+	} else {
+		openPort, err := netx.GetNextPort(netx.MinPort(NITRIC_SERVICE_MIN_PORT), netx.MaxPort(NITRIC_SERVICE_MAX_PORT))
+		if err != nil {
+			return fmt.Errorf("failed to find open port: %v", err)
+		}
+
+		s.apiPort = openPort
 	}
 
-	addr := net.JoinHostPort(host, port)
+	addr := net.JoinHostPort(host, s.apiPort.String())
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -75,11 +98,6 @@ func (s *SimulationServer) startNitricApis() error {
 
 	return nil
 }
-
-const (
-	ENTRYPOINT_MIN_PORT = 3000
-	ENTRYPOINT_MAX_PORT = 3999
-)
 
 var greenCheck = style.Green(icons.Check)
 
@@ -221,7 +239,7 @@ func (s *SimulationServer) startServices(output io.Writer) (<-chan service.Servi
 			return nil, err
 		}
 
-		simulatedService, eventChan, err := service.NewServiceSimulation(serviceName, *serviceIntent, port)
+		simulatedService, eventChan, err := service.NewServiceSimulation(serviceName, *serviceIntent, port, s.apiPort)
 		if err != nil {
 			return nil, err
 		}
