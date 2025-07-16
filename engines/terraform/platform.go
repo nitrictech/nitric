@@ -217,7 +217,7 @@ func (r *ResourceBlueprint) ResolvePlugin(platform *PlatformSpec) (*Plugin, erro
 
 	lib, err := platform.GetLibrary(libraryName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to resolve library for plugin %s, %w", pluginId, err)
 	}
 
 	return &Plugin{Library: *lib, Name: pluginName}, nil
