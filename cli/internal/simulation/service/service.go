@@ -30,7 +30,8 @@ type ServiceSimulation struct {
 	stdOut io.Writer
 	stdErr io.Writer
 
-	port netx.ReservedPort
+	port    netx.ReservedPort
+	apiPort netx.ReservedPort
 }
 
 var _ SimulatedService = (*ServiceSimulation)(nil)
@@ -189,6 +190,7 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 		}
 
 		srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("PORT=%d", s.port))
+		srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("NITRIC_SERVICE_ADDRESS=localhost:%d", s.apiPort))
 
 		srvCommand.Dir = s.intent.Container.Docker.Context
 		srvCommand.Stdout = stdoutWriter
@@ -219,7 +221,7 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 	return nil
 }
 
-func NewServiceSimulation(name string, intent schema.ServiceIntent, port netx.ReservedPort) (*ServiceSimulation, <-chan ServiceEvent, error) {
+func NewServiceSimulation(name string, intent schema.ServiceIntent, port netx.ReservedPort, apiPort netx.ReservedPort) (*ServiceSimulation, <-chan ServiceEvent, error) {
 	if intent.Dev == nil {
 		return nil, nil, fmt.Errorf("service does not have a dev configuration and cannot be started")
 	}
@@ -236,5 +238,6 @@ func NewServiceSimulation(name string, intent schema.ServiceIntent, port netx.Re
 		currentStatus: Status_Init,
 		events:        eventsChan,
 		port:          port,
+		apiPort:       apiPort,
 	}, eventsChan, nil
 }

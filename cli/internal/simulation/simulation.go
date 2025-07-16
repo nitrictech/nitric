@@ -239,7 +239,7 @@ func (s *SimulationServer) startServices(output io.Writer) (<-chan service.Servi
 			return nil, err
 		}
 
-		simulatedService, eventChan, err := service.NewServiceSimulation(serviceName, *serviceIntent, port)
+		simulatedService, eventChan, err := service.NewServiceSimulation(serviceName, *serviceIntent, port, s.apiPort)
 		if err != nil {
 			return nil, err
 		}
