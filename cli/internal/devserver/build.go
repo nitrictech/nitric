@@ -62,17 +62,16 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 
 	platformRepository := platforms.NewPlatformRepository(n.apiClient)
 
-	// TODO: Do we care if the file contains no targets if the target we were given was in the message
-	// Probably but can add this error case back in if we want to
-	// if len(appSpec.Targets) == 0 {
-	// 	n.broadcast(Message[any]{
-	// 		Type: "nitricBuildError",
-	// 		Payload: ProjectBuildError{
-	// 			Message: "No targets specified in nitric.yaml",
-	// 		},
-	// 	})
-	// 	return
-	// }
+	if len(appSpec.Targets) == 0 {
+		// Just in case there is some kind of desync between the client and server
+		n.broadcast(Message[any]{
+			Type: "nitricBuildError",
+			Payload: ProjectBuildError{
+				Message: "No targets specified in nitric.yaml",
+			},
+		})
+		return
+	}
 
 	platform, err := terraform.PlatformFromId(n.fs, buildMessage.Payload.Target, platformRepository)
 	if err != nil {
