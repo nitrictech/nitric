@@ -34,7 +34,7 @@ func WithDebounce(debounce time.Duration) FileSyncOption {
 	}
 }
 
-func (fs *NitricFileSync) getFileContents() (*schema.Application, []byte, error) {
+func (fs *NitricFileSync) getApplicationFileContents() (*schema.Application, []byte, error) {
 	fs.file.Seek(0, 0) // Seek to beginning
 	contents, err := io.ReadAll(fs.file)
 	if err != nil {
@@ -53,7 +53,7 @@ func (fs *NitricFileSync) getFileContents() (*schema.Application, []byte, error)
 	return application, contents, nil
 }
 
-func (fs *NitricFileSync) setFileContents(contents []byte) error {
+func (fs *NitricFileSync) setApplicationFileContents(contents []byte) error {
 	_, err := fs.file.Seek(0, 0)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (fs *NitricFileSync) setFileContents(contents []byte) error {
 	return err
 }
 
-func (fs *NitricFileSync) checkFileValidity(contents []byte) ([]schema.ValidationError, error) {
+func validateApplicationSchema(contents []byte) ([]schema.ValidationError, error) {
 	appSpec, schemaResult, err := schema.ApplicationFromYaml(string(contents))
 	if err != nil {
 		return nil, err
@@ -86,9 +86,9 @@ func (fs *NitricFileSync) checkFileValidity(contents []byte) ([]schema.Validatio
 }
 
 func (fs *NitricFileSync) OnConnect(send SendFunc) {
-	application, contents, err := fs.getFileContents()
+	application, contents, err := fs.getApplicationFileContents()
 	if err != nil {
-		validationErrors, err := fs.checkFileValidity(contents)
+		validationErrors, err := validateApplicationSchema(contents)
 		if err != nil {
 			return
 		}
@@ -132,7 +132,7 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 		return
 	}
 
-	err = fs.setFileContents(buffer.Bytes())
+	err = fs.setApplicationFileContents(buffer.Bytes())
 	if err != nil {
 		fmt.Println("Error setting file contents:", err)
 		return
@@ -191,11 +191,11 @@ func (fs *NitricFileSync) watchFile() error {
 
 			var fileError error = nil
 			debounced, cancel = lo.NewDebounce(fs.debounce, func() {
-				application, contents, err := fs.getFileContents()
+				application, contents, err := fs.getApplicationFileContents()
 				if err != nil {
 					fileError = err
 
-					validationErrors, err := fs.checkFileValidity(contents)
+					validationErrors, err := validateApplicationSchema(contents)
 					if err != nil {
 						return
 					}

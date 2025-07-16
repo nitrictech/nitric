@@ -66,7 +66,9 @@ func (a *Application) checkNoNameConflicts() []gojsonschema.ResultError {
 
 func (a *Application) checkNoReservedNames() []gojsonschema.ResultError {
 	violations := []gojsonschema.ResultError{}
-	reservedNames := []string{"backend"}
+	reservedNames := []string{
+		"backend", // Backend is a reserved keyword in terraform
+	}
 
 	for name := range a.ServiceIntents {
 		if slices.Contains(reservedNames, name) {
