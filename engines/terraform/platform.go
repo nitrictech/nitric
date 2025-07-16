@@ -50,7 +50,7 @@ type Plugin struct {
 func (p PlatformSpec) GetLibrary(name string) (*Library, error) {
 	library, ok := p.Libraries[name]
 	if !ok {
-		return nil, fmt.Errorf("library %s not found in platform spec", name)
+		return nil, fmt.Errorf("library %s not found in platform spec, configured libraries in platform are: %v", name, slices.Collect(maps.Keys(p.Libraries)))
 	}
 
 	pattern := `^(?P<team>[^/]+)/(?P<library>[^@]+)@(?P<version>.+)$`
@@ -58,7 +58,7 @@ func (p PlatformSpec) GetLibrary(name string) (*Library, error) {
 
 	matches := re.FindStringSubmatch(library)
 	if len(matches) == 0 {
-		return nil, fmt.Errorf("invalid package format: %s", library)
+		return nil, fmt.Errorf("invalid library format: %s, expected format: <team>/<library>@<version>", library)
 	}
 
 	team := matches[re.SubexpIndex("team")]
@@ -209,7 +209,7 @@ func (r *ResourceBlueprint) ResolvePlugin(platform *PlatformSpec) (*Plugin, erro
 
 	pluginParts := strings.Split(pluginId, "/")
 	if len(pluginParts) != 2 {
-		return nil, fmt.Errorf("invalid plugin id %s", pluginId)
+		return nil, fmt.Errorf("invalid plugin id %s, expected format: <library>/<plugin>", pluginId)
 	}
 
 	libraryName := pluginParts[0]
@@ -217,7 +217,7 @@ func (r *ResourceBlueprint) ResolvePlugin(platform *PlatformSpec) (*Plugin, erro
 
 	lib, err := platform.GetLibrary(libraryName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to resolve library for plugin %s, %w", pluginId, err)
 	}
 
 	return &Plugin{Library: *lib, Name: pluginName}, nil

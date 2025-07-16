@@ -486,7 +486,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) (string, e
 		}
 		plug, err := e.resolvePlugin(spec.ResourceBlueprint)
 		if err != nil {
-			return "", fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
+			return "", err
 		}
 
 		nitricVar, err := tfDeployment.resolveService(intentName, serviceIntent, spec, plug)
@@ -513,7 +513,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) (string, e
 		}
 		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return "", fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
+			return "", err
 		}
 
 		servicesInput := map[string]any{}
@@ -568,7 +568,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) (string, e
 		}
 		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return "", fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
+			return "", err
 		}
 
 		servicesInput := map[string]any{}
@@ -618,7 +618,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) (string, e
 		}
 		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return "", fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
+			return "", err
 		}
 
 		var nitricVar *NitricServiceVariables = serviceInputs[intentName]
@@ -649,7 +649,7 @@ func (e *TerraformEngine) Apply(appSpec *app_spec_schema.Application) (string, e
 		}
 		plug, err := e.resolvePlugin(spec)
 		if err != nil {
-			return "", fmt.Errorf("could not find plugin %s: %v", spec.PluginId, err)
+			return "", err
 		}
 
 		nitricVar, err := tfDeployment.resolveEntrypointNitricVar(intentName, appSpec, resourceIntent)

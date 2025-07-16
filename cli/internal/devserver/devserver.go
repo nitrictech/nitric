@@ -46,7 +46,10 @@ type BroadcastFunc func(Message[any])
 
 // Broadcast a message to connected clients
 func (fw *DevWebsockerServer) Broadcast(message Message[any]) {
-	fw.broadcast <- message
+	// Don't block as processes may want to broadcast on their own on message thread
+	go func() {
+		fw.broadcast <- message
+	}()
 }
 
 func (fw *DevWebsockerServer) unsubscribe(subscriberId string) {
@@ -120,6 +123,7 @@ func (fw *DevWebsockerServer) run() {
 	for {
 		select {
 		case client := <-fw.register:
+
 			fw.mutex.Lock()
 			fw.clients[client] = true
 			fw.mutex.Unlock()
@@ -128,15 +132,11 @@ func (fw *DevWebsockerServer) run() {
 			for _, subscriber := range fw.subscribers {
 				subscriber.OnConnect(send)
 			}
-			// log.Printf("Client connected. Total clients: %d", len(fw.clients))
-
 		case client := <-fw.unregister:
 			fw.mutex.Lock()
 			delete(fw.clients, client)
 			fw.mutex.Unlock()
 			client.Close()
-			// log.Printf("Client disconnected. Total clients: %d", len(fw.clients))
-
 		case message := <-fw.broadcast:
 			messageJSON, err := json.Marshal(message)
 			if err != nil {
