@@ -41,17 +41,17 @@ func LoadFromFile(fs afero.Fs, path string, validate bool) (*Application, error)
 		return appSpec, nil
 	}
 
+	validationErrors := []ValidationError{}
 	if results != nil && !results.Valid() {
-		errs := ""
-		for _, err := range results.Errors() {
-			errs += fmt.Sprintf(" - %s\n", err)
-		}
-		return nil, fmt.Errorf("invalid %s application file %s:\n%s", version.ProductName, path, errs)
+		validationErrors = append(validationErrors, GetSchemaValidationErrors(results.Errors())...)
 	}
 
-	// Perform additional validation checks on the application
-	if err := appSpec.IsValid(); err != nil {
-		return nil, fmt.Errorf("invalid %s application file %s:\n%s", version.ProductName, path, err)
+	if appSpecErrors := appSpec.IsValid(); len(appSpecErrors) > 0 {
+		validationErrors = append(validationErrors, GetSchemaValidationErrors(appSpecErrors)...)
+	}
+
+	if len(validationErrors) > 0 {
+		return nil, fmt.Errorf("Your %s application file '%s' is invalid. It has the following issues:\n%s", version.ProductName, path, FormatValidationErrors(validationErrors))
 	}
 
 	return appSpec, nil

@@ -1,0 +1,99 @@
+package schema
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/nitrictech/nitric/cli/internal/style/colors"
+	"github.com/xeipuuv/gojsonschema"
+)
+
+type YamlContextBuilder struct {
+	strings.Builder
+}
+
+func (b *YamlContextBuilder) WriteError(s string) (int, error) {
+	errStr := lipgloss.NewStyle().Foreground(colors.Red).Render(fmt.Sprintf("\t# <-- %s", s))
+	return b.Builder.WriteString(errStr)
+}
+
+func (b *YamlContextBuilder) WriteYamlKey(s interface{}, indent int) (int, error) {
+	indentStr := strings.Repeat("  ", indent)
+	keyStr := ""
+
+	switch s.(type) {
+	case int:
+		// If the key is an integer, it means its an array index, replace it with a dash.
+		keyStr = fmt.Sprintf("\n%s-", indentStr)
+	case string:
+		keyStr = fmt.Sprintf("\n%s%s:", indentStr, s)
+	default:
+		keyStr = fmt.Sprintf("\n%s%v:", indentStr, s)
+	}
+
+	styledKeyStr := lipgloss.NewStyle().Foreground(colors.Blue).Render(keyStr)
+	return b.Builder.WriteString(styledKeyStr)
+}
+
+func (b *YamlContextBuilder) String() string {
+	return strings.TrimSpace(b.Builder.String())
+}
+
+// GenerateYamlContext generates the YAML context for validation errors
+func GenerateYamlContext(err gojsonschema.ResultError, updatedDescription string) string {
+	path := err.Field()
+	yaml := YamlContextBuilder{}
+	parts := strings.Split(path, ".")
+
+	// Handle missing root properties
+	if parts[0] == "(root)" {
+		yaml.WriteYamlKey(err.Details()["property"], 0)
+		yaml.WriteError(updatedDescription)
+		return yaml.String()
+	}
+
+	if len(parts) > 0 {
+		for i, part := range parts {
+			yaml.WriteYamlKey(part, i)
+
+			if i == len(parts)-1 {
+				// Add offending property key
+				if err.Type() == "required" || err.Type() == "additional_property_not_allowed" {
+					yaml.WriteYamlKey(err.Details()["property"], i+1)
+				}
+
+				if errMap, ok := err.Value().(map[string]interface{}); ok {
+					if len(errMap) > 0 {
+						yaml.WriteError(updatedDescription)
+						writeMapValue(&yaml, errMap, i)
+					} else {
+						yaml.WriteError(updatedDescription)
+					}
+				} else {
+					fmt.Fprintf(&yaml, " %v", err.Value())
+					yaml.WriteError(updatedDescription)
+				}
+			}
+		}
+	}
+
+	return yaml.String()
+}
+
+func writeMapValue(contextBuilder *YamlContextBuilder, errMap map[string]interface{}, indent int) {
+	// Only print if the value is not a map (i.e. a primitive type)
+	if len(errMap) > 0 {
+		for key, value := range errMap {
+			contextBuilder.WriteYamlKey(key, indent+1)
+
+			if _, ok := value.(map[string]interface{}); ok {
+				writeMapValue(contextBuilder, value.(map[string]interface{}), indent+1)
+			} else {
+				fmt.Fprintf(contextBuilder, " %v", value)
+			}
+		}
+	} else {
+		contextBuilder.WriteString(" {}")
+	}
+}

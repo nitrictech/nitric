@@ -22,6 +22,8 @@ type NitricFileSync struct {
 	lastSyncContents []byte
 }
 
+type FileSyncError Message[[]schema.ValidationError]
+
 type FileSyncMessage Message[schema.Application]
 
 type FileSyncOption func(*NitricFileSync)
@@ -32,7 +34,7 @@ func WithDebounce(debounce time.Duration) FileSyncOption {
 	}
 }
 
-func (fs *NitricFileSync) getFileContents() (*schema.Application, []byte, error) {
+func (fs *NitricFileSync) getApplicationFileContents() (*schema.Application, []byte, error) {
 	fs.file.Seek(0, 0) // Seek to beginning
 	contents, err := io.ReadAll(fs.file)
 	if err != nil {
@@ -51,7 +53,7 @@ func (fs *NitricFileSync) getFileContents() (*schema.Application, []byte, error)
 	return application, contents, nil
 }
 
-func (fs *NitricFileSync) setFileContents(contents []byte) error {
+func (fs *NitricFileSync) setApplicationFileContents(contents []byte) error {
 	_, err := fs.file.Seek(0, 0)
 	if err != nil {
 		return err
@@ -65,11 +67,39 @@ func (fs *NitricFileSync) setFileContents(contents []byte) error {
 	return err
 }
 
-func (fs *NitricFileSync) OnConnect(send SendFunc) {
-	application, _, err := fs.getFileContents()
+func validateApplicationSchema(contents []byte) ([]schema.ValidationError, error) {
+	appSpec, schemaResult, err := schema.ApplicationFromYaml(string(contents))
 	if err != nil {
+		return nil, err
+	}
+
+	validationErrors := []schema.ValidationError{}
+	if schemaResult != nil && !schemaResult.Valid() {
+		validationErrors = append(validationErrors, schema.GetSchemaValidationErrors(schemaResult.Errors())...)
+	}
+
+	if appSpecErrors := appSpec.IsValid(); len(appSpecErrors) > 0 {
+		validationErrors = append(validationErrors, schema.GetSchemaValidationErrors(appSpecErrors)...)
+	}
+
+	return validationErrors, nil
+}
+
+func (fs *NitricFileSync) OnConnect(send SendFunc) {
+	application, contents, err := fs.getApplicationFileContents()
+	if err != nil {
+		validationErrors, err := validateApplicationSchema(contents)
+		if err != nil {
+			return
+		}
+
+		send(Message[any]{
+			Type:    "nitricSyncError",
+			Payload: validationErrors,
+		})
 		return
 	}
+
 	// Send initial state to a newly connected client
 	send(Message[any]{
 		Type:    "nitricSync",
@@ -102,7 +132,7 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 		return
 	}
 
-	err = fs.setFileContents(buffer.Bytes())
+	err = fs.setApplicationFileContents(buffer.Bytes())
 	if err != nil {
 		fmt.Println("Error setting file contents:", err)
 		return
@@ -139,7 +169,7 @@ func (fs *NitricFileSync) Start() error {
 }
 
 // watchFile watches the file for changes and broadcasts updates
-func (fw *NitricFileSync) watchFile() error {
+func (fs *NitricFileSync) watchFile() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -147,7 +177,7 @@ func (fw *NitricFileSync) watchFile() error {
 	defer watcher.Close()
 
 	// Add the file to the watcher
-	err = watcher.Add(fw.filePath)
+	err = watcher.Add(fs.filePath)
 	if err != nil {
 		return err
 	}
@@ -160,25 +190,35 @@ func (fw *NitricFileSync) watchFile() error {
 			}
 
 			var fileError error = nil
-			debounced, cancel = lo.NewDebounce(fw.debounce, func() {
-				application, contents, err := fw.getFileContents()
+			debounced, cancel = lo.NewDebounce(fs.debounce, func() {
+				application, contents, err := fs.getApplicationFileContents()
 				if err != nil {
 					fileError = err
+
+					validationErrors, err := validateApplicationSchema(contents)
+					if err != nil {
+						return
+					}
+
+					fs.broadcast(Message[any]{
+						Type:    "nitricSyncError",
+						Payload: validationErrors,
+					})
 					return
 				}
 
-				if bytes.Equal(fw.lastSyncContents, contents) {
+				if bytes.Equal(fs.lastSyncContents, contents) {
 					return
 				}
 
-				fw.broadcast(Message[any]{
+				fs.broadcast(Message[any]{
 					Type:    "nitricSync",
 					Payload: *application,
 				})
 			})
 			debounced()
 			if fileError != nil {
-				return err
+				return fileError
 			}
 		}
 	}

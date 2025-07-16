@@ -2,7 +2,6 @@ package schema
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 
@@ -23,65 +22,6 @@ type Application struct {
 	EntrypointIntents map[string]*EntrypointIntent `json:"entrypoints,omitempty" yaml:"entrypoints,omitempty"`
 	DatabaseIntents   map[string]*DatabaseIntent   `json:"databases,omitempty" yaml:"databases,omitempty"`
 	WebsiteIntents    map[string]*WebsiteIntent    `json:"websites,omitempty" yaml:"websites,omitempty"`
-}
-
-// Perform additional validation checks on the application
-func (a *Application) IsValid() error {
-	// Check the names of all resources are unique
-	resourceNames := map[string]string{}
-	violations := []error{}
-
-	for name, _ := range a.ServiceIntents {
-		if existingType, ok := resourceNames[name]; ok {
-			violations = append(violations, fmt.Errorf("service name %s is already in use by a %s", name, existingType))
-			continue
-		}
-		resourceNames[name] = "service"
-	}
-
-	for name, _ := range a.BucketIntents {
-		if existingType, ok := resourceNames[name]; ok {
-			violations = append(violations, fmt.Errorf("bucket name %s is already in use by a %s", name, existingType))
-			continue
-		}
-		resourceNames[name] = "bucket"
-	}
-
-	for name, _ := range a.EntrypointIntents {
-		if existingType, ok := resourceNames[name]; ok {
-			violations = append(violations, fmt.Errorf("entrypoint name %s is already in use by a %s", name, existingType))
-			continue
-		}
-		resourceNames[name] = "entrypoint"
-	}
-
-	for name, _ := range a.DatabaseIntents {
-		if existingType, ok := resourceNames[name]; ok {
-			violations = append(violations, fmt.Errorf("database name %s is already in use by a %s", name, existingType))
-			continue
-		}
-		resourceNames[name] = "database"
-	}
-
-	for name, _ := range a.WebsiteIntents {
-		if existingType, ok := resourceNames[name]; ok {
-			violations = append(violations, fmt.Errorf("website name %s is already in use by a %s", name, existingType))
-			continue
-		}
-		resourceNames[name] = "website"
-	}
-
-	if len(violations) > 0 {
-		// format the violations as a list
-		violationsString := "Errors found in application:\n"
-		for _, violation := range violations {
-			violationsString += fmt.Sprintf(" - %s\n", violation)
-		}
-
-		return errors.New(violationsString)
-	}
-
-	return nil
 }
 
 func (a *Application) GetTypeForIntent(intent interface{}) (string, error) {
@@ -180,10 +120,11 @@ func ApplicationFromYaml(yamlString string) (*Application, *gojsonschema.Result,
 }
 
 func ApplicationFromJson(jsonString string) (*Application, *gojsonschema.Result, error) {
+	gojsonschema.ErrorTemplateFuncs = ErrorTemplateFunc
+	gojsonschema.Locale = &NitricErrorTemplate{}
+
 	schemaLoader := gojsonschema.NewStringLoader(ApplicationJsonSchemaString())
 	documentLoader := gojsonschema.NewStringLoader(jsonString)
-
-	appSchema, _ := gojsonschema.NewSchema(schemaLoader)
 
 	var app Application
 	err := json.Unmarshal([]byte(jsonString), &app)
@@ -191,10 +132,12 @@ func ApplicationFromJson(jsonString string) (*Application, *gojsonschema.Result,
 		return nil, nil, err
 	}
 
+	appSchema, _ := gojsonschema.NewSchema(schemaLoader)
+
 	result, err := appSchema.Validate(documentLoader)
 	if err != nil || !result.Valid() {
 		return &app, result, err
 	}
 
-	return &app, nil, nil
+	return &app, result, nil
 }

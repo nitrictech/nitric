@@ -73,6 +73,7 @@ func (fw *DevWebsockerServer) sendToClient(client *websocket.Conn) SendFunc {
 			log.Printf("Error marshaling message: %v", err)
 			return
 		}
+
 		client.Write(messageJSON)
 	}
 }
