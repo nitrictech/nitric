@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -35,6 +36,7 @@ type SimulationServer struct {
 	storagepb.UnimplementedStorageServer
 	pubsubpb.UnimplementedPubsubServer
 
+	apiPort        netx.ReservedPort
 	fileServerPort int
 	services       map[string]*service.ServiceSimulation
 }
@@ -63,19 +65,28 @@ func (s *SimulationServer) startNitricApis() error {
 	pubsubpb.RegisterPubsubServer(srv, s)
 
 	host := os.Getenv("NITRIC_HOST")
-	port := os.Getenv("NITRIC_PORT")
-	if port == "" {
-		port = DEFAULT_SERVER_PORT
+	portEnv := os.Getenv("NITRIC_PORT")
+
+	if portEnv != "" {
+		portInt, err := strconv.Atoi(portEnv)
+		if err != nil {
+			return fmt.Errorf("failed to parse port: %v", err)
+		}
+
+		s.apiPort, err = netx.ReservePort(portInt)
+		if err != nil {
+			return err
+		}
+	} else {
 		openPort, err := netx.GetNextPort(netx.MinPort(NITRIC_SERVICE_MIN_PORT), netx.MaxPort(NITRIC_SERVICE_MAX_PORT))
 		if err != nil {
 			return fmt.Errorf("failed to find open port: %v", err)
 		}
 
-		port = fmt.Sprintf("%d", openPort)
+		s.apiPort = openPort
 	}
 
-	addr := net.JoinHostPort(host, port)
-	os.Setenv("NITRIC_SERVICE_ADDRESS", addr)
+	addr := net.JoinHostPort(host, s.apiPort.String())
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
