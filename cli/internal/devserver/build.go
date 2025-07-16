@@ -57,6 +57,7 @@ func (n *NitricProjectBuild) OnMessage(message json.RawMessage) {
 				Message: err.Error(),
 			},
 		})
+		return
 	}
 
 	platformRepository := platforms.NewPlatformRepository(n.apiClient)
