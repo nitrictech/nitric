@@ -89,6 +89,21 @@ func (c *NitricApp) Templates() error {
 	return nil
 }
 
+// currentDirProjName returns a normalized version of the current directory as a name
+// or "my-project" if the name can't be normalized.
+func currentDirProjName() string {
+	const fallback = "my-project"
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fallback
+	}
+
+	currentDir := filepath.Base(cwd)
+
+	return normalizeDirectoryName(currentDir, fallback)
+}
+
 // Init initializes nitric for an existing project, creating a nitric.yaml file if it doesn't exist
 func (c *NitricApp) Init() error {
 	nitricYamlPath := filepath.Join(".", "nitric.yaml")
@@ -110,12 +125,22 @@ func (c *NitricApp) Init() error {
 	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.emphasize.Render(version.GetCommand("edit")))
 	fmt.Println()
 
+	defaultName := currentDirProjName()
+
 	// Project Name Prompt
 	var name string
 	err = ask.NewInput().
 		Title("Project name:").
 		Value(&name).
-		Validate(validateProjName).
+		Placeholder(defaultName).
+		Validate(func(name string) error {
+			// Allow blank, we'll use the default value in this case
+			if name == "" {
+				return nil
+			}
+
+			return isValidProjName(name)
+		}).
 		Run()
 
 	if errors.Is(err, huh.ErrUserAborted) {
@@ -124,6 +149,10 @@ func (c *NitricApp) Init() error {
 
 	if err != nil {
 		return err
+	}
+
+	if name == "" {
+		name = defaultName
 	}
 
 	fmt.Printf("Project name: %s\n", name)
@@ -173,17 +202,46 @@ func (c *NitricApp) Init() error {
 	return nil
 }
 
-func validateProjName(name string) error {
-	if name == "" {
-		return errors.New("project name is required")
-	}
-
+func isValidProjName(name string) error {
 	// Must be kebab-case
 	if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(name) {
 		return errors.New("project name must start with a letter and be lower kebab-case")
 	}
 
 	return nil
+}
+
+// normalizeDirectoryName converts a directory name to a valid project name
+func normalizeDirectoryName(dirName string, fallback string) string {
+	// Convert to lowercase
+	normalized := strings.ToLower(dirName)
+
+	// Replace spaces and underscores with dashes
+	normalized = strings.ReplaceAll(normalized, " ", "-")
+	normalized = strings.ReplaceAll(normalized, "_", "-")
+
+	// Remove any characters that aren't alphanumeric or dashes
+	re := regexp.MustCompile(`[^a-z0-9-]+`)
+	normalized = re.ReplaceAllString(normalized, "")
+
+	// Remove multiple consecutive dashes
+	re = regexp.MustCompile(`-+`)
+	normalized = re.ReplaceAllString(normalized, "-")
+
+	// Remove leading and trailing dashes
+	normalized = strings.Trim(normalized, "-")
+
+	// If the name doesn't start with a letter, prepend "project-"
+	if normalized != "" && !regexp.MustCompile(`^[a-z]`).MatchString(normalized) {
+		normalized = "project-" + normalized
+	}
+
+	// If still empty or invalid, use a default
+	if normalized == "" || isValidProjName(normalized) != nil {
+		return fallback
+	}
+
+	return normalized
 }
 
 // New handles the new project creation command logic
@@ -206,7 +264,13 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		err := ask.NewInput().
 			Title("Project name:").
 			Value(&projectName).
-			Validate(validateProjName).
+			Validate(func(name string) error {
+				if name == "" {
+					return errors.New("project name is required")
+				}
+
+				return isValidProjName(name)
+			}).
 			Run()
 
 		if errors.Is(err, huh.ErrUserAborted) {
