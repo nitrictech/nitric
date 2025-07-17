@@ -505,6 +505,8 @@ func (c *NitricApp) Edit() error {
 		fmt.Printf("Error opening browser: %v\n", err)
 	}
 
+	fmt.Println(c.styles.faint.Render("Use Ctrl-C to exit"))
+
 	// Wait for the file watcher to fail/return
 	return <-errChan
 }

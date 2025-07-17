@@ -364,6 +364,8 @@ func (s *SimulationServer) Start(output io.Writer) error {
 		fmt.Fprint(output, "\n")
 	}
 
+	fmt.Println(style.Gray("Use Ctrl-C to exit\n"))
+
 	// block on handling service outputs for now
 	s.handleServiceOutputs(output, svcEvents)
 
