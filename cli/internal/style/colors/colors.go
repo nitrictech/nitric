@@ -133,7 +133,7 @@ var Theme = huh.Theme{
 		TextInput: huh.TextInputStyles{
 			Cursor:      lipgloss.NewStyle(),
 			CursorText:  lipgloss.NewStyle(),
-			Placeholder: lipgloss.NewStyle(),
+			Placeholder: lipgloss.NewStyle().Faint(true),
 			Prompt:      lipgloss.NewStyle(),
 			Text:        lipgloss.NewStyle(),
 		},
