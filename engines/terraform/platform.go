@@ -31,9 +31,9 @@ type PlatformSpec struct {
 }
 
 type Variable struct {
-	Type        string
-	Description string
-	Default     interface{}
+	Type        string      `json:"type" yaml:"type"`
+	Description string      `json:"description" yaml:"description"`
+	Default     interface{} `json:"default" yaml:"default"`
 }
 
 type Library struct {
@@ -43,8 +43,8 @@ type Library struct {
 }
 
 type Plugin struct {
-	Library Library
-	Name    string
+	Library Library `json:"library" yaml:"library"`
+	Name    string  `json:"name" yaml:"name"`
 }
 
 func (p PlatformSpec) GetLibrary(name string) (*Library, error) {
