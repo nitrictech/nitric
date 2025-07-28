@@ -1,7 +1,7 @@
 package schema
 
 type Resource struct {
-	SubType string `json:"subtype,omitempty" yaml:"subtype,omitempty" jsonschema:"-"`
+	SubType string `json:"subtype,omitempty" yaml:"subtype,omitempty"`
 }
 
 func (r *Resource) GetSubType() string {
