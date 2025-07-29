@@ -43,7 +43,9 @@ func NewLogoutCmd(injector do.Injector) *cobra.Command {
 
 // NewAccessTokenCmd creates the access token command
 func NewAccessTokenCmd(injector do.Injector) *cobra.Command {
-	return &cobra.Command{
+	var refresh bool
+
+	cmd := &cobra.Command{
 		Use:   "access-token",
 		Short: "Get access token",
 		Long:  `Get the current access token.`,
@@ -52,7 +54,11 @@ func NewAccessTokenCmd(injector do.Injector) *cobra.Command {
 			if err != nil {
 				cobra.CheckErr(err)
 			}
-			app.AccessToken()
+			app.AccessToken(refresh)
 		},
 	}
+
+	cmd.Flags().BoolVarP(&refresh, "refresh", "r", false, "Retrieve a new access token, ignoring any cached tokens")
+
+	return cmd
 }

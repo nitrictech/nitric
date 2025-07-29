@@ -66,14 +66,19 @@ func (a *WorkOSAuth) Login() (*http.User, error) {
 	return a.tokens.User, nil
 }
 
-func (a *WorkOSAuth) GetAccessToken() (string, error) {
-
+func (a *WorkOSAuth) GetAccessToken(forceRefresh bool) (string, error) {
 	if a.tokens == nil {
 		tokens, err := a.tokenStore.GetTokens()
 		if err != nil {
 			return "", fmt.Errorf("no stored tokens found, please login: %w", err)
 		}
 		a.tokens = tokens
+	}
+
+	if forceRefresh {
+		if err := a.refreshToken(); err != nil {
+			return "", fmt.Errorf("token refresh failed: %w", err)
+		}
 	}
 
 	// Decode the JWT to check if it's expired
