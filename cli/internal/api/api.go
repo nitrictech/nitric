@@ -12,7 +12,7 @@ import (
 
 type TokenProvider interface {
 	// GetAccessToken returns the access token for the user
-	GetAccessToken() (string, error)
+	GetAccessToken(forceRefresh bool) (string, error)
 }
 
 type NitricApiClient struct {
@@ -50,7 +50,7 @@ func (c *NitricApiClient) get(path string, requiresAuth bool) (*http.Response, e
 			return nil, errors.Wrap(ErrPreconditionFailed, "no token provider provided")
 		}
 
-		token, err := c.tokenProvider.GetAccessToken()
+		token, err := c.tokenProvider.GetAccessToken(false)
 		if err != nil {
 			return nil, errors.Wrap(ErrUnauthenticated, err.Error())
 		}

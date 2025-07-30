@@ -48,8 +48,8 @@ func (c *AuthApp) Logout() {
 }
 
 // AccessToken handles the access token command logic
-func (c *AuthApp) AccessToken() {
-	token, err := c.auth.GetAccessToken()
+func (c *AuthApp) AccessToken(forceRefresh bool) {
+	token, err := c.auth.GetAccessToken(forceRefresh)
 	if err != nil {
 		fmt.Printf("\n%s Error getting access token: %s\n", style.Red(icons.Cross), err)
 		return
