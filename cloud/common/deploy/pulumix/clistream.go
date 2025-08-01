@@ -257,7 +257,7 @@ func StreamPulumiUpEngineEvents(stream deploymentspb.Deployment_UpServer, pulumi
 			},
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to send deployment up event: %w", err)
 		}
 	}
 	return nil
@@ -290,7 +290,7 @@ func StreamPulumiDownEngineEvents(stream deploymentspb.Deployment_DownServer, pu
 				},
 			})
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to send deployment down event: %w", err)
 			}
 		}
 	}
