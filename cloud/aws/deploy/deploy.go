@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -164,13 +165,30 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 		return err
 	}
 
-	stackIdChan := make(chan string)
-	pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result).ApplyT(func(id string) string {
-		stackIdChan <- id
+	stackIdOutput := pulumi.Sprintf("%s-%s", ctx.Stack(), stackRandId.Result)
+
+	// Wait for the stack ID to be available
+	stackIdChan := make(chan string, 1)
+	errChan := make(chan error, 1)
+
+	stackIdOutput.ApplyT(func(id string) string {
+		select {
+		case stackIdChan <- id:
+		default:
+			errChan <- fmt.Errorf("failed to send stack ID to channel")
+		}
 		return id
 	})
 
-	a.StackId = <-stackIdChan
+	// Use a select with timeout to avoid hanging forever
+	select {
+	case a.StackId = <-stackIdChan:
+		// Successfully received stack ID
+	case err := <-errChan:
+		return err
+	case <-time.After(1 * time.Minute):
+		return fmt.Errorf("timeout waiting for stack ID generation")
+	}
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		Config:            aws.Config{Region: aws.String(a.Region)},

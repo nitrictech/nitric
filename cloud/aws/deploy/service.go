@@ -277,7 +277,7 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 	}
 
 	// ensure that the lambda was deployed successfully
-	_ = a.Lambdas[name].Arn.ApplyT(func(arn string) (bool, error) {
+	healthCheckOutput := a.Lambdas[name].Arn.ApplyT(func(arn string) (bool, error) {
 		payload, _ := json.Marshal(map[string]interface{}{
 			"x-nitric-healthcheck": true,
 		})
@@ -296,6 +296,9 @@ func (a *NitricAwsPulumiProvider) Service(ctx *pulumi.Context, parent pulumi.Res
 
 		return true, nil
 	})
+
+	// Register the health check as a dependency to ensure it completes
+	ctx.Export(fmt.Sprintf("lambda-%s-healthcheck", name), healthCheckOutput)
 
 	return nil
 }
