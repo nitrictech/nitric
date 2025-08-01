@@ -36,9 +36,8 @@ import (
 )
 
 type PulumiProviderServer struct {
-	provider      NitricPulumiProvider
-	runtime       RuntimeProvider
-	errorHandlers []ErrorHandler
+	provider NitricPulumiProvider
+	runtime  RuntimeProvider
 }
 
 func NewPulumiProviderServer(provider NitricPulumiProvider, runtime RuntimeProvider, options ...func(*PulumiProviderServer)) *PulumiProviderServer {
@@ -260,13 +259,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 	result, err := autoStack.Up(context.TODO(), options...)
 	if err != nil {
-		err = handleCommonErrors(err)
-
-		for _, handler := range s.errorHandlers {
-			err = handler(err)
-		}
-
-		return err
+		return explainCommonErrs(err)
 	}
 
 	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
