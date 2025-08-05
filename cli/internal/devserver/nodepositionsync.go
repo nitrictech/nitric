@@ -88,7 +88,12 @@ func storeNodePositions(changedPositions map[string]XYPosition) error {
 	}
 
 	for nodeId, position := range changedPositions {
-		existingPositions[nodeId] = position
+		// Check if position is empty (zero values) - treat as deletion
+		if position.X == 0 && position.Y == 0 {
+			delete(existingPositions, nodeId)
+		} else {
+			existingPositions[nodeId] = position
+		}
 	}
 
 	data, err := json.MarshalIndent(existingPositions, "", "  ")
