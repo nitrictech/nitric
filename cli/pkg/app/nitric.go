@@ -531,8 +531,13 @@ func (c *NitricApp) Edit() error {
 		return err
 	}
 
+	// create node position sync observer
+	nodePositionSync := devserver.NewNodePositionSync()
+
 	// subscribe the file sync to the websocket server
 	devwsServer.Subscribe(fileSync)
+	// subscribe the node position sync to the websocket server
+	devwsServer.Subscribe(nodePositionSync)
 	// subscribe the build server to the websocket server
 	devwsServer.Subscribe(buildServer)
 

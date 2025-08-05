@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
@@ -23,13 +21,6 @@ type NitricFileSync struct {
 	broadcast        BroadcastFunc
 	lastSyncContents []byte
 }
-
-type XYPosition struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
-}
-
-type NodePositionUpdate Message[map[string]XYPosition]
 
 type FileSyncError Message[[]schema.ValidationError]
 
@@ -94,51 +85,6 @@ func validateApplicationSchema(contents []byte) ([]schema.ValidationError, error
 	return validationErrors, nil
 }
 
-func loadNodePositions() (map[string]XYPosition, error) {
-	data, err := os.ReadFile(filepath.Join(config.LocalConfigPath(), "node-positions.json"))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return make(map[string]XYPosition), nil
-		}
-		return nil, fmt.Errorf("failed to read node positions file: %w", err)
-	}
-
-	var positions map[string]XYPosition
-	if err := json.Unmarshal(data, &positions); err != nil {
-		// If JSON is invalid, return empty map instead of failing
-		return make(map[string]XYPosition), nil
-	}
-
-	return positions, nil
-}
-
-func storeNodePositions(changedPositions map[string]XYPosition) error {
-	if err := os.MkdirAll(config.LocalConfigPath(), 0755); err != nil {
-		return fmt.Errorf("failed to create nitric config directory: %w", err)
-	}
-
-	existingPositions, err := loadNodePositions()
-	if err != nil {
-		// If we can't load existing positions, start with empty map
-		existingPositions = make(map[string]XYPosition)
-	}
-
-	for nodeId, position := range changedPositions {
-		existingPositions[nodeId] = position
-	}
-
-	data, err := json.MarshalIndent(existingPositions, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal node positions: %w", err)
-	}
-
-	if err := os.WriteFile(filepath.Join(config.LocalConfigPath(), "node-positions.json"), data, 0644); err != nil {
-		return fmt.Errorf("failed to write node positions file: %w", err)
-	}
-
-	return nil
-}
-
 func (fs *NitricFileSync) OnConnect(send SendFunc) {
 	application, contents, err := fs.getApplicationFileContents()
 	if err != nil {
@@ -160,36 +106,11 @@ func (fs *NitricFileSync) OnConnect(send SendFunc) {
 		Payload: *application,
 	})
 
-	// Send current node positions to trigger frontend sync
-	positions, err := loadNodePositions()
-	if err != nil {
-		// If we can't load positions, send empty map to trigger initial sync
-		positions = make(map[string]XYPosition)
-	}
-	send(Message[any]{
-		Type:    "nitricNodeUpdate",
-		Payload: positions,
-	})
 }
 
 func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
-	// First try to parse as node position update
-	var nodePositionUpdate NodePositionUpdate
-
-	err := json.Unmarshal(message, &nodePositionUpdate)
-	if err == nil && nodePositionUpdate.Type == "nitricNodeUpdate" {
-		err := storeNodePositions(nodePositionUpdate.Payload)
-		if err != nil {
-			fmt.Println("Error storing node positions:", err)
-		}
-
-		return
-	}
-
-
-	// Otherwise try to parse as file sync message
 	var fileSyncMessage FileSyncMessage
-	err = json.Unmarshal(message, &fileSyncMessage)
+	err := json.Unmarshal(message, &fileSyncMessage)
 	if err != nil {
 		return
 	}
