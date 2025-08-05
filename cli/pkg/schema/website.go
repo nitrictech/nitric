@@ -2,9 +2,9 @@ package schema
 
 type WebsiteIntent struct {
 	Resource     `json:",inline" yaml:",inline"`
-	BaseDir      string      `json:"baseDir" yaml:"baseDir"`
-	AssetDir     string      `json:"assetDir" yaml:"assetDir"`
-	ErrorPage    string      `json:"errorPage" yaml:"errorPage"`
+	BaseDir      string      `json:"base_dir" yaml:"base_dir"`
+	AssetDir     string      `json:"asset_dir" yaml:"asset_dir"`
+	ErrorPage    string      `json:"error_page" yaml:"error_page"`
 	BuildCommand *string     `json:"build,omitempty" yaml:"build,omitempty"`
 	Dev          *WebsiteDev `json:"dev,omitempty" yaml:"dev,omitempty"`
 }
@@ -14,6 +14,6 @@ func (w *WebsiteIntent) GetType() string {
 }
 
 type WebsiteDev struct {
-	Url     string `json:"url"`
-	Command string `json:"command"`
+	Url     string `json:"url" yaml:"url"`
+	Command string `json:"command" yaml:"command"`
 }
