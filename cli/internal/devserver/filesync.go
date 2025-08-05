@@ -105,7 +105,6 @@ func (fs *NitricFileSync) OnConnect(send SendFunc) {
 		Type:    "nitricSync",
 		Payload: *application,
 	})
-
 }
 
 func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
