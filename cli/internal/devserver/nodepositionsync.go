@@ -88,7 +88,11 @@ func storeNodePositions(changedPositions map[string]XYPosition) error {
 	}
 
 	for nodeId, position := range changedPositions {
-		// Check if position is empty (zero values) - treat as deletion
+		// The platform sends {x: 0, y: 0} as a deletion signal when nodes are removed.
+		// This approach reuses the existing position update message format instead of
+		// requiring a separate deletion message type. When we receive {0, 0}, we
+		// remove the node from the persisted JSON file to prevent accumulation of
+		// deleted node positions over time.
 		if position.X == 0 && position.Y == 0 {
 			delete(existingPositions, nodeId)
 		} else {
