@@ -79,7 +79,7 @@ services:
 	assert.Len(t, validationErrs, 1)
 
 	errString := FormatValidationErrors(validationErrs)
-	assert.Contains(t, errString, "targets:   \n  |   - invalid-target-format    # <-- Must be in the format: `<team>/<platform>@<revision>` or `file:<path>`")
+	assert.Contains(t, errString, "Must be in the format: `<team>/<platform>@<revision>` or `file:<path>`")
 }
 
 func TestApplicationFromYaml_ServiceWithImage(t *testing.T) {
@@ -321,4 +321,185 @@ func TestApplication_IsValid_ReservedNames(t *testing.T) {
 	assert.Contains(t, errString, "backend:    # <-- entrypoint name backend is a reserved name")
 	assert.Contains(t, errString, "backend:    # <-- website name backend is a reserved name")
 	assert.Contains(t, errString, "backend:    # <-- bucket name backend is a reserved name")
+}
+
+func TestApplication_IsValid_ValidSnakeCaseNames(t *testing.T) {
+	app := &Application{
+		Name:    "test-app",
+		Targets: []string{"team/platform@1"},
+		ServiceIntents: map[string]*ServiceIntent{
+			"user_api": {
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+			"data_processor": {
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+			"_private_service": {
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+			"service123": {
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+		},
+		BucketIntents: map[string]*BucketIntent{
+			"file_storage":   {},
+			"user_uploads":   {},
+			"temp_data_123": {},
+		},
+		EntrypointIntents: map[string]*EntrypointIntent{
+			"main_api":     {},
+			"webhook_handler": {},
+		},
+		DatabaseIntents: map[string]*DatabaseIntent{
+			"user_db":    {},
+			"session_store": {},
+		},
+		WebsiteIntents: map[string]*WebsiteIntent{
+			"public_site": {},
+			"admin_panel": {},
+		},
+	}
+
+	violations := app.IsValid()
+	assert.Len(t, violations, 0, "Expected no violations for valid snake_case names, got: %v", violations)
+}
+
+func TestApplication_IsValid_InvalidSnakeCaseNames(t *testing.T) {
+	app := &Application{
+		Name:    "test-app",
+		Targets: []string{"team/platform@1"},
+		ServiceIntents: map[string]*ServiceIntent{
+			"user-api": { // kebab-case
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+			"UserAPI": { // PascalCase
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+			"userAPI": { // camelCase
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+			"123service": { // starts with number
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+			"service!": { // contains special character
+				Container: Container{
+					Docker: &Docker{Dockerfile: "Dockerfile"},
+				},
+			},
+		},
+		BucketIntents: map[string]*BucketIntent{
+			"file-storage": {}, // kebab-case
+			"FileStorage":  {}, // PascalCase
+		},
+		EntrypointIntents: map[string]*EntrypointIntent{
+			"main-api":  {}, // kebab-case
+			"MainAPI":   {}, // PascalCase
+		},
+		DatabaseIntents: map[string]*DatabaseIntent{
+			"user-db":   {}, // kebab-case
+			"UserDB":    {}, // PascalCase
+		},
+		WebsiteIntents: map[string]*WebsiteIntent{
+			"public-site": {}, // kebab-case
+			"PublicSite":  {}, // PascalCase
+		},
+	}
+
+	violations := app.IsValid()
+	assert.NotEmpty(t, violations, "Expected violations for invalid snake_case names")
+
+	errString := FormatValidationErrors(GetSchemaValidationErrors(violations))
+	
+	// Check service violations
+	assert.Contains(t, errString, "user-api:    # <-- service name user-api must be in snake_case format")
+	assert.Contains(t, errString, "UserAPI:    # <-- service name UserAPI must be in snake_case format")
+	assert.Contains(t, errString, "userAPI:    # <-- service name userAPI must be in snake_case format")
+	assert.Contains(t, errString, "123service:    # <-- service name 123service must be in snake_case format")
+	assert.Contains(t, errString, "service!:    # <-- service name service! must be in snake_case format")
+	
+	// Check bucket violations
+	assert.Contains(t, errString, "file-storage:    # <-- bucket name file-storage must be in snake_case format")
+	assert.Contains(t, errString, "FileStorage:    # <-- bucket name FileStorage must be in snake_case format")
+	
+	// Check entrypoint violations
+	assert.Contains(t, errString, "main-api:    # <-- entrypoint name main-api must be in snake_case format")
+	assert.Contains(t, errString, "MainAPI:    # <-- entrypoint name MainAPI must be in snake_case format")
+	
+	// Check database violations
+	assert.Contains(t, errString, "user-db:    # <-- database name user-db must be in snake_case format")
+	assert.Contains(t, errString, "UserDB:    # <-- database name UserDB must be in snake_case format")
+	
+	// Check website violations
+	assert.Contains(t, errString, "public-site:    # <-- website name public-site must be in snake_case format")
+	assert.Contains(t, errString, "PublicSite:    # <-- website name PublicSite must be in snake_case format")
+}
+
+func TestApplicationFromYaml_InvalidResourceNames(t *testing.T) {
+	yaml := `
+name: test-app
+description: A test application with invalid resource names
+targets:
+  - team/platform@1
+services:
+  user-api:
+    container:
+      docker:
+        dockerfile: Dockerfile
+  UserService:
+    container:
+      docker:
+        dockerfile: Dockerfile
+buckets:
+  file-storage:
+    access:
+      user-api:
+        - read
+        - write
+entrypoints:
+  main-api:
+    routes:
+      /api/:
+        name: user-api
+databases:
+  user-db: {}
+websites:
+  public-site: {}
+`
+
+	app, result, err := ApplicationFromYaml(yaml)
+	assert.NoError(t, err)
+	
+	// First check JSON schema validation
+	if !result.Valid() {
+		schemaErrors := GetSchemaValidationErrors(result.Errors())
+		t.Logf("Schema validation errors: %s", FormatValidationErrors(schemaErrors))
+	}
+	
+	// Then check custom application validation
+	violations := app.IsValid()
+	assert.NotEmpty(t, violations, "Expected violations for invalid snake_case names")
+
+	errString := FormatValidationErrors(GetSchemaValidationErrors(violations))
+	assert.Contains(t, errString, "user-api:    # <-- service name user-api must be in snake_case format")
+	assert.Contains(t, errString, "UserService:    # <-- service name UserService must be in snake_case format")
+	assert.Contains(t, errString, "file-storage:    # <-- bucket name file-storage must be in snake_case format")
+	assert.Contains(t, errString, "main-api:    # <-- entrypoint name main-api must be in snake_case format")
+	assert.Contains(t, errString, "user-db:    # <-- database name user-db must be in snake_case format")
+	assert.Contains(t, errString, "public-site:    # <-- website name public-site must be in snake_case format")
 }

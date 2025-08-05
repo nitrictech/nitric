@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 
 	"github.com/xeipuuv/gojsonschema"
@@ -12,6 +13,7 @@ func (a *Application) IsValid() []gojsonschema.ResultError {
 	// Check the names of all resources are unique
 	violations := a.checkNoNameConflicts()
 	violations = append(violations, a.checkNoReservedNames()...)
+	violations = append(violations, a.checkSnakeCaseNames()...)
 
 	return violations
 }
@@ -97,6 +99,43 @@ func (a *Application) checkNoReservedNames() []gojsonschema.ResultError {
 	for name := range a.WebsiteIntents {
 		if slices.Contains(reservedNames, name) {
 			violations = append(violations, newValidationError(fmt.Sprintf("websites.%s", name), fmt.Sprintf("website name %s is a reserved name", name)))
+		}
+	}
+
+	return violations
+}
+
+func (a *Application) checkSnakeCaseNames() []gojsonschema.ResultError {
+	violations := []gojsonschema.ResultError{}
+	snakeCasePattern := regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
+
+	for name := range a.ServiceIntents {
+		if !snakeCasePattern.MatchString(name) {
+			violations = append(violations, newValidationError(fmt.Sprintf("services.%s", name), fmt.Sprintf("service name %s must be in snake_case format", name)))
+		}
+	}
+
+	for name := range a.BucketIntents {
+		if !snakeCasePattern.MatchString(name) {
+			violations = append(violations, newValidationError(fmt.Sprintf("buckets.%s", name), fmt.Sprintf("bucket name %s must be in snake_case format", name)))
+		}
+	}
+
+	for name := range a.EntrypointIntents {
+		if !snakeCasePattern.MatchString(name) {
+			violations = append(violations, newValidationError(fmt.Sprintf("entrypoints.%s", name), fmt.Sprintf("entrypoint name %s must be in snake_case format", name)))
+		}
+	}
+
+	for name := range a.DatabaseIntents {
+		if !snakeCasePattern.MatchString(name) {
+			violations = append(violations, newValidationError(fmt.Sprintf("databases.%s", name), fmt.Sprintf("database name %s must be in snake_case format", name)))
+		}
+	}
+
+	for name := range a.WebsiteIntents {
+		if !snakeCasePattern.MatchString(name) {
+			violations = append(violations, newValidationError(fmt.Sprintf("websites.%s", name), fmt.Sprintf("website name %s must be in snake_case format", name)))
 		}
 	}
 
