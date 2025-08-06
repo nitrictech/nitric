@@ -132,6 +132,11 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 		return
 	}
 
+	validationErrors, err := validateApplicationSchema(buffer.Bytes())
+	if err != nil || len(validationErrors) > 0 {
+		return
+	}
+
 	err = fs.setApplicationFileContents(buffer.Bytes())
 	if err != nil {
 		fmt.Println("Error setting file contents:", err)
@@ -193,6 +198,9 @@ func (fs *NitricFileSync) watchFile() error {
 			debounced, cancel = lo.NewDebounce(fs.debounce, func() {
 				application, contents, err := fs.getApplicationFileContents()
 				if err != nil {
+					// Update contents so sync can be handled after validation errors clear
+					fs.lastSyncContents = contents
+
 					fileError = err
 
 					validationErrors, err := validateApplicationSchema(contents)
