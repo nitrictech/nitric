@@ -6,8 +6,8 @@ import (
 	"io"
 )
 
-func (c *NitricApiClient) GetTemplates() ([]Template, error) {
-	response, err := c.get("/api/templates", true)
+func (c *NitricApiClient) GetTemplates(team string) ([]Template, error) {
+	response, err := c.get(fmt.Sprintf("/api/teams/%s/templates", team), true)
 	if err != nil {
 		return nil, err
 	}
@@ -23,21 +23,21 @@ func (c *NitricApiClient) GetTemplates() ([]Template, error) {
 		return nil, err
 	}
 
-	var templates []Template
+	var templates GetTemplatesResponse
 	if err := json.Unmarshal(body, &templates); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal templates: %v, body: %s", err, string(body))
 	}
 
-	return templates, nil
+	return templates.Templates, nil
 }
 
 // GetTemplate gets a specific template by teamSlug, templateName and version
 // version is optional, if it is not provided, the latest version will be returned
 func (c *NitricApiClient) GetTemplate(teamSlug string, templateName string, version string) (*TemplateVersion, error) {
-	// latest version URL is /api/templates/{teamSlug}/{templateName}
-	// specific version URL is /api/templates/{teamSlug}/{templateName}/v/{version}
+	// latest version URL is /api/teams/{teamSlug}/templates/{templateName}
+	// specific version URL is /api/teams/{teamSlug}/templates/{templateName}/v/{version}
 
-	templatePath := fmt.Sprintf("/api/templates/%s/%s", teamSlug, templateName)
+	templatePath := fmt.Sprintf("/api/teams/%s/templates/%s", teamSlug, templateName)
 
 	if version != "" {
 		templatePath = fmt.Sprintf("%s/v/%s", templatePath, version)

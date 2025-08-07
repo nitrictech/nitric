@@ -63,9 +63,44 @@ func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 	}}, nil
 }
 
+// getCurrentTeam retrieves the current team from the API client
+// It prints help errors to the console if the user is not authenticated or no team is set
+func (c *NitricApp) getCurrentTeam() *api.Team {
+	allTeams, err := c.apiClient.GetUserTeams()
+
+	if err != nil {
+		if errors.Is(err, api.ErrUnauthenticated) {
+			fmt.Println("Please login first, using the", c.styles.emphasize.Render(version.GetCommand("login")), "command")
+			return nil
+		}
+		fmt.Printf("Failed to get teams: %v\n", err)
+		return nil
+	}
+
+	var currentTeam *api.Team
+	for _, t := range allTeams {
+		if t.IsCurrent {
+			currentTeam = &t
+			break
+		}
+	}
+
+	if currentTeam == nil {
+		fmt.Println("No current team set, please set a team using the", c.styles.emphasize.Render(version.GetCommand("team")), "command")
+		return nil
+	}
+
+	return currentTeam
+}
+
 // Templates handles the templates command logic
 func (c *NitricApp) Templates() error {
-	templates, err := c.apiClient.GetTemplates()
+	team := c.getCurrentTeam()
+	if team == nil {
+		return nil
+	}
+
+	templates, err := c.apiClient.GetTemplates(team.Slug)
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
 			fmt.Println("Please login first, using the", c.styles.emphasize.Render(version.GetCommand("login")), "command")
@@ -246,7 +281,12 @@ func normalizeDirectoryName(dirName string, fallback string) string {
 
 // New handles the new project creation command logic
 func (c *NitricApp) New(projectName string, force bool) error {
-	templates, err := c.apiClient.GetTemplates()
+	team := c.getCurrentTeam()
+	if team == nil {
+		return nil
+	}
+
+	templates, err := c.apiClient.GetTemplates(team.Slug)
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
 			fmt.Println("Please login first, using", c.styles.emphasize.Render(version.GetCommand("login")))

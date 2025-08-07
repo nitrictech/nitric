@@ -13,6 +13,10 @@ type Template struct {
 	Versions []string `json:"versions"`
 }
 
+type GetTemplatesResponse struct {
+	Templates []Template `json:"templates"`
+}
+
 func (t *Template) String() string {
 	return fmt.Sprintf("%s/%s", t.TeamSlug, t.Slug)
 }
