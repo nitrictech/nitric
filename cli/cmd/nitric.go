@@ -44,7 +44,6 @@ func NewInitCmd(injector do.Injector) *cobra.Command {
 // NewNewCmd creates the new command
 func NewNewCmd(injector do.Injector) *cobra.Command {
 	var force bool
-
 	cmd := &cobra.Command{
 		Use:   "new [project-name]",
 		Short: fmt.Sprintf("Create a new %s project", version.ProductName),

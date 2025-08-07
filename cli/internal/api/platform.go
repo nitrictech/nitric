@@ -15,7 +15,7 @@ type PlatformRevisionResponse struct {
 
 // FIXME: Because of the difference in fields between identity and resource plugins we need to return an interface
 func (c *NitricApiClient) GetPlatform(team, name string, revision int) (*terraform.PlatformSpec, error) {
-	response, err := c.get(fmt.Sprintf("/api/platforms/%s/%s/revisions/%d", team, name, revision), true)
+	response, err := c.get(fmt.Sprintf("/api/teams/%s/platforms/%s/revisions/%d", team, name, revision), true)
 	if err != nil {
 		return nil, err
 	}
