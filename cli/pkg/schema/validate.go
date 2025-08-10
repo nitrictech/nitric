@@ -8,12 +8,28 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+func (a *Application) checkNoEnvVarCollisions() []gojsonschema.ResultError {
+	violations := []gojsonschema.ResultError{}
+	envVarMap := map[string]string{}
+
+	for name, intent := range a.DatabaseIntents {
+		if existingName, ok := envVarMap[intent.EnvVarKey]; ok {
+			violations = append(violations, newValidationError(fmt.Sprintf("databases.%s", name), fmt.Sprintf("env var %s is already in use by %s", intent.EnvVarKey, existingName)))
+			continue
+		}
+		envVarMap[intent.EnvVarKey] = name
+	}
+
+	return violations
+}
+
 // Perform additional validation checks on the application
 func (a *Application) IsValid() []gojsonschema.ResultError {
 	// Check the names of all resources are unique
 	violations := a.checkNoNameConflicts()
 	violations = append(violations, a.checkNoReservedNames()...)
 	violations = append(violations, a.checkSnakeCaseNames()...)
+	violations = append(violations, a.checkNoEnvVarCollisions()...)
 
 	return violations
 }
