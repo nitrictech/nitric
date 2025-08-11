@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/nitrictech/nitric/cli/internal/netx"
 	"github.com/nitrictech/nitric/cli/pkg/schema"
@@ -32,6 +33,10 @@ type ServiceSimulation struct {
 
 	port    netx.ReservedPort
 	apiPort netx.ReservedPort
+
+	// Rapid failure detection
+	consecutiveFailures int // Count of consecutive rapid failures
+	maxFailures         int // Maximum consecutive failures allowed
 }
 
 var _ SimulatedService = (*ServiceSimulation)(nil)
@@ -110,6 +115,14 @@ func (s *ServiceSimulation) updateStatus(newStatus Status) {
 	})
 }
 
+// hasExceededFailureLimit checks if we've had too many consecutive failures
+func (s *ServiceSimulation) hasExceededFailureLimit() bool {
+	if s.maxFailures <= 0 {
+		return false // No limit configured
+	}
+	return s.consecutiveFailures >= s.maxFailures
+}
+
 func (s *ServiceSimulation) startSchedules(stdoutWriter, stderrorWriter io.Writer) (*cron.Cron, error) {
 	triggers := s.intent.Triggers
 	cron := cron.New()
@@ -163,9 +176,21 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 	stdoutWriter := newServiceLogWriter(s, OutputType_Stdout)
 	stderrWriter := newServiceLogWriter(s, OutputType_Stderr)
 
+	// Track if service ran successfully for a meaningful duration
+	const minSuccessfulRuntime = 5 * time.Second
+
 	for {
 		if s.currentStatus != Status_Init && !s.autoRestart {
 			break
+		}
+
+		// Check if we've exceeded the failure limit before attempting to restart
+		if s.hasExceededFailureLimit() {
+			fmt.Fprintf(stderrWriter, "\n[ERROR] Service '%s' has failed %d consecutive times. Stopping restart attempts to prevent crash loop.\n",
+				s.name, s.maxFailures)
+			s.updateStatus(Status_Fatal)
+			return fmt.Errorf("service '%s' exceeded maximum consecutive restart attempts (%d failures)",
+				s.name, s.maxFailures)
 		}
 
 		commandParts := strings.Split(s.intent.Dev.Script, " ")
@@ -196,11 +221,17 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 		srvCommand.Stdout = stdoutWriter
 		srvCommand.Stderr = stderrWriter
 
+		startTime := time.Now()
 		err := srvCommand.Start()
 		if err != nil {
+			// If the command fails to start at all (e.g., command not found, compilation error),
+			// this is an immediate fatal error - no point retrying
+			fmt.Fprintf(stderrWriter, "\n Service failed to start: %v\n", err)
 			s.updateStatus(Status_Fatal)
-			return err
+			return fmt.Errorf("service failed to start: %w", s.name, err)
 		}
+
+		s.cmd = srvCommand
 		s.updateStatus(Status_Running)
 
 		cron, err := s.startSchedules(stdoutWriter, stderrWriter)
@@ -210,11 +241,26 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 		}
 
 		err = srvCommand.Wait()
-		if err == nil {
-			break
-		}
+		runDuration := time.Since(startTime)
+
 		// Stop running cron jobs
 		cron.Stop()
+
+		if err == nil {
+			// Clean exit
+			break
+		}
+
+		// Check if the service ran for a meaningful duration
+		if runDuration < minSuccessfulRuntime {
+			// Service crashed quickly - likely a startup issue
+			s.consecutiveFailures++
+			fmt.Fprintf(stderrWriter, "\nService crashed after only %v\n", runDuration)
+		} else {
+			// Service ran for a while before crashing - reset failure count
+			s.consecutiveFailures = 0
+		}
+
 		s.updateStatus(Status_Stopped)
 	}
 
@@ -239,5 +285,6 @@ func NewServiceSimulation(name string, intent schema.ServiceIntent, port netx.Re
 		events:        eventsChan,
 		port:          port,
 		apiPort:       apiPort,
+		maxFailures:   2, // Default: stop after 1 consecutive rapid failures
 	}, eventsChan, nil
 }
