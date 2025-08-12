@@ -10,7 +10,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	random "github.com/cdktf/cdktf-provider-random-go/random/v11/provider"
 	"github.com/cdktf/cdktf-provider-random-go/random/v11/stringresource"
@@ -224,12 +223,10 @@ func (tf *TerraformDeployment) resolveTokensForModule(intentName string, resourc
 	return nil
 }
 
-
 func NewTerraformDeployment(engine *TerraformEngine, stackName string) *TerraformDeployment {
 	app := cdktf.NewApp(&cdktf.AppConfig{
 		Outdir: jsii.String(engine.outputDir),
 	})
-	// stack := NewTerraformStackSansBackend(app, jsii.String(stackName))
 
 	stack := cdktf.NewTerraformStack(app, jsii.String(stackName))
 
