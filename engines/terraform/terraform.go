@@ -227,7 +227,11 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 	app := cdktf.NewApp(&cdktf.AppConfig{
 		Outdir: jsii.String(engine.outputDir),
 	})
+
 	stack := cdktf.NewTerraformStack(app, jsii.String(stackName))
+
+	// Create a new nil backend for the stack
+	NewNilTerraformBackend(stack, jsii.String("nil_backend"))
 
 	random.NewRandomProvider(stack, jsii.String("random"), &random.RandomProviderConfig{})
 
