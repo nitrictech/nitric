@@ -33,6 +33,8 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 	})
 	stack := cdktf.NewTerraformStack(app, jsii.String(stackName))
 
+	NewNilTerraformBackend(app, jsii.String("nil_backend"))
+
 	random.NewRandomProvider(stack, jsii.String("random"), &random.RandomProviderConfig{})
 
 	stackId := stringresource.NewStringResource(stack, jsii.String("stack_id"), &stringresource.StringResourceConfig{
@@ -104,10 +106,10 @@ func (td *TerraformDeployment) resolveEntrypointNitricVar(name string, appSpec *
 		resourcesNitricVar := hclTarget.Get(jsii.String("nitric.exports.resources"))
 
 		origins[route.TargetName] = map[string]interface{}{
-			"path":      jsii.String(path),
-			"base_path": jsii.String(route.BasePath),
-			"type":      jsii.String(intentTargetType),
-			"id":        idNitricVar,
+			"path":        jsii.String(path),
+			"base_path":   jsii.String(route.BasePath),
+			"type":        jsii.String(intentTargetType),
+			"id":          idNitricVar,
 			"domain_name": domainNameNitricVar,
 			"resources":   resourcesNitricVar,
 		}
@@ -186,7 +188,7 @@ func (td *TerraformDeployment) resolveService(name string, spec *app_spec_schema
 		}
 
 		idModule := cdktf.NewTerraformHclModule(td.stack, jsii.Sprintf("%s_%s_role", name, identityPlugin.Name), &cdktf.TerraformHclModuleConfig{
-			Source: jsii.String(identityPlugin.Deployment.Terraform),
+			Source:    jsii.String(identityPlugin.Deployment.Terraform),
 			Variables: &id.Properties,
 		})
 
