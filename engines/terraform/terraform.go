@@ -256,6 +256,11 @@ func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePlugin
 	// TODO: Map platform resource plugins to the service plugin
 	gets := []string{}
 
+	// Check if Runtime is nil to prevent panic
+	if servicePlugin.Runtime == nil {
+		return nil, fmt.Errorf("service plugin %s has no runtime configuration", servicePlugin.Name)
+	}
+
 	pluginDef := &plugin.PluginDefinition{
 		Service: plugin.GoPlugin{
 			Alias:  "svcPlugin",

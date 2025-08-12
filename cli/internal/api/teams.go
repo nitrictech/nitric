@@ -7,7 +7,7 @@ import (
 
 type Team struct {
 	Slug      string `json:"slug"`
-	WorkOsId  string `json:"workOsId"`
+	WorkOsID  string `json:"workOsId"`
 	ImageUrl  string `json:"imageUrl"`
 	Name      string `json:"name"`
 	CreatedAt string `json:"createdAt"`
@@ -20,7 +20,7 @@ type GetTeamsResponse struct {
 }
 
 func (c *NitricApiClient) GetUserTeams() ([]Team, error) {
-	response, err := c.get("/api/teams", true)
+	response, err := c.get("/me/teams", true)
 	if err != nil {
 		return nil, err
 	}

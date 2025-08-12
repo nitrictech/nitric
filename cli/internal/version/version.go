@@ -7,10 +7,10 @@ import (
 
 var (
 	// Name of the product
-	ProductName = "Nitric"
+	ProductName = "Suga"
 
 	// The name of the binary/command, for use in help messages, e.g. "nitric version"
-	CommandName = "nitric"
+	CommandName = "suga"
 
 	// Raw is the string representation of the version. This will be replaced
 	// with the calculated version at build time.
