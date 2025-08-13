@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func (c *NitricApiClient) GetTemplates(team string) ([]Template, error) {
+func (c *NitricApiClient) GetTemplates(team string) ([]TemplateResponse, error) {
 	response, err := c.get(fmt.Sprintf("/api/teams/%s/templates", team), true)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func (c *NitricApiClient) GetTemplates(team string) ([]Template, error) {
 		return nil, err
 	}
 
-	var templates GetTemplatesResponse
+	var templates ListTemplatesResponse
 	if err := json.Unmarshal(body, &templates); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal templates: %v, body: %s", err, string(body))
 	}
@@ -59,10 +59,10 @@ func (c *NitricApiClient) GetTemplate(teamSlug string, templateName string, vers
 		return nil, err
 	}
 
-	var template *TemplateVersion
-	if err := json.Unmarshal(body, &template); err != nil {
+	var templateResponse GetTemplateVersionResponse
+	if err := json.Unmarshal(body, &templateResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal template: %v, body: %s", err, string(body))
 	}
 
-	return template, nil
+	return templateResponse.Template, nil
 }

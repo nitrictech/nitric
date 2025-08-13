@@ -29,15 +29,29 @@ func (c *NitricApiClient) GetPluginManifest(team, lib, libVersion, name string) 
 		return nil, fmt.Errorf("failed to read response from %s plugin details endpoint: %v", version.ProductName, err)
 	}
 
+	// First, unmarshal the response wrapper
+	var manifestResponse GetPluginManifestResponse
+	err = json.Unmarshal(body, &manifestResponse)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected response from %s plugin details endpoint: %v", version.ProductName, err)
+	}
+
+	// Convert the manifest map back to JSON for proper unmarshaling
+	manifestBytes, err := json.Marshal(manifestResponse.Manifest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal manifest from %s plugin details endpoint: %v", version.ProductName, err)
+	}
+
+	// Try to unmarshal as ResourcePluginManifest first
 	var pluginManifest terraform.ResourcePluginManifest
-	err = json.Unmarshal(body, &pluginManifest)
+	err = json.Unmarshal(manifestBytes, &pluginManifest)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected response from %s plugin details endpoint: %v", version.ProductName, err)
 	}
 
 	if pluginManifest.Type == "identity" {
 		var identityPluginManifest terraform.IdentityPluginManifest
-		err = json.Unmarshal(body, &identityPluginManifest)
+		err = json.Unmarshal(manifestBytes, &identityPluginManifest)
 		if err != nil {
 			return nil, fmt.Errorf("unexpected response from %s plugin details endpoint: %v", version.ProductName, err)
 		}
