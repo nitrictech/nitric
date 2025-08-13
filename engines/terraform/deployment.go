@@ -33,7 +33,7 @@ func NewTerraformDeployment(engine *TerraformEngine, stackName string) *Terrafor
 	})
 	stack := cdktf.NewTerraformStack(app, jsii.String(stackName))
 
-	NewNilTerraformBackend(app, jsii.String("nil_backend"))
+	NewNilTerraformBackend(stack, jsii.String("nil_backend"))
 
 	random.NewRandomProvider(stack, jsii.String("random"), &random.RandomProviderConfig{})
 
