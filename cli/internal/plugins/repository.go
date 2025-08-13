@@ -9,7 +9,7 @@ import (
 )
 
 type PluginRepository struct {
-	apiClient *api.NitricApiClient
+	apiClient *api.SugaApiClient
 }
 
 func (r *PluginRepository) GetResourcePlugin(team, libname, version, name string) (*terraform.ResourcePluginManifest, error) {
@@ -44,7 +44,7 @@ func (r *PluginRepository) GetIdentityPlugin(team, libname, version, name string
 	return identityPluginManifest, nil
 }
 
-func NewPluginRepository(apiClient *api.NitricApiClient) *PluginRepository {
+func NewPluginRepository(apiClient *api.SugaApiClient) *PluginRepository {
 	return &PluginRepository{
 		apiClient: apiClient,
 	}

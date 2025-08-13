@@ -9,13 +9,13 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/version"
 )
 
-var nitric = style.Purple(icons.Lightning + " " + version.ProductName)
+var suga = style.Purple(icons.Lightning + " " + version.ProductName)
 var ver = style.Gray(version.GetShortVersion())
 
-func NitricIntro(elements ...string) string {
+func SugaIntro(elements ...string) string {
 	var b strings.Builder
 
-	b.WriteString(nitric + " " + ver + "\n")
+	b.WriteString(suga + " " + ver + "\n")
 
 	for i, element := range elements {
 		isKey := i%2 == 0

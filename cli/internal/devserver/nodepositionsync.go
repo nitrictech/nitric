@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/nitrictech/nitric/cli/internal/config"
+	"github.com/nitrictech/nitric/cli/internal/version"
 )
 
 type NodePositionSync struct{}
@@ -31,7 +32,7 @@ func (nps *NodePositionSync) OnConnect(send SendFunc) {
 	}
 
 	send(Message[any]{
-		Type:    "nitricNodeUpdate",
+		Type:    "nodeUpdateMessage",
 		Payload: positions,
 	})
 }
@@ -44,8 +45,8 @@ func (nps *NodePositionSync) OnMessage(message json.RawMessage) {
 		return
 	}
 
-	// Only handle nitricNodeUpdate messages
-	if nodePositionUpdate.Type != "nitricNodeUpdate" {
+	// Only handle nodeUpdateMessage messages
+	if nodePositionUpdate.Type != "nodeUpdateMessage" {
 		return
 	}
 
@@ -78,7 +79,7 @@ func loadNodePositions() (map[string]XYPosition, error) {
 
 func storeNodePositions(changedPositions map[string]XYPosition) error {
 	if err := os.MkdirAll(config.LocalConfigPath(), 0755); err != nil {
-		return fmt.Errorf("failed to create nitric config directory: %w", err)
+		return fmt.Errorf("failed to create %s config directory: %w", version.CommandName, err)
 	}
 
 	existingPositions, err := loadNodePositions()

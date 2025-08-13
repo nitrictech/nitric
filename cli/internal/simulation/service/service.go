@@ -215,7 +215,7 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 		}
 
 		srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("PORT=%d", s.port))
-		srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("NITRIC_SERVICE_ADDRESS=localhost:%d", s.apiPort))
+		srvCommand.Env = append(srvCommand.Env, fmt.Sprintf("SUGA_SERVICE_ADDRESS=localhost:%d", s.apiPort))
 
 		srvCommand.Dir = s.intent.Container.Docker.Context
 		srvCommand.Stdout = stdoutWriter
@@ -228,7 +228,7 @@ func (s *ServiceSimulation) Start(autoRestart bool) error {
 			// this is an immediate fatal error - no point retrying
 			fmt.Fprintf(stderrWriter, "\n Service failed to start: %v\n", err)
 			s.updateStatus(Status_Fatal)
-			return fmt.Errorf("service failed to start: %w", s.name, err)
+			return fmt.Errorf("service %s failed to start: %w", s.name, err)
 		}
 
 		s.cmd = srvCommand

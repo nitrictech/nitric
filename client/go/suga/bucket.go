@@ -1,4 +1,4 @@
-package nitric
+package suga
 
 import (
 	"context"

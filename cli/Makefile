@@ -15,7 +15,7 @@ export LDFLAGS="-X $(VERSION_URI).Version=${BUILD_VERSION} \
                 -X $(VERSION_URI).BuildTime=$(shell date +%Y-%m-%dT%H:%M:%S%z)"
 
 build:
-	go build -ldflags $(LDFLAGS) -o bin/nitric$(EXECUTABLE_EXT) main.go
+	go build -ldflags $(LDFLAGS) -o bin/suga$(EXECUTABLE_EXT) main.go
 
 install:
 	@echo "Installing dependencies..."

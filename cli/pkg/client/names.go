@@ -41,7 +41,7 @@ func (n *ResourceNameNormalizer) Parts() []string {
 	return parts
 }
 
-// Unmodified returns the original name as it appears in the Nitric application spec
+// Unmodified returns the original name as it appears in the application spec
 func (n *ResourceNameNormalizer) Unmodified() string {
 	return n.original
 }

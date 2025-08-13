@@ -33,10 +33,10 @@ type Tokens struct {
 }
 
 type WorkOSAuth struct {
-	nitricBackendUrl *url.URL
-	tokenStore       TokenStore
-	tokens           *Tokens
-	httpClient       *http.HttpClient
+	sugaBackendUrl *url.URL
+	tokenStore     TokenStore
+	tokens         *Tokens
+	httpClient     *http.HttpClient
 }
 
 func NewWorkOSAuth(inj do.Injector) (*WorkOSAuth, error) {

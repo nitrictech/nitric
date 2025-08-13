@@ -13,7 +13,7 @@ import (
 
 func NewRootCmd(injector do.Injector) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "nitric",
+		Use:   version.CommandName,
 		Short: fmt.Sprintf("%s CLI - The command line interface for %s", version.ProductName, version.ProductName),
 		Long:  fmt.Sprintf("%s CLI is a command line interface for managing and deploying %s applications. It provides a set of commands to help you develop, test, and deploy your %s applications.", version.ProductName, version.ProductName, version.ProductName),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

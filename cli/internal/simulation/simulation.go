@@ -41,31 +41,31 @@ type SimulationServer struct {
 	services       map[string]*service.ServiceSimulation
 }
 
-var nitric = style.Purple(icons.Lightning + " " + version.ProductName)
+var suga = style.Purple(icons.Lightning + " " + version.ProductName)
 
-func nitricIntro(addr string, dashUrl string, appSpec *schema.Application) string {
+func sugaIntro(addr string, dashUrl string, appSpec *schema.Application) string {
 	version := version.GetShortVersion()
 
-	intro := fmt.Sprintf("\n%s %s\n- App: %s\n- Addr: %s\n- Dashboard: %s\n", nitric, style.Gray(version), appSpec.Name, addr, dashUrl)
+	intro := fmt.Sprintf("\n%s %s\n- App: %s\n- Addr: %s\n- Dashboard: %s\n", suga, style.Gray(version), appSpec.Name, addr, dashUrl)
 
 	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder(), false, true).Render(intro)
 }
 
 const (
-	NITRIC_SERVICE_MIN_PORT = 50051
-	NITRIC_SERVICE_MAX_PORT = 50999
-	ENTRYPOINT_MIN_PORT     = 3000
-	ENTRYPOINT_MAX_PORT     = 3999
+	SUGA_SERVICE_MIN_PORT = 50051
+	SUGA_SERVICE_MAX_PORT = 50999
+	ENTRYPOINT_MIN_PORT   = 3000
+	ENTRYPOINT_MAX_PORT   = 3999
 )
 
-func (s *SimulationServer) startNitricApis() error {
+func (s *SimulationServer) startSugaApis() error {
 	srv := grpc.NewServer()
 
 	storagepb.RegisterStorageServer(srv, s)
 	pubsubpb.RegisterPubsubServer(srv, s)
 
-	host := os.Getenv("NITRIC_HOST")
-	portEnv := os.Getenv("NITRIC_PORT")
+	host := os.Getenv("SUGA_HOST")
+	portEnv := os.Getenv("SUGA_PORT")
 
 	if portEnv != "" {
 		portInt, err := strconv.Atoi(portEnv)
@@ -78,7 +78,7 @@ func (s *SimulationServer) startNitricApis() error {
 			return err
 		}
 	} else {
-		openPort, err := netx.GetNextPort(netx.MinPort(NITRIC_SERVICE_MIN_PORT), netx.MaxPort(NITRIC_SERVICE_MAX_PORT))
+		openPort, err := netx.GetNextPort(netx.MinPort(SUGA_SERVICE_MIN_PORT), netx.MaxPort(SUGA_SERVICE_MAX_PORT))
 		if err != nil {
 			return fmt.Errorf("failed to find open port: %v", err)
 		}
@@ -93,7 +93,7 @@ func (s *SimulationServer) startNitricApis() error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	fmt.Println(tui.NitricIntro("App", s.appSpec.Name, "Addr", addr, "Dashboard", "https://app.nitric.io/dev"))
+	fmt.Println(tui.SugaIntro("App", s.appSpec.Name, "Addr", addr, "Dashboard", fmt.Sprintf("%s/dev", version.ProductURL)))
 	go srv.Serve(lis)
 
 	return nil
@@ -332,7 +332,7 @@ func styledName(name string, styleFunc func(...string) string) string {
 }
 
 func (s *SimulationServer) Start(output io.Writer) error {
-	err := s.startNitricApis()
+	err := s.startSugaApis()
 	if err != nil {
 		return err
 	}

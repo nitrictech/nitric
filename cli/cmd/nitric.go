@@ -16,7 +16,7 @@ func NewTemplatesCmd(injector do.Injector) *cobra.Command {
 		Short: "List available templates",
 		Long:  `List all available templates for creating new projects.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			app, err := do.Invoke[*app.NitricApp](injector)
+			app, err := do.Invoke[*app.SugaApp](injector)
 			if err != nil {
 				cobra.CheckErr(err)
 			}
@@ -32,7 +32,7 @@ func NewInitCmd(injector do.Injector) *cobra.Command {
 		Short: fmt.Sprintf("Setup a new %s project", version.ProductName),
 		Long:  fmt.Sprintf("Setup a new %s project, including within existing applications", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
-			app, err := do.Invoke[*app.NitricApp](injector)
+			app, err := do.Invoke[*app.SugaApp](injector)
 			if err != nil {
 				cobra.CheckErr(err)
 			}
@@ -53,7 +53,7 @@ func NewNewCmd(injector do.Injector) *cobra.Command {
 			if len(args) > 0 {
 				projectName = args[0]
 			}
-			app, err := do.Invoke[*app.NitricApp](injector)
+			app, err := do.Invoke[*app.SugaApp](injector)
 			if err != nil {
 				cobra.CheckErr(err)
 			}
@@ -70,9 +70,9 @@ func NewBuildCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "build",
 		Short: fmt.Sprintf("Builds the %s application", version.ProductName),
-		Long:  "Builds an application using the nitric.yaml application spec and referenced platform.",
+		Long:  fmt.Sprintf("Builds an application using the %s application spec and referenced platform.", version.ConfigFileName),
 		Run: func(cmd *cobra.Command, args []string) {
-			app, err := do.Invoke[*app.NitricApp](injector)
+			app, err := do.Invoke[*app.SugaApp](injector)
 			if err != nil {
 				cobra.CheckErr(err)
 			}
@@ -93,7 +93,7 @@ func NewGenerateCmd(injector do.Injector) *cobra.Command {
 		Short: fmt.Sprintf("Generate client libraries for %s", version.ProductName),
 		Long:  fmt.Sprintf("Generate client libraries for different programming languages based on the %s application specification.", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
-			app, err := do.Invoke[*app.NitricApp](injector)
+			app, err := do.Invoke[*app.SugaApp](injector)
 			if err != nil {
 				cobra.CheckErr(err)
 			}
@@ -123,9 +123,9 @@ func NewEditCmd(injector do.Injector) *cobra.Command {
 	return &cobra.Command{
 		Use:   "edit",
 		Short: fmt.Sprintf("Edit the %s application", version.ProductName),
-		Long:  `Edits an application using the nitric.yaml application spec and referenced platform.`,
+		Long:  fmt.Sprintf("Edits an application using the %s application spec and referenced platform.", version.ConfigFileName),
 		Run: func(cmd *cobra.Command, args []string) {
-			app, err := do.Invoke[*app.NitricApp](injector)
+			app, err := do.Invoke[*app.SugaApp](injector)
 			if err != nil {
 				cobra.CheckErr(err)
 			}

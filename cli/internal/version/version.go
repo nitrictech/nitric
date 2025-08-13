@@ -9,8 +9,20 @@ var (
 	// Name of the product
 	ProductName = "Suga"
 
-	// The name of the binary/command, for use in help messages, e.g. "nitric version"
+	// The name of the binary/command, for use in help messages, e.g. "suga version"
 	CommandName = "suga"
+
+	// The name of the configuration file
+	ConfigFileName = "suga.yaml"
+
+	// The name of the configuration directory
+	ConfigDirName = ".suga"
+
+	// The URL with the API
+	ProductURL = "https://app.addsuga.com"
+
+	// The docs URL for the product
+	DocsURL = "https://docs.addsuga.com"
 
 	// Raw is the string representation of the version. This will be replaced
 	// with the calculated version at build time.

@@ -9,7 +9,7 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-type NitricErrorTemplate struct {
+type SugaErrorTemplate struct {
 	gojsonschema.DefaultLocale
 }
 
@@ -148,23 +148,23 @@ func PrettyPrintPattern(pattern *regexp.Regexp) string {
 
 // These are used to format the error messages in the gojsonschema Locale
 // Unused here, but used when gojsonschema validates the schema
-func (t *NitricErrorTemplate) ErrorFormat() string {
+func (t *SugaErrorTemplate) ErrorFormat() string {
 	return "{{ error_prefix .field}}: {{.description}}"
 }
 
-func (t *NitricErrorTemplate) NumberOneOf() string {
+func (t *SugaErrorTemplate) NumberOneOf() string {
 	return "{{one_of .field}}"
 }
 
-func (t *NitricErrorTemplate) InvalidPropertyName() string {
+func (t *SugaErrorTemplate) InvalidPropertyName() string {
 	return "{{ invalid_property_name .field}} {{.property}}"
 }
 
-func (t *NitricErrorTemplate) DoesNotMatchPattern() string {
+func (t *SugaErrorTemplate) DoesNotMatchPattern() string {
 	return "{{pretty_print_pattern .pattern}}"
 }
 
-func (t *NitricErrorTemplate) Required() string {
+func (t *SugaErrorTemplate) Required() string {
 	return "The {{.property}} property is required"
 }
 

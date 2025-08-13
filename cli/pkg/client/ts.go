@@ -45,7 +45,7 @@ func AppSpecToTSTemplateData(appSpec schema.Application) (TSSDKTemplateData, err
 // GenerateTypeScript generates TypeScript SDK
 func GenerateTypeScript(fs afero.Fs, appSpec schema.Application, outputDir string) error {
 	if outputDir == "" {
-		outputDir = "nitric/ts/client"
+		outputDir = fmt.Sprintf("%s/ts/client", version.CommandName)
 	}
 
 	tmpl := template.Must(template.New("client").Parse(tsClientTemplate))

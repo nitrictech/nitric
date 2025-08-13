@@ -15,7 +15,7 @@ import (
 
 type Config struct {
 	v   *viper.Viper `mapstructure:"-"`
-	Url string       `mapstructure:"url" desc:"The base URL of the Nitric server (e.g., https://app.nitric.io)"`
+	Url string       `mapstructure:"url" desc:"The base URL of the Suga server (e.g., https://app.addsuga.com)"`
 }
 
 func (c *Config) FileUsed() string {
@@ -70,26 +70,26 @@ func (c *Config) SetValue(key, value string) error {
 	return mapstructure.Decode(map[string]interface{}{key: value}, c)
 }
 
-func (c *Config) GetNitricServerUrl() *url.URL {
-	nitricUrl, err := url.Parse(c.Url)
+func (c *Config) GetSugaServerUrl() *url.URL {
+	sugaUrl, err := url.Parse(c.Url)
 	if err != nil {
 		fmt.Printf("Error parsing %s server url from config, using default: %v\n", version.ProductName, err)
 		return &url.URL{
 			Scheme: "https",
-			Host:   "app.nitric.io",
+			Host:   version.ProductURL,
 		}
 	}
 
-	return nitricUrl
+	return sugaUrl
 }
 
-func (c *Config) SetNitricServerUrl(newUrl string) error {
-	nitricUrl, err := url.Parse(newUrl)
+func (c *Config) SetSugaServerUrl(newUrl string) error {
+	sugaUrl, err := url.Parse(newUrl)
 	if err != nil {
 		return err
 	}
 
-	c.Url = nitricUrl.String()
+	c.Url = sugaUrl.String()
 	return nil
 }
 
@@ -138,11 +138,11 @@ func HomeConfigPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, ".nitric"), nil
+	return filepath.Join(home, version.ConfigDirName), nil
 }
 
 func LocalConfigPath() string {
-	return ".nitric"
+	return version.ConfigDirName
 }
 
 func Load(cmd *cobra.Command) (*Config, error) {
@@ -150,7 +150,7 @@ func Load(cmd *cobra.Command) (*Config, error) {
 
 	v.SetConfigType("yaml")
 
-	// Search the current .nitric directory first
+	// Search the current config directory first
 	v.AddConfigPath(LocalConfigPath())
 
 	homeConfigPath, err := HomeConfigPath()
@@ -162,7 +162,7 @@ func Load(cmd *cobra.Command) (*Config, error) {
 	c := Config{
 		v: v,
 		// Set any default values here
-		Url: "https://app.nitric.io/",
+		Url: version.ProductURL,
 	}
 
 	err = v.ReadInConfig()

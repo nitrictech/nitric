@@ -35,7 +35,7 @@ func (c *AuthApp) Login() {
 
 // Logout handles the logout command logic
 func (c *AuthApp) Logout() {
-	fmt.Printf("\n%s Logging out...\n", style.Purple(icons.Lightning+" Nitric"))
+	fmt.Printf("\n%s Logging out...\n", style.Purple(icons.Lightning+fmt.Sprintf(" %s", version.ProductName)))
 
 	err := c.auth.Logout()
 	if err != nil {

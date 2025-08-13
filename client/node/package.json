@@ -1,7 +1,7 @@
 {
-  "name": "@nitric/client",
+  "name": "@suga/client",
   "version": "1.0.0",
-  "description": "nitric runtime client",
+  "description": "suga runtime client",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -12,7 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "gen:sources": "mkdir -p ./src/gen && grpc_tools_node_protoc --ts_out=service=grpc-node,mode=grpc-js:./src/gen --js_out=import_style=commonjs,binary:./src/gen --grpc_out=grpc_js:./src/gen -I ../.. ../../proto/*/*/*.proto"
   },
-  "author": "maintainers@nitric.io",
+  "author": "maintainers@addsuga.com",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/google-protobuf": "^3.15.12",

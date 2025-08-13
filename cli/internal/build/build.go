@@ -15,7 +15,7 @@ import (
 
 type BuilderService struct {
 	fs        afero.Fs
-	apiClient *api.NitricApiClient
+	apiClient *api.SugaApiClient
 }
 
 func (b *BuilderService) BuildProjectForTarget(appSpec *schema.Application, target string) (string, error) {
@@ -53,7 +53,7 @@ func (b *BuilderService) BuildProjectFromFileForTarget(projectFile, target strin
 
 func NewBuilderService(injector do.Injector) (*BuilderService, error) {
 	fs := do.MustInvoke[afero.Fs](injector)
-	apiClient := do.MustInvoke[*api.NitricApiClient](injector)
+	apiClient := do.MustInvoke[*api.SugaApiClient](injector)
 
 	return &BuilderService{
 		fs:        fs,

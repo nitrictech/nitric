@@ -10,7 +10,7 @@ import (
 )
 
 // FIXME: Because of the difference in fields between identity and resource plugins we need to return an interface
-func (c *NitricApiClient) GetPluginManifest(team, lib, libVersion, name string) (interface{}, error) {
+func (c *SugaApiClient) GetPluginManifest(team, lib, libVersion, name string) (interface{}, error) {
 	response, err := c.get(fmt.Sprintf("/api/teams/%s/plugin_libraries/%s/versions/%s/plugins/%s", team, lib, libVersion, name), true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to %s plugin details endpoint: %v", version.ProductName, err)

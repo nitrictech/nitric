@@ -121,7 +121,7 @@ func ApplicationFromYaml(yamlString string) (*Application, *gojsonschema.Result,
 
 func ApplicationFromJson(jsonString string) (*Application, *gojsonschema.Result, error) {
 	gojsonschema.ErrorTemplateFuncs = ErrorTemplateFunc
-	gojsonschema.Locale = &NitricErrorTemplate{}
+	gojsonschema.Locale = &SugaErrorTemplate{}
 
 	schemaLoader := gojsonschema.NewStringLoader(ApplicationJsonSchemaString())
 	documentLoader := gojsonschema.NewStringLoader(jsonString)

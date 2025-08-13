@@ -1,4 +1,4 @@
-module github.com/nitrictech/nitric/client
+module github.com/nitrictech/nitric/suga
 
 go 1.24.3
 

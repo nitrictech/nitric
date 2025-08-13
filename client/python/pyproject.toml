@@ -1,7 +1,7 @@
 [project]
-name = "nitric-client"
+name = "suga-client"
 version = "0.1.0"
-description = "Nitric Python Client"
+description = "Suga Python Client"
 dependencies = [
     "grpcio",
     "grpcio-tools",

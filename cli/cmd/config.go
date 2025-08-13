@@ -8,6 +8,7 @@ import (
 
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/style"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 )
@@ -38,13 +39,13 @@ func NewConfigCmd(injector do.Injector) *cobra.Command {
 
 By default, this command displays the current configuration values.
 Use the --list flag to see all available configuration keys and their descriptions.`,
-		Example: `
+		Example: fmt.Sprintf(`
 # Display the current configuration values
-nitric config
+%s config
 
 # List all available configuration keys and their descriptions
-nitric config --list
-		`,
+%s config --list
+		`, version.CommandName, version.CommandName),
 		Run: func(cmd *cobra.Command, args []string) {
 			conf := do.MustInvoke[*config.Config](injector)
 
@@ -79,13 +80,13 @@ nitric config --list
 	configSetCmd := &cobra.Command{
 		Use:   "set <key> <value>",
 		Short: "Set a configuration value.",
-		Example: `
-# Set the URL to the Nitric server
-nitric config set url https://app.nitric.io
+		Example: fmt.Sprintf(`
+# Set the URL to the %s server
+%s config set url %s
 
-# Set the URL to the Nitric server and save to the global config file
-nitric config set url https://app.nitric.io --global
-		`,
+# Set the URL to the %s server and save to the global config file
+%s config set url %s --global
+		`, version.ProductName, version.CommandName, version.ProductURL, version.ProductName, version.CommandName, version.ProductURL),
 		Long: `Set a value in the cli configuration file.`,
 		Args: cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {

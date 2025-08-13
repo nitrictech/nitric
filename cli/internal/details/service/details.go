@@ -19,7 +19,7 @@ type AuthDetails struct {
 }
 
 type Service struct {
-	nitricBackendUrl *url.URL
+	sugaBackendUrl *url.URL
 }
 
 var _ detail.AuthDetailsService = &Service{}
@@ -27,11 +27,11 @@ var _ detail.AuthDetailsService = &Service{}
 func NewService(inj do.Injector) (*Service, error) {
 	conf := do.MustInvoke[*config.Config](inj)
 
-	return &Service{nitricBackendUrl: conf.GetNitricServerUrl()}, nil
+	return &Service{sugaBackendUrl: conf.GetSugaServerUrl()}, nil
 }
 
 func (s *Service) GetWorkOSDetails() (*detail.WorkOSDetails, error) {
-	apiUrl, err := url.JoinPath(s.nitricBackendUrl.String(), "/auth/details")
+	apiUrl, err := url.JoinPath(s.sugaBackendUrl.String(), "/auth/details")
 	if err != nil {
 		return nil, err
 	}

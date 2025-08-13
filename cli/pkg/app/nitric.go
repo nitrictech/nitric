@@ -31,9 +31,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-type NitricApp struct {
+type SugaApp struct {
 	config    *config.Config
-	apiClient *api.NitricApiClient
+	apiClient *api.SugaApiClient
 	fs        afero.Fs
 	styles    tui.AppStyles
 	builder   *build.BuilderService
@@ -41,7 +41,7 @@ type NitricApp struct {
 
 func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 	config := do.MustInvoke[*config.Config](injector)
-	apiClient := do.MustInvoke[*api.NitricApiClient](injector)
+	apiClient := do.MustInvoke[*api.SugaApiClient](injector)
 	builder := do.MustInvoke[*build.BuilderService](injector)
 	fs, err := do.Invoke[afero.Fs](injector)
 	if err != nil {
@@ -55,7 +55,7 @@ func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 
 // getCurrentTeam retrieves the current team from the API client
 // It prints help errors to the console if the user is not authenticated or no team is set
-func (c *NitricApp) getCurrentTeam() *api.Team {
+func (c *SugaApp) getCurrentTeam() *api.Team {
 	allTeams, err := c.apiClient.GetUserTeams()
 
 	if err != nil {
@@ -84,7 +84,7 @@ func (c *NitricApp) getCurrentTeam() *api.Team {
 }
 
 // Templates handles the templates command logic
-func (c *NitricApp) Templates() error {
+func (c *SugaApp) Templates() error {
 	team := c.getCurrentTeam()
 	if team == nil {
 		return nil
@@ -129,13 +129,13 @@ func currentDirProjName() string {
 	return normalizeDirectoryName(currentDir, fallback)
 }
 
-// Init initializes nitric for an existing project, creating a nitric.yaml file if it doesn't exist
-func (c *NitricApp) Init() error {
-	nitricYamlPath := filepath.Join(".", "nitric.yaml")
-	exists, _ := afero.Exists(c.fs, nitricYamlPath)
+// Init initializes suga for an existing project, creating a suga.yaml file if it doesn't exist
+func (c *SugaApp) Init() error {
+	yamlPath := filepath.Join(".", version.ConfigFileName)
+	exists, _ := afero.Exists(c.fs, yamlPath)
 
-	// Read the nitric.yaml file
-	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
+	// Read the suga.yaml file
+	_, err := schema.LoadFromFile(c.fs, yamlPath, true)
 	if err == nil {
 		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.Emphasize.Render(version.GetCommand("edit")))
 		return nil
@@ -204,9 +204,9 @@ func (c *NitricApp) Init() error {
 		Description: description,
 	}
 
-	err = schema.SaveToYaml(c.fs, nitricYamlPath, newProject)
+	err = schema.SaveToYaml(c.fs, yamlPath, newProject)
 	if err != nil {
-		fmt.Println("Failed to save nitric.yaml file")
+		fmt.Println("Failed to save " + version.ConfigFileName + " file")
 		return err
 	}
 
@@ -270,7 +270,7 @@ func normalizeDirectoryName(dirName string, fallback string) string {
 }
 
 // New handles the new project creation command logic
-func (c *NitricApp) New(projectName string, force bool) error {
+func (c *SugaApp) New(projectName string, force bool) error {
 	team := c.getCurrentTeam()
 	if team == nil {
 		return nil
@@ -370,9 +370,9 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		return fmt.Errorf("failed to get home directory: %v", err)
 	}
 
-	templateDir := filepath.Join(home, ".nitric", "templates", latestVersion.TeamSlug, latestVersion.TemplateSlug, latestVersion.Version)
+	templateDir := filepath.Join(home, version.ConfigDirName, "templates", latestVersion.TeamSlug, latestVersion.TemplateSlug, latestVersion.Version)
 
-	templateCached, err := afero.Exists(c.fs, filepath.Join(templateDir, "nitric.yaml"))
+	templateCached, err := afero.Exists(c.fs, filepath.Join(templateDir, version.ConfigFileName))
 	if err != nil {
 		return fmt.Errorf("failed read template cache directory: %v", err)
 	}
@@ -403,16 +403,16 @@ func (c *NitricApp) New(projectName string, force bool) error {
 		return fmt.Errorf("failed to copy template directory: %v", err)
 	}
 
-	nitricYamlPath := filepath.Join(projectDir, "nitric.yaml")
+	yamlPath := filepath.Join(projectDir, version.ConfigFileName)
 
-	appSpec, err := schema.LoadFromFile(c.fs, nitricYamlPath, false)
+	appSpec, err := schema.LoadFromFile(c.fs, yamlPath, false)
 	if err != nil {
 		return err
 	}
 
 	appSpec.Name = projectName
 
-	err = schema.SaveToYaml(c.fs, nitricYamlPath, appSpec)
+	err = schema.SaveToYaml(c.fs, yamlPath, appSpec)
 	if err != nil {
 		return err
 	}
@@ -436,8 +436,8 @@ func (c *NitricApp) New(projectName string, force bool) error {
 }
 
 // Build handles the build command logic
-func (c *NitricApp) Build() error {
-	appSpec, err := schema.LoadFromFile(c.fs, "nitric.yaml", true)
+func (c *SugaApp) Build() error {
+	appSpec, err := schema.LoadFromFile(c.fs, version.ConfigFileName, true)
 	if err != nil {
 		return err
 	}
@@ -494,13 +494,13 @@ func (c *NitricApp) Build() error {
 }
 
 // Generate handles the generate command logic
-func (c *NitricApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag bool, goOutputDir, goPackageName, pythonOutputDir, javascriptOutputDir, typescriptOutputDir string) error {
+func (c *SugaApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag bool, goOutputDir, goPackageName, pythonOutputDir, javascriptOutputDir, typescriptOutputDir string) error {
 	// Check if at least one language flag is provided
 	if !goFlag && !pythonFlag && !javascriptFlag && !typescriptFlag {
 		return fmt.Errorf("at least one language flag must be specified")
 	}
 
-	appSpec, err := schema.LoadFromFile(c.fs, "nitric.yaml", true)
+	appSpec, err := schema.LoadFromFile(c.fs, version.ConfigFileName, true)
 	if err != nil {
 		return err
 	}
@@ -541,8 +541,8 @@ func (c *NitricApp) Generate(goFlag, pythonFlag, javascriptFlag, typescriptFlag 
 }
 
 // Edit handles the edit command logic
-func (c *NitricApp) Edit() error {
-	const fileName = "nitric.yaml"
+func (c *SugaApp) Edit() error {
+	fileName := version.ConfigFileName
 
 	listener, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
@@ -574,12 +574,12 @@ func (c *NitricApp) Edit() error {
 	port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 
 	// Open browser tab to the dashboard
-	devUrl := c.config.GetNitricServerUrl().JoinPath("dev")
+	devUrl := c.config.GetSugaServerUrl().JoinPath("dev")
 	q := devUrl.Query()
 	q.Add("port", port)
 	devUrl.RawQuery = q.Encode()
 
-	fmt.Println(tui.NitricIntro("Sync Port", port, "Dashboard", devUrl.String()))
+	fmt.Println(tui.SugaIntro("Sync Port", port, "Dashboard", devUrl.String()))
 
 	// Start the WebSocket server
 	errChan := make(chan error)
@@ -613,10 +613,10 @@ func (c *NitricApp) Edit() error {
 // Dev handles the dev command logic
 func Dev() error {
 	// 1. Load the App Spec
-	// Read the nitric.yaml file
+	// Read the suga.yaml file
 	fs := afero.NewOsFs()
 
-	appSpec, err := schema.LoadFromFile(fs, "nitric.yaml", true)
+	appSpec, err := schema.LoadFromFile(fs, version.ConfigFileName, true)
 	if err != nil {
 		return err
 	}

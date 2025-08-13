@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type NitricFileSync struct {
+type SugaFileSync struct {
 	filePath         string
 	file             *os.File
 	debounce         time.Duration
@@ -26,15 +26,15 @@ type FileSyncError Message[[]schema.ValidationError]
 
 type FileSyncMessage Message[schema.Application]
 
-type FileSyncOption func(*NitricFileSync)
+type FileSyncOption func(*SugaFileSync)
 
 func WithDebounce(debounce time.Duration) FileSyncOption {
-	return func(fs *NitricFileSync) {
+	return func(fs *SugaFileSync) {
 		fs.debounce = debounce
 	}
 }
 
-func (fs *NitricFileSync) getApplicationFileContents() (*schema.Application, []byte, error) {
+func (fs *SugaFileSync) getApplicationFileContents() (*schema.Application, []byte, error) {
 	fs.file.Seek(0, 0) // Seek to beginning
 	contents, err := io.ReadAll(fs.file)
 	if err != nil {
@@ -57,7 +57,7 @@ func (fs *NitricFileSync) getApplicationFileContents() (*schema.Application, []b
 	return application, contents, nil
 }
 
-func (fs *NitricFileSync) setApplicationFileContents(contents []byte) error {
+func (fs *SugaFileSync) setApplicationFileContents(contents []byte) error {
 	_, err := fs.file.Seek(0, 0)
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func validateApplicationSchema(contents []byte) ([]schema.ValidationError, error
 	return validationErrors, nil
 }
 
-func (fs *NitricFileSync) OnConnect(send SendFunc) {
+func (fs *SugaFileSync) OnConnect(send SendFunc) {
 	application, contents, err := fs.getApplicationFileContents()
 	if err != nil {
 		validationErrors, err := validateApplicationSchema(contents)
@@ -98,7 +98,7 @@ func (fs *NitricFileSync) OnConnect(send SendFunc) {
 		}
 
 		send(Message[any]{
-			Type:    "nitricSyncError",
+			Type:    "syncError",
 			Payload: validationErrors,
 		})
 		return
@@ -106,12 +106,12 @@ func (fs *NitricFileSync) OnConnect(send SendFunc) {
 
 	// Send initial state to a newly connected client
 	send(Message[any]{
-		Type:    "nitricSync",
+		Type:    "syncMessage",
 		Payload: *application,
 	})
 }
 
-func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
+func (fs *SugaFileSync) OnMessage(message json.RawMessage) {
 	var fileSyncMessage FileSyncMessage
 	err := json.Unmarshal(message, &fileSyncMessage)
 	if err != nil {
@@ -119,7 +119,7 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 	}
 
 	// Not the right message type continue
-	if fileSyncMessage.Type != "nitricSync" {
+	if fileSyncMessage.Type != "syncMessage" {
 		return
 	}
 
@@ -150,13 +150,13 @@ func (fs *NitricFileSync) OnMessage(message json.RawMessage) {
 	fs.lastSyncContents = buffer.Bytes()
 }
 
-func (fs *NitricFileSync) Close() error {
+func (fs *SugaFileSync) Close() error {
 	return fs.file.Close()
 }
 
-func NewFileSync(filePath string, broadcast BroadcastFunc, options ...FileSyncOption) (*NitricFileSync, error) {
+func NewFileSync(filePath string, broadcast BroadcastFunc, options ...FileSyncOption) (*SugaFileSync, error) {
 	var err error
-	fs := &NitricFileSync{
+	fs := &SugaFileSync{
 		filePath:  filePath,
 		broadcast: broadcast,
 	}
@@ -173,12 +173,12 @@ func NewFileSync(filePath string, broadcast BroadcastFunc, options ...FileSyncOp
 	return fs, nil
 }
 
-func (fs *NitricFileSync) Start() error {
+func (fs *SugaFileSync) Start() error {
 	return fs.watchFile()
 }
 
 // watchFile watches the file for changes and broadcasts updates
-func (fs *NitricFileSync) watchFile() error {
+func (fs *SugaFileSync) watchFile() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (fs *NitricFileSync) watchFile() error {
 					}
 
 					fs.broadcast(Message[any]{
-						Type:    "nitricSyncError",
+						Type:    "syncError",
 						Payload: validationErrors,
 					})
 					return
@@ -224,7 +224,7 @@ func (fs *NitricFileSync) watchFile() error {
 				}
 
 				fs.broadcast(Message[any]{
-					Type:    "nitricSync",
+					Type:    "syncMessage",
 					Payload: *application,
 				})
 			})

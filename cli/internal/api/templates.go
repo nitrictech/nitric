@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func (c *NitricApiClient) GetTemplates(team string) ([]TemplateResponse, error) {
+func (c *SugaApiClient) GetTemplates(team string) ([]TemplateResponse, error) {
 	response, err := c.get(fmt.Sprintf("/api/teams/%s/templates", team), true)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (c *NitricApiClient) GetTemplates(team string) ([]TemplateResponse, error) 
 
 // GetTemplate gets a specific template by teamSlug, templateName and version
 // version is optional, if it is not provided, the latest version will be returned
-func (c *NitricApiClient) GetTemplate(teamSlug string, templateName string, version string) (*TemplateVersion, error) {
+func (c *SugaApiClient) GetTemplate(teamSlug string, templateName string, version string) (*TemplateVersion, error) {
 	// latest version URL is /api/teams/{teamSlug}/templates/{templateName}
 	// specific version URL is /api/teams/{teamSlug}/templates/{templateName}/v/{version}
 

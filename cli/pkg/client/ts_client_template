@@ -1,8 +1,8 @@
-import { grpc, {{if .Buckets}} StorageClient, Bucket {{end}}} from "@nitric/client";
+import { grpc, {{if .Buckets}} StorageClient, Bucket {{end}}} from "@suga/client";
 
-const SERVICE_ADDRESS = `${process.env.NITRIC_SERVICE_ADDRESS || "localhost:50051"}`;
+const SERVICE_ADDRESS = `${process.env.SUGA_SERVICE_ADDRESS || "localhost:50051"}`;
 
-export class NitricClient {
+export class SugaClient {
   private storageClient: InstanceType<typeof StorageClient>;
   {{range .Buckets}}
   public {{.CamelCase}}: Bucket;

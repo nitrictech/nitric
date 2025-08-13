@@ -7,11 +7,12 @@ import (
 	"strconv"
 
 	"github.com/nitrictech/nitric/cli/internal/api"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/engines/terraform"
 )
 
 type PlatformRepository struct {
-	apiClient *api.NitricApiClient
+	apiClient *api.SugaApiClient
 }
 
 var _ terraform.PlatformRepository = (*PlatformRepository)(nil)
@@ -22,7 +23,7 @@ func (r *PlatformRepository) GetPlatform(name string) (*terraform.PlatformSpec, 
 	matches := re.FindStringSubmatch(name)
 
 	if matches == nil {
-		return nil, fmt.Errorf("invalid platform name format: %s. Expected format: <team>/<lib>@<revision> e.g. nitric/aws@1", name)
+		return nil, fmt.Errorf("invalid platform name format: %s. Expected format: <team>/<lib>@<revision> e.g. %s/aws@1", version.CommandName, name)
 	}
 
 	// Extract named groups
@@ -52,7 +53,7 @@ func (r *PlatformRepository) GetPlatform(name string) (*terraform.PlatformSpec, 
 	return platformSpec, nil
 }
 
-func NewPlatformRepository(apiClient *api.NitricApiClient) *PlatformRepository {
+func NewPlatformRepository(apiClient *api.SugaApiClient) *PlatformRepository {
 	return &PlatformRepository{
 		apiClient: apiClient,
 	}

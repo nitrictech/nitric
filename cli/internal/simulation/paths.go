@@ -3,14 +3,16 @@ package simulation
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/nitrictech/nitric/cli/internal/version"
 )
 
 var (
-	DotNitricDir = "./.nitric"
+	DotSugaDir = "./" + version.ConfigDirName
 	// Container of all buckets
-	BucketsDir = filepath.Join(DotNitricDir, "buckets")
+	BucketsDir = filepath.Join(DotSugaDir, "buckets")
 	// Container of all services
-	ServicesDir = filepath.Join(DotNitricDir, "services")
+	ServicesDir = filepath.Join(DotSugaDir, "services")
 	// Container of all service logs
 	ServicesLogsDir = filepath.Join(ServicesDir, "logs")
 )
