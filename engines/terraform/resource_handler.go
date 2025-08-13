@@ -13,6 +13,11 @@ import (
 func (e *TerraformEngine) resolvePluginsForService(servicePlugin *ResourcePluginManifest) (*plugin.PluginDefinition, error) {
 	gets := []string{}
 
+	// Check if Runtime is nil to prevent panic
+	if servicePlugin.Runtime == nil {
+		return nil, fmt.Errorf("service plugin %s has no runtime configuration", servicePlugin.Name)
+	}
+
 	pluginDef := &plugin.PluginDefinition{
 		Service: plugin.GoPlugin{
 			Alias:  "svcPlugin",
@@ -237,4 +242,3 @@ func (td *TerraformDeployment) processDatabaseResources(appSpec *app_spec_schema
 
 	return serviceEnvs, nil
 }
-
