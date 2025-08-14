@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/samber/lo"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -25,29 +24,23 @@ func (a *Application) IsValid() []gojsonschema.ResultError {
 func (a *Application) checkAccessPermissions() []gojsonschema.ResultError {
 	violations := []gojsonschema.ResultError{}
 
-	// Validate bucket actions
-	validBucketActions := []string{"read", "write", "delete"}
-
 	for name, intent := range a.BucketIntents {
 		for serviceName, actions := range intent.Access {
-			invalidActions, ok := hasInvalidActions(actions, validBucketActions)
+			invalidActions, ok := ValidateActions(actions, Bucket)
 			if !ok {
 				key := fmt.Sprintf("buckets.%s.access.%s", name, serviceName)
-				err := fmt.Sprintf("Invalid database %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(validBucketActions, ", "))
+				err := fmt.Sprintf("Invalid bucket %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(GetValidActions(Bucket), ", "))
 				violations = append(violations, newValidationError(key, err))
 			}
 		}
 	}
 
-	// Validate database actions
-	validDatabaseActions := []string{"query", "mutate"}
-
 	for name, intent := range a.DatabaseIntents {
 		for serviceName, actions := range intent.Access {
-			invalidActions, ok := hasInvalidActions(actions, validDatabaseActions)
+			invalidActions, ok := ValidateActions(actions, Database)
 			if !ok {
 				key := fmt.Sprintf("databases.%s.access.%s", name, serviceName)
-				err := fmt.Sprintf("Invalid database %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(validDatabaseActions, ", "))
+				err := fmt.Sprintf("Invalid database %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(GetValidActions(Database), ", "))
 				violations = append(violations, newValidationError(key, err))
 			}
 		}
@@ -62,19 +55,6 @@ func pluralise(word string, count int) string {
 		output += "s"
 	}
 	return output
-}
-
-func hasInvalidActions(actions []string, validActions []string) ([]string, bool) {
-	invalidActions := []string{}
-	validActions = append(validActions, "all")
-
-	for _, action := range actions {
-		if !lo.Contains(validActions, strings.ToLower(action)) {
-			invalidActions = append(invalidActions, action)
-		}
-	}
-
-	return invalidActions, len(invalidActions) == 0
 }
 
 func (a *Application) checkNoNameConflicts() []gojsonschema.ResultError {

@@ -50,6 +50,10 @@ func (fs *NitricFileSync) getApplicationFileContents() (*schema.Application, []b
 		return nil, contents, fmt.Errorf("Errors parsing application from yaml: %v", schemaResult.Errors())
 	}
 
+	if appSpecErrors := application.IsValid(); len(appSpecErrors) > 0 {
+		return nil, contents, fmt.Errorf("application is not valid")
+	}
+
 	return application, contents, nil
 }
 

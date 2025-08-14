@@ -122,7 +122,7 @@ func (td *TerraformDeployment) processBucketResources(appSpec *app_spec_schema.A
 		servicesInput := map[string]any{}
 		if access, ok := bucketIntent.GetAccess(); ok {
 			for serviceName, actions := range access {
-				expandedActions := ExpandActions(actions, Bucket)
+				expandedActions := app_spec_schema.ExpandActions(actions, app_spec_schema.Bucket)
 
 				idMap, ok := td.serviceIdentities[serviceName]
 				if !ok {
@@ -207,7 +207,7 @@ func (td *TerraformDeployment) processDatabaseResources(appSpec *app_spec_schema
 		servicesInput := map[string]any{}
 		if access, ok := databaseIntent.GetAccess(); ok {
 			for serviceName, actions := range access {
-				expandedActions := ExpandActions(actions, Database)
+				expandedActions := app_spec_schema.ExpandActions(actions, app_spec_schema.Database)
 
 				idMap, ok := td.serviceIdentities[serviceName]
 				if !ok {
