@@ -122,13 +122,15 @@ func (td *TerraformDeployment) processBucketResources(appSpec *app_spec_schema.A
 		servicesInput := map[string]any{}
 		if access, ok := bucketIntent.GetAccess(); ok {
 			for serviceName, actions := range access {
+				expandedActions := ExpandActions(actions, Bucket)
+
 				idMap, ok := td.serviceIdentities[serviceName]
 				if !ok {
 					return nil, fmt.Errorf("could not give access to bucket %s: service %s not found", intentName, serviceName)
 				}
 
 				servicesInput[serviceName] = map[string]interface{}{
-					"actions":    jsii.Strings(actions...),
+					"actions":    jsii.Strings(expandedActions...),
 					"identities": idMap,
 				}
 			}
@@ -205,13 +207,15 @@ func (td *TerraformDeployment) processDatabaseResources(appSpec *app_spec_schema
 		servicesInput := map[string]any{}
 		if access, ok := databaseIntent.GetAccess(); ok {
 			for serviceName, actions := range access {
+				expandedActions := ExpandActions(actions, Database)
+
 				idMap, ok := td.serviceIdentities[serviceName]
 				if !ok {
 					return nil, fmt.Errorf("could not give access to database %s: service %s not found", intentName, serviceName)
 				}
 
 				servicesInput[serviceName] = map[string]interface{}{
-					"actions":    jsii.Strings(actions...),
+					"actions":    jsii.Strings(expandedActions...),
 					"identities": idMap,
 				}
 			}
