@@ -25,29 +25,43 @@ func (a *Application) IsValid() []gojsonschema.ResultError {
 func (a *Application) checkAccessPermissions() []gojsonschema.ResultError {
 	violations := []gojsonschema.ResultError{}
 
+	// Validate bucket actions
+	validBucketActions := []string{"read", "write", "delete"}
+
 	for name, intent := range a.BucketIntents {
 		for serviceName, actions := range intent.Access {
-			invalidActions, ok := hasInvalidActions(actions, []string{"read", "write", "delete"})
+			invalidActions, ok := hasInvalidActions(actions, validBucketActions)
 			if !ok {
 				key := fmt.Sprintf("buckets.%s.access.%s", name, serviceName)
-				err := fmt.Sprintf("provided invalid actions [%s]", strings.Join(invalidActions, ", "))
+				err := fmt.Sprintf("Invalid database %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(validBucketActions, ", "))
 				violations = append(violations, newValidationError(key, err))
 			}
 		}
 	}
 
+	// Validate database actions
+	validDatabaseActions := []string{"query", "mutate"}
+
 	for name, intent := range a.DatabaseIntents {
 		for serviceName, actions := range intent.Access {
-			invalidActions, ok := hasInvalidActions(actions, []string{"query", "mutate"})
+			invalidActions, ok := hasInvalidActions(actions, validDatabaseActions)
 			if !ok {
 				key := fmt.Sprintf("databases.%s.access.%s", name, serviceName)
-				err := fmt.Sprintf("provided invalid actions [%s]", strings.Join(invalidActions, ", "))
+				err := fmt.Sprintf("Invalid database %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(validDatabaseActions, ", "))
 				violations = append(violations, newValidationError(key, err))
 			}
 		}
 	}
 
 	return violations
+}
+
+func pluralise(word string, count int) string {
+	output := word
+	if count > 1 {
+		output += "s"
+	}
+	return output
 }
 
 func hasInvalidActions(actions []string, validActions []string) ([]string, bool) {
