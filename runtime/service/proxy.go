@@ -16,7 +16,7 @@ type HttpServerProxy struct {
 
 var defaultHttpClient = &http.Client{
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		// Prevent redirects to ensure we handle them manually if needed
+		// Prevent redirects so the end user client can follow them itself
 		return http.ErrUseLastResponse
 	},
 }
