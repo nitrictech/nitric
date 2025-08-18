@@ -27,7 +27,7 @@ func NewSugaApiClient(injector do.Injector) (*SugaApiClient, error) {
 		return nil, fmt.Errorf("failed to get config: %w", err)
 	}
 
-	apiUrl := config.GetNitricServerUrl()
+	apiUrl := config.GetSugaServerUrl()
 
 	tokenProvider, err := do.InvokeAs[TokenProvider](injector)
 	if err != nil {

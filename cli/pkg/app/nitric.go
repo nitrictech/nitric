@@ -39,7 +39,7 @@ type SugaApp struct {
 	builder   *build.BuilderService
 }
 
-func NewNitricApp(injector do.Injector) (*NitricApp, error) {
+func NewSugaApp(injector do.Injector) (*SugaApp, error) {
 	config := do.MustInvoke[*config.Config](injector)
 	apiClient := do.MustInvoke[*api.SugaApiClient](injector)
 	builder := do.MustInvoke[*build.BuilderService](injector)
@@ -50,7 +50,7 @@ func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 
 	appStyles := tui.NewAppStyles()
 
-	return &NitricApp{config: config, apiClient: apiClient, fs: fs, builder: builder, styles: appStyles}, nil
+	return &SugaApp{config: config, apiClient: apiClient, fs: fs, builder: builder, styles: appStyles}, nil
 }
 
 // getCurrentTeam retrieves the current team from the API client
@@ -140,11 +140,11 @@ func (c *SugaApp) Init() error {
 		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.Emphasize.Render(version.GetCommand("edit")))
 		return nil
 	} else if exists {
-		fmt.Printf("Project already initialized, but an error occurred loading %s\n", c.styles.Emphasize.Render("nitric.yaml"))
+		fmt.Printf("Project already initialized, but an error occurred loading %s\n", c.styles.Emphasize.Render(version.ConfigFileName))
 		return err
 	}
 
-	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.Emphasize.Render(version.ProductName))
+	fmt.Printf("Welcome to %s, this command will walk you through creating a %s file.\n", c.styles.Emphasize.Render(version.ProductName), version.ConfigFileName)
 	fmt.Printf("This file is used to define your app's infrastructure, resources and deployment targets.\n")
 	fmt.Println()
 	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.Emphasize.Render(version.GetCommand("edit")))
@@ -212,7 +212,7 @@ func (c *SugaApp) Init() error {
 
 	fmt.Println()
 	fmt.Println(c.styles.Success.Render(" " + icons.Check + " Project initialized!"))
-	fmt.Println(c.styles.Faint.Render("   " + version.ProductName + " project written to " + nitricYamlPath))
+	fmt.Println(c.styles.Faint.Render("   " + version.ProductName + " project written to " + yamlPath))
 
 	fmt.Println()
 	fmt.Println("Next steps:")
@@ -222,7 +222,7 @@ func (c *SugaApp) Init() error {
 	fmt.Println("4. Run", c.styles.Emphasize.Render(version.GetCommand("dev")), "to start the development server")
 	fmt.Println("5. Run", c.styles.Emphasize.Render(version.GetCommand("build")), "to build the project for a specific platform")
 	fmt.Println()
-	fmt.Println("For more information, see the", c.styles.Emphasize.Render(version.ProductName+" docs"), "at", c.styles.Emphasize.Render("https://nitric.io/docs"))
+	fmt.Println("For more information, see the", c.styles.Emphasize.Render(version.ProductName+" docs"), "at", c.styles.Emphasize.Render(version.DocsURL))
 
 	return nil
 }
@@ -429,7 +429,7 @@ func (c *SugaApp) New(projectName string, force bool) error {
 	b.WriteString("4. Run " + c.styles.Emphasize.Render(version.GetCommand("dev")) + " to start the development server\n")
 	b.WriteString("5. Run " + c.styles.Emphasize.Render(version.GetCommand("build")) + " to build the project for a specific platform\n")
 	b.WriteString("\n")
-	b.WriteString("For more information, see the " + c.styles.Emphasize.Render(version.ProductName+" docs") + " at " + c.styles.Emphasize.Render("https://nitric.io/docs"))
+	b.WriteString("For more information, see the " + c.styles.Emphasize.Render(version.ProductName+" docs") + " at " + c.styles.Emphasize.Render(version.DocsURL))
 
 	fmt.Println(b.String())
 	return nil
@@ -443,8 +443,8 @@ func (c *SugaApp) Build() error {
 	}
 
 	if len(appSpec.Targets) == 0 {
-		nitricEdit := c.styles.Emphasize.Render(version.GetCommand("edit"))
-		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
+		editCommand := c.styles.Emphasize.Render(version.GetCommand("edit"))
+		fmt.Printf("No targets specified in %s, run %s to add a target\n", version.ConfigFileName, editCommand)
 		return nil
 	}
 

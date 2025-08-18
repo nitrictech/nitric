@@ -19,13 +19,13 @@ import (
 )
 
 type TeamApp struct {
-	apiClient *api.NitricApiClient
+	apiClient *api.SugaApiClient
 	auth      *workos.WorkOSAuth
 	styles    tui.AppStyles
 }
 
 func NewTeamApp(injector do.Injector) (*TeamApp, error) {
-	apiClient, err := api.NewNitricApiClient(injector)
+	apiClient, err := api.NewSugaApiClient(injector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}

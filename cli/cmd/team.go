@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/app"
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
@@ -15,13 +18,13 @@ func NewTeamCmd(injector do.Injector) *cobra.Command {
 
 When run without arguments, displays an interactive list of available teams.
 When run with a team slug, switches directly to that team.`,
-		Example: `
+		Example: fmt.Sprintf(`
 # Show interactive team switcher
-nitric team
+%s team
 
 # Switch to team by slug
-nitric team my-team-slug
-		`,
+%s team my-team-slug
+		`, version.CommandName, version.CommandName),
 		Run: func(cmd *cobra.Command, args []string) {
 			teamApp, err := app.NewTeamApp(injector)
 			if err != nil {
