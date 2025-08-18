@@ -4,24 +4,10 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strings"
 
 	"github.com/xeipuuv/gojsonschema"
 )
-
-func (a *Application) checkNoEnvVarCollisions() []gojsonschema.ResultError {
-	violations := []gojsonschema.ResultError{}
-	envVarMap := map[string]string{}
-
-	for name, intent := range a.DatabaseIntents {
-		if existingName, ok := envVarMap[intent.EnvVarKey]; ok {
-			violations = append(violations, newValidationError(fmt.Sprintf("databases.%s", name), fmt.Sprintf("env var %s is already in use by %s", intent.EnvVarKey, existingName)))
-			continue
-		}
-		envVarMap[intent.EnvVarKey] = name
-	}
-
-	return violations
-}
 
 // Perform additional validation checks on the application
 func (a *Application) IsValid() []gojsonschema.ResultError {
@@ -30,8 +16,45 @@ func (a *Application) IsValid() []gojsonschema.ResultError {
 	violations = append(violations, a.checkNoReservedNames()...)
 	violations = append(violations, a.checkSnakeCaseNames()...)
 	violations = append(violations, a.checkNoEnvVarCollisions()...)
+	violations = append(violations, a.checkAccessPermissions()...)
 
 	return violations
+}
+
+func (a *Application) checkAccessPermissions() []gojsonschema.ResultError {
+	violations := []gojsonschema.ResultError{}
+
+	for name, intent := range a.BucketIntents {
+		for serviceName, actions := range intent.Access {
+			invalidActions, ok := ValidateActions(actions, Bucket)
+			if !ok {
+				key := fmt.Sprintf("buckets.%s.access.%s", name, serviceName)
+				err := fmt.Sprintf("Invalid bucket %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(GetValidActions(Bucket), ", "))
+				violations = append(violations, newValidationError(key, err))
+			}
+		}
+	}
+
+	for name, intent := range a.DatabaseIntents {
+		for serviceName, actions := range intent.Access {
+			invalidActions, ok := ValidateActions(actions, Database)
+			if !ok {
+				key := fmt.Sprintf("databases.%s.access.%s", name, serviceName)
+				err := fmt.Sprintf("Invalid database %s: %s. Valid actions are: %s", pluralise("action", len(invalidActions)), strings.Join(invalidActions, ", "), strings.Join(GetValidActions(Database), ", "))
+				violations = append(violations, newValidationError(key, err))
+			}
+		}
+	}
+
+	return violations
+}
+
+func pluralise(word string, count int) string {
+	output := word
+	if count > 1 {
+		output += "s"
+	}
+	return output
 }
 
 func (a *Application) checkNoNameConflicts() []gojsonschema.ResultError {
@@ -153,6 +176,21 @@ func (a *Application) checkSnakeCaseNames() []gojsonschema.ResultError {
 		if !snakeCasePattern.MatchString(name) {
 			violations = append(violations, newValidationError(fmt.Sprintf("websites.%s", name), fmt.Sprintf("website name %s must be in snake_case format", name)))
 		}
+	}
+
+	return violations
+}
+
+func (a *Application) checkNoEnvVarCollisions() []gojsonschema.ResultError {
+	violations := []gojsonschema.ResultError{}
+	envVarMap := map[string]string{}
+
+	for name, intent := range a.DatabaseIntents {
+		if existingName, ok := envVarMap[intent.EnvVarKey]; ok {
+			violations = append(violations, newValidationError(fmt.Sprintf("databases.%s", name), fmt.Sprintf("env var %s is already in use by %s", intent.EnvVarKey, existingName)))
+			continue
+		}
+		envVarMap[intent.EnvVarKey] = name
 	}
 
 	return violations
