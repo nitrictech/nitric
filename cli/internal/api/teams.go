@@ -27,6 +27,9 @@ func (c *NitricApiClient) GetUserTeams() ([]Team, error) {
 
 	defer response.Body.Close()
 
+	if response.StatusCode == 401 || response.StatusCode == 403 {
+		return nil, ErrUnauthenticated
+	}
 	if response.StatusCode != 200 {
 		return nil, fmt.Errorf("failed to get user teams: %s", response.Status)
 	}
