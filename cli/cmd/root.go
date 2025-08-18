@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nitrictech/nitric/cli/internal/config"
+	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
@@ -39,6 +40,7 @@ func NewRootCmd(injector do.Injector) *cobra.Command {
 	rootCmd.AddCommand(NewEditCmd(injector))
 	rootCmd.AddCommand(NewDevCmd(injector))
 	rootCmd.AddCommand(NewConfigCmd(injector))
+	rootCmd.AddCommand(NewTeamCmd(injector))
 
 	return rootCmd
 }
@@ -50,7 +52,7 @@ func NewVersionCmd(injector do.Injector) *cobra.Command {
 		Short: fmt.Sprintf("Print the %s CLI version", version.ProductName),
 		Long:  fmt.Sprintf("Display the version number of the %s CLI.", version.ProductName),
 		Run: func(cmd *cobra.Command, args []string) {
-			highlight := lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
+			highlight := lipgloss.NewStyle().Foreground(colors.Teal)
 			fmt.Printf("%s cli version %s\n", version.ProductName, highlight.Render(version.Version))
 		},
 	}

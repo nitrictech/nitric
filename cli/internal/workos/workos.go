@@ -58,7 +58,7 @@ func (a *WorkOSAuth) Login() (*http.User, error) {
 		return a.tokens.User, nil
 	}
 
-	err := a.performPKCE()
+	err := a.performPKCE("")
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +113,39 @@ func (a *WorkOSAuth) refreshToken() error {
 	}
 
 	workosToken, err := a.httpClient.AuthenticateWithRefreshToken(a.tokens.RefreshToken, nil)
+	if err != nil {
+		return err
+	}
+
+	a.tokens = &Tokens{
+		AccessToken:  workosToken.AccessToken,
+		RefreshToken: workosToken.RefreshToken,
+		User:         &workosToken.User,
+	}
+
+	err = a.tokenStore.SaveTokens(a.tokens)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *WorkOSAuth) RefreshTokenForOrganization(organizationId string) error {
+	if a.tokens == nil {
+		tokens, err := a.tokenStore.GetTokens()
+		if err != nil {
+			return fmt.Errorf("no stored tokens found, please login: %w", err)
+		}
+		a.tokens = tokens
+	}
+
+	if a.tokens.RefreshToken == "" {
+		return fmt.Errorf("no refresh token available", ErrUnauthenticated)
+	}
+
+	// Use organization-scoped refresh token
+	workosToken, err := a.httpClient.AuthenticateWithRefreshToken(a.tokens.RefreshToken, &organizationId)
 	if err != nil {
 		return err
 	}

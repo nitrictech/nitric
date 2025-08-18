@@ -29,7 +29,7 @@ var LOCAL_PKCE_CALLBACK_PORT = 48321
 // ErrPortNotAvailable is returned when the local auth callback port is not available.
 var ErrPortNotAvailable = fmt.Errorf("port %d is not available, unable to start local auth callback server", LOCAL_PKCE_CALLBACK_PORT)
 
-func (a *WorkOSAuth) performPKCE() error {
+func (a *WorkOSAuth) performPKCE(organizationId string) error {
 	// Check if the callback port is available and create a listener
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", LOCAL_PKCE_CALLBACK_PORT))
 	if err != nil {
@@ -58,12 +58,19 @@ func (a *WorkOSAuth) performPKCE() error {
 		callbackServer.Shutdown(shutdownCtx)
 	}()
 
-	authUrl, err := a.httpClient.GetAuthorizationUrl(workos_http.GetAuthorizationUrlOptions{
+	authOptions := workos_http.GetAuthorizationUrlOptions{
 		Provider:            "authkit",
 		RedirectURI:         fmt.Sprintf("http://127.0.0.1:%d/callback", LOCAL_PKCE_CALLBACK_PORT),
 		CodeChallenge:       pkceChallenge.Challenge,
 		CodeChallengeMethod: "S256",
-	})
+	}
+	
+	// If organization ID is provided, add it to the auth options
+	if organizationId != "" {
+		authOptions.OrganizationID = organizationId
+	}
+	
+	authUrl, err := a.httpClient.GetAuthorizationUrl(authOptions)
 	if err != nil {
 		return err
 	}

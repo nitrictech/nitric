@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/hashicorp/go-getter"
 	"github.com/nitrictech/nitric/cli/internal/api"
 	"github.com/nitrictech/nitric/cli/internal/browser"
@@ -21,7 +20,6 @@ import (
 	"github.com/nitrictech/nitric/cli/internal/config"
 	"github.com/nitrictech/nitric/cli/internal/devserver"
 	"github.com/nitrictech/nitric/cli/internal/simulation"
-	"github.com/nitrictech/nitric/cli/internal/style/colors"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
 	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/pkg/client"
@@ -37,14 +35,8 @@ type NitricApp struct {
 	config    *config.Config
 	apiClient *api.NitricApiClient
 	fs        afero.Fs
-	styles    Styles
+	styles    tui.AppStyles
 	builder   *build.BuilderService
-}
-
-type Styles struct {
-	emphasize lipgloss.Style
-	faint     lipgloss.Style
-	success   lipgloss.Style
 }
 
 func NewNitricApp(injector do.Injector) (*NitricApp, error) {
@@ -56,11 +48,9 @@ func NewNitricApp(injector do.Injector) (*NitricApp, error) {
 		fs = afero.NewOsFs()
 	}
 
-	return &NitricApp{config: config, apiClient: apiClient, fs: fs, builder: builder, styles: Styles{
-		emphasize: lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
-		faint:     lipgloss.NewStyle().Faint(true),
-		success:   lipgloss.NewStyle().Foreground(colors.Teal).Bold(true),
-	}}, nil
+	appStyles := tui.NewAppStyles()
+
+	return &NitricApp{config: config, apiClient: apiClient, fs: fs, builder: builder, styles: appStyles}, nil
 }
 
 // getCurrentTeam retrieves the current team from the API client
@@ -70,7 +60,7 @@ func (c *NitricApp) getCurrentTeam() *api.Team {
 
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
-			fmt.Println("Please login first, using the", c.styles.emphasize.Render(version.GetCommand("login")), "command")
+			fmt.Println("Please login first, using the", c.styles.Emphasize.Render(version.GetCommand("login")), "command")
 			return nil
 		}
 		fmt.Printf("Failed to get teams: %v\n", err)
@@ -86,7 +76,7 @@ func (c *NitricApp) getCurrentTeam() *api.Team {
 	}
 
 	if currentTeam == nil {
-		fmt.Println("No current team set, please set a team using the", c.styles.emphasize.Render(version.GetCommand("team")), "command")
+		fmt.Println("No current team set, please set a team using the", c.styles.Emphasize.Render(version.GetCommand("team")), "command")
 		return nil
 	}
 
@@ -103,7 +93,7 @@ func (c *NitricApp) Templates() error {
 	templates, err := c.apiClient.GetTemplates(team.Slug)
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
-			fmt.Println("Please login first, using the", c.styles.emphasize.Render(version.GetCommand("login")), "command")
+			fmt.Println("Please login first, using the", c.styles.Emphasize.Render(version.GetCommand("login")), "command")
 			return nil
 		}
 
@@ -147,17 +137,17 @@ func (c *NitricApp) Init() error {
 	// Read the nitric.yaml file
 	_, err := schema.LoadFromFile(c.fs, nitricYamlPath, true)
 	if err == nil {
-		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.emphasize.Render(version.GetCommand("edit")))
+		fmt.Printf("Project already initialized, run %s to edit the project\n", c.styles.Emphasize.Render(version.GetCommand("edit")))
 		return nil
 	} else if exists {
-		fmt.Printf("Project already initialized, but an error occurred loading %s\n", c.styles.emphasize.Render("nitric.yaml"))
+		fmt.Printf("Project already initialized, but an error occurred loading %s\n", c.styles.Emphasize.Render("nitric.yaml"))
 		return err
 	}
 
-	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.emphasize.Render(version.ProductName))
+	fmt.Printf("Welcome to %s, this command will walk you through creating a nitric.yaml file.\n", c.styles.Emphasize.Render(version.ProductName))
 	fmt.Printf("This file is used to define your app's infrastructure, resources and deployment targets.\n")
 	fmt.Println()
-	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.emphasize.Render(version.GetCommand("edit")))
+	fmt.Printf("Here we'll only cover the basics, use %s to continue editing the project.\n", c.styles.Emphasize.Render(version.GetCommand("edit")))
 	fmt.Println()
 
 	defaultName := currentDirProjName()
@@ -221,18 +211,18 @@ func (c *NitricApp) Init() error {
 	}
 
 	fmt.Println()
-	fmt.Println(c.styles.success.Render(" " + icons.Check + " Project initialized!"))
-	fmt.Println(c.styles.faint.Render("   " + version.ProductName + " project written to " + nitricYamlPath))
+	fmt.Println(c.styles.Success.Render(" " + icons.Check + " Project initialized!"))
+	fmt.Println(c.styles.Faint.Render("   " + version.ProductName + " project written to " + nitricYamlPath))
 
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("1. Run", c.styles.emphasize.Render(version.GetCommand("edit")), "to start the", version.ProductName, "editor")
+	fmt.Println("1. Run", c.styles.Emphasize.Render(version.GetCommand("edit")), "to start the", version.ProductName, "editor")
 	fmt.Println("2. Design your app's resources and deployment targets")
-	fmt.Println("3. Optionally, use", c.styles.emphasize.Render(version.GetCommand("generate")), "to generate the client libraries for your app")
-	fmt.Println("4. Run", c.styles.emphasize.Render(version.GetCommand("dev")), "to start the development server")
-	fmt.Println("5. Run", c.styles.emphasize.Render(version.GetCommand("build")), "to build the project for a specific platform")
+	fmt.Println("3. Optionally, use", c.styles.Emphasize.Render(version.GetCommand("generate")), "to generate the client libraries for your app")
+	fmt.Println("4. Run", c.styles.Emphasize.Render(version.GetCommand("dev")), "to start the development server")
+	fmt.Println("5. Run", c.styles.Emphasize.Render(version.GetCommand("build")), "to build the project for a specific platform")
 	fmt.Println()
-	fmt.Println("For more information, see the", c.styles.emphasize.Render(version.ProductName+" docs"), "at", c.styles.emphasize.Render("https://nitric.io/docs"))
+	fmt.Println("For more information, see the", c.styles.Emphasize.Render(version.ProductName+" docs"), "at", c.styles.Emphasize.Render("https://nitric.io/docs"))
 
 	return nil
 }
@@ -289,15 +279,15 @@ func (c *NitricApp) New(projectName string, force bool) error {
 	templates, err := c.apiClient.GetTemplates(team.Slug)
 	if err != nil {
 		if errors.Is(err, api.ErrUnauthenticated) {
-			fmt.Println("Please login first, using", c.styles.emphasize.Render(version.GetCommand("login")))
+			fmt.Println("Please login first, using", c.styles.Emphasize.Render(version.GetCommand("login")))
 			return nil
 		}
 
 		return fmt.Errorf("failed to get templates: %v", err)
 	}
 
-	fmt.Printf("Welcome to %s, this command will help you create a project from a template.\n", c.styles.emphasize.Render(version.ProductName))
-	fmt.Printf("If you already have a project, run %s instead.\n", c.styles.emphasize.Render(version.GetCommand("init")))
+	fmt.Printf("Welcome to %s, this command will help you create a project from a template.\n", c.styles.Emphasize.Render(version.ProductName))
+	fmt.Printf("If you already have a project, run %s instead.\n", c.styles.Emphasize.Render(version.GetCommand("init")))
 	fmt.Println()
 
 	if projectName == "" {
@@ -430,16 +420,16 @@ func (c *NitricApp) New(projectName string, force bool) error {
 	var b strings.Builder
 
 	b.WriteString("\n")
-	b.WriteString(c.styles.emphasize.Render(icons.Check + " Project created!\n"))
+	b.WriteString(c.styles.Emphasize.Render(icons.Check + " Project created!\n"))
 	b.WriteString("\n")
 	b.WriteString("Next steps:\n")
-	b.WriteString("1. Run " + c.styles.emphasize.Render("cd ./"+projectDir) + " to move to the project directory\n")
-	b.WriteString("2. Run " + c.styles.emphasize.Render(version.GetCommand("edit")) + " to start the " + version.ProductName + " editor\n")
+	b.WriteString("1. Run " + c.styles.Emphasize.Render("cd ./"+projectDir) + " to move to the project directory\n")
+	b.WriteString("2. Run " + c.styles.Emphasize.Render(version.GetCommand("edit")) + " to start the " + version.ProductName + " editor\n")
 	b.WriteString("3. Design your app's resources and deployment targets\n")
-	b.WriteString("4. Run " + c.styles.emphasize.Render(version.GetCommand("dev")) + " to start the development server\n")
-	b.WriteString("5. Run " + c.styles.emphasize.Render(version.GetCommand("build")) + " to build the project for a specific platform\n")
+	b.WriteString("4. Run " + c.styles.Emphasize.Render(version.GetCommand("dev")) + " to start the development server\n")
+	b.WriteString("5. Run " + c.styles.Emphasize.Render(version.GetCommand("build")) + " to build the project for a specific platform\n")
 	b.WriteString("\n")
-	b.WriteString("For more information, see the " + c.styles.emphasize.Render(version.ProductName+" docs") + " at " + c.styles.emphasize.Render("https://nitric.io/docs"))
+	b.WriteString("For more information, see the " + c.styles.Emphasize.Render(version.ProductName+" docs") + " at " + c.styles.Emphasize.Render("https://nitric.io/docs"))
 
 	fmt.Println(b.String())
 	return nil
@@ -453,7 +443,7 @@ func (c *NitricApp) Build() error {
 	}
 
 	if len(appSpec.Targets) == 0 {
-		nitricEdit := c.styles.emphasize.Render(version.GetCommand("edit"))
+		nitricEdit := c.styles.Emphasize.Render(version.GetCommand("edit"))
 		fmt.Printf("No targets specified in nitric.yaml, run %s to add a target\n", nitricEdit)
 		return nil
 	}
@@ -490,15 +480,15 @@ func (c *NitricApp) Build() error {
 		return err
 	}
 
-	fmt.Println(c.styles.success.Render(" " + icons.Check + " Terraform generated successfully"))
-	fmt.Println(c.styles.faint.Render("   output written to " + stackPath))
+	fmt.Println(c.styles.Success.Render(" " + icons.Check + " Terraform generated successfully"))
+	fmt.Println(c.styles.Faint.Render("   output written to " + stackPath))
 
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Println("1. Run", c.styles.emphasize.Render(fmt.Sprintf("cd %s", stackPath)), "to move to the stack directory")
-	fmt.Println("2. Initialize the stack", c.styles.emphasize.Render("terraform init -upgrade"))
-	fmt.Println("3. Optionally, preview with", c.styles.emphasize.Render("terraform plan"))
-	fmt.Println("4. Deploy with", c.styles.emphasize.Render("terraform apply"))
+	fmt.Println("1. Run", c.styles.Emphasize.Render(fmt.Sprintf("cd %s", stackPath)), "to move to the stack directory")
+	fmt.Println("2. Initialize the stack", c.styles.Emphasize.Render("terraform init -upgrade"))
+	fmt.Println("3. Optionally, preview with", c.styles.Emphasize.Render("terraform plan"))
+	fmt.Println("4. Deploy with", c.styles.Emphasize.Render("terraform apply"))
 
 	return nil
 }
@@ -614,7 +604,7 @@ func (c *NitricApp) Edit() error {
 		fmt.Printf("Error opening browser: %v\n", err)
 	}
 
-	fmt.Println(c.styles.faint.Render("Use Ctrl-C to exit"))
+	fmt.Println(c.styles.Faint.Render("Use Ctrl-C to exit"))
 
 	// Wait for the file watcher to fail/return
 	return <-errChan

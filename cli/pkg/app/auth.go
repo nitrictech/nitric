@@ -6,6 +6,7 @@ import (
 
 	"github.com/nitrictech/nitric/cli/internal/style"
 	"github.com/nitrictech/nitric/cli/internal/style/icons"
+	"github.com/nitrictech/nitric/cli/internal/version"
 	"github.com/nitrictech/nitric/cli/internal/workos"
 	"github.com/samber/do/v2"
 )
@@ -21,7 +22,7 @@ func NewAuthApp(injector do.Injector) (*AuthApp, error) {
 
 // Login handles the login command logic
 func (c *AuthApp) Login() {
-	fmt.Printf("\n%s Logging in...\n", style.Purple(icons.Lightning+" Nitric"))
+	fmt.Printf("\n%s Logging in...\n", style.Purple(icons.Lightning+" "+version.ProductName))
 
 	user, err := c.auth.Login()
 	if err != nil {

@@ -21,10 +21,17 @@ type NitricApiClient struct {
 }
 
 func NewNitricApiClient(injector do.Injector) (*NitricApiClient, error) {
-	config := do.MustInvoke[*config.Config](injector)
+	config, err := do.Invoke[*config.Config](injector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config: %w", err)
+	}
+
 	apiUrl := config.GetNitricServerUrl()
 
-	tokenProvider := do.MustInvokeAs[TokenProvider](injector)
+	tokenProvider, err := do.InvokeAs[TokenProvider](injector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token provider: %w", err)
+	}
 
 	return &NitricApiClient{
 		apiUrl:        apiUrl,
