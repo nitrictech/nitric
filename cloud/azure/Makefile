@@ -42,7 +42,7 @@ install: deploybin deploybintf
 
 license-check: runtimebin
 	@echo Checking Azure Runtime OSS Licenses
-	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/runtime-azure
+	@go tool lichen --config=./lichen.yaml ./bin/runtime-azure
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 

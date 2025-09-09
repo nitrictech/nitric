@@ -4,6 +4,8 @@ go 1.23.1
 
 toolchain go1.24.0
 
+tool github.com/uw-labs/lichen
+
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-lambda-go v1.34.1

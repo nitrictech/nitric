@@ -2,7 +2,9 @@ module github.com/nitrictech/nitric/cloud/azure
 
 go 1.23.1
 
-toolchain go1.23.5
+toolchain go1.24.0
+
+tool github.com/uw-labs/lichen
 
 require (
 	github.com/Azure/azure-sdk-for-go v67.1.0+incompatible
