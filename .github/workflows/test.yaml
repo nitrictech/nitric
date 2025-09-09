@@ -33,7 +33,70 @@ jobs:
             ${{ runner.os }}-golang-
       - name: Build check
         run: make binaries
-  test:
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: |
+            cloud/aws/bin/
+            cloud/gcp/bin/
+            cloud/azure/bin/
+          retention-days: 1
+
+  # Jobs that can run independently without build dependencies
+  security:
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.24.0
+      - name: Setup Golang caches
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-golang-
+      - name: Run Gosec Security Scanner
+        run: make sec
+
+  generate-check:
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.24.0
+      - name: Setup Golang caches
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-golang-
+      - name: Generate Sources
+        run: make generate-sources
+      - name: Check generated sources
+        run: |
+          git add .
+          git diff --cached --exit-code
+
+  # Jobs that need build dependencies
+  lint:
+    needs: build
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/go
@@ -54,21 +117,41 @@ jobs:
           key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
           restore-keys: |
             ${{ runner.os }}-golang-
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
       - name: Linting check
         run: make lint
-      - name: Generate Sources
-        run: make generate-sources
-      - name: Check generated sources
-        run: |
-          git add .
-          git diff --cached --exit-code
-      - name: Run Gosec Security Scanner
-        run: make sec
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.24.0
+      - name: Setup Golang caches
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-golang-
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
       - name: Run Tests
         run: make test-coverage
-      - name: Check Dependency Licenses
-        run: make license-check
-      # Upload coverage report if for core
+      # Upload coverage reports
       - name: Upload Coverage Report Core
         uses: codecov/codecov-action@v2
         with:
@@ -93,3 +176,31 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: ./cloud/azure/all.coverprofile
           flags: azure # optional
+
+  license-check:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.24.0
+      - name: Setup Golang caches
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-golang-
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+      - name: Check Dependency Licenses
+        run: make license-check
