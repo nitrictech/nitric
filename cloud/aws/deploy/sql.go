@@ -288,7 +288,7 @@ func (a *NitricAwsPulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulumi
 
 		image, err := docker.NewRegistryImage(ctx, name+"-remote", &docker.RegistryImageArgs{
 			Name: repo.RepositoryUrl,
-			Triggers: pulumi.Map{
+			Triggers: pulumi.StringMap{
 				"imageSha": pulumi.String(inspect.ID),
 			},
 		}, pulumi.Parent(parent), pulumi.Provider(a.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))
