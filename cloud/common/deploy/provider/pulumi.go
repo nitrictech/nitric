@@ -36,9 +36,8 @@ import (
 )
 
 type PulumiProviderServer struct {
-	provider      NitricPulumiProvider
-	runtime       RuntimeProvider
-	errorHandlers []ErrorHandler
+	provider NitricPulumiProvider
+	runtime  RuntimeProvider
 }
 
 func NewPulumiProviderServer(provider NitricPulumiProvider, runtime RuntimeProvider, options ...func(*PulumiProviderServer)) *PulumiProviderServer {
@@ -237,7 +236,10 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 	go func() {
 		// output the stream
-		_ = pulumix.StreamPulumiUpEngineEvents(stream, pulumiEventsChan)
+		err := pulumix.StreamPulumiUpEngineEvents(stream, pulumiEventsChan)
+		if err != nil {
+			logger.Errorf("error streaming Pulumi events: %v", err)
+		}
 	}()
 
 	config, err := s.provider.Config()
@@ -260,13 +262,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 	result, err := autoStack.Up(context.TODO(), options...)
 	if err != nil {
-		err = handleCommonErrors(err)
-
-		for _, handler := range s.errorHandlers {
-			err = handler(err)
-		}
-
-		return err
+		return explainCommonErrs(err)
 	}
 
 	resultStr, ok := result.Outputs[resultCtxKey].Value.(string)
@@ -274,7 +270,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 		resultStr = ""
 	}
 
-	err = stream.Send(&deploymentspb.DeploymentUpEvent{
+	return stream.Send(&deploymentspb.DeploymentUpEvent{
 		Content: &deploymentspb.DeploymentUpEvent_Result{
 			Result: &deploymentspb.UpResult{
 				Content: &deploymentspb.UpResult_Text{
@@ -283,8 +279,6 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 			},
 		},
 	})
-
-	return err
 }
 
 // Down - automatically called by the Nitric CLI via the `down` command
@@ -315,7 +309,10 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 	pulumiEventsChan := make(chan events.EngineEvent)
 
 	go func() {
-		_ = pulumix.StreamPulumiDownEngineEvents(stream, pulumiEventsChan)
+		err = pulumix.StreamPulumiDownEngineEvents(stream, pulumiEventsChan)
+		if err != nil {
+			logger.Errorf("error streaming Pulumi events: %v", err)
+		}
 	}()
 
 	config, err := s.provider.Config()

@@ -22,13 +22,7 @@ import (
 
 type ErrorHandler = func(err error) error
 
-func WithErrorHandler(handler ErrorHandler) func(*PulumiProviderServer) {
-	return func(s *PulumiProviderServer) {
-		s.errorHandlers = append(s.errorHandlers, handler)
-	}
-}
-
-func handleCommonErrors(err error) error {
+func explainCommonErrs(err error) error {
 	// Check for common Pulumi 'autoError' types
 	if auto.IsConcurrentUpdateError(err) {
 		if pe := parsePulumiError(err); pe != nil {

@@ -216,6 +216,9 @@ func (a *NitricAwsPulumiProvider) Pre(ctx *pulumi.Context, resources []*pulumix.
 			}`, tags.GetResourceNameKey(a.StackId)),
 		},
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create resource group: %w", err)
+	}
 
 	databases := lo.Filter(resources, func(item *pulumix.NitricPulumiResource[any], idx int) bool {
 		return item.Id.Type == resourcespb.ResourceType_SqlDatabase
