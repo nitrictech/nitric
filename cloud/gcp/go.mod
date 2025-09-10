@@ -4,6 +4,8 @@ go 1.23.1
 
 toolchain go1.24.0
 
+tool github.com/uw-labs/lichen
+
 require (
 	cloud.google.com/go/apigateway v1.7.0
 	cloud.google.com/go/batch v1.10.0

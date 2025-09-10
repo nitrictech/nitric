@@ -60,7 +60,7 @@ func (a *NitricAzurePulumiProvider) SqlDatabase(ctx *pulumi.Context, parent pulu
 
 		migrationImage, err := docker.NewRegistryImage(ctx, name, &docker.RegistryImageArgs{
 			Name: repositoryUrl,
-			Triggers: pulumi.Map{
+			Triggers: pulumi.StringMap{
 				"imageSha": pulumi.String(inspect.ID),
 			},
 		}, pulumi.Parent(parent), pulumi.Provider(a.ContainerEnv.DockerProvider), pulumi.DependsOn([]pulumi.Resource{newTag}))

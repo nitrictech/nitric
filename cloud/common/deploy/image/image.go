@@ -116,7 +116,7 @@ func NewLocalImage(ctx *pulumi.Context, name string, args *LocalImageArgs, opts 
 
 	res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
 		Name: image.ImageName,
-		Triggers: pulumi.Map{
+		Triggers: pulumi.StringMap{
 			"hash": image.RepoDigest,
 		},
 	}, defaultOpts...)
@@ -216,7 +216,7 @@ func NewImage(ctx *pulumi.Context, name string, args *ImageArgs, opts ...pulumi.
 
 	res.DockerImage, err = docker.NewRegistryImage(ctx, name+"-image", &docker.RegistryImageArgs{
 		Name: image.ImageName,
-		Triggers: pulumi.Map{
+		Triggers: pulumi.StringMap{
 			"hash": image.RepoDigest,
 		},
 	}, defaultOpts...)

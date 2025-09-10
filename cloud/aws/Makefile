@@ -48,7 +48,7 @@ install: deploybin deploybintf
 
 license-check: runtimebin
 	@echo Checking AWS Runtime Server OSS Licenses
-	@go run github.com/uw-labs/lichen --config=./lichen.yaml ./bin/runtime-aws
+	@go tool lichen --config=./lichen.yaml ./bin/runtime-aws
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 
