@@ -72,6 +72,12 @@ export async function generateMetadata({
     alternates: {
       canonical: doc.canonical_url ? doc.canonical_url : url,
     },
+    ...(doc.noindex && {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    }),
   }
 }
 

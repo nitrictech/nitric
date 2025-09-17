@@ -39,6 +39,10 @@ const baseFields: FieldDefs = {
     type: 'string',
     description: 'The canonical url of the doc, if different from the url',
   },
+  noindex: {
+    type: 'boolean',
+    description: 'Prevent search engines from indexing this page',
+  },
 }
 
 const computedFields: ComputedFields = {

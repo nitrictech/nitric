@@ -13,10 +13,13 @@ export default function robots(): MetadataRoute.Robots {
 
   // production robots.txt
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-    },
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: '/misc/comparison/',
+      },
+    ],
     host: 'https://nitric.io/docs',
     sitemap: 'https://nitric.io/docs/sitemap.xml',
   }
