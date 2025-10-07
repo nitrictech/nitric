@@ -15,9 +15,6 @@ const nextConfig = {
     outputFileTracingIncludes: {
       '/**/*': ['./src/app/**/*.mdx'],
     },
-    serverActions: {
-      allowedOrigins: ['nitric.io'],
-    },
     scrollRestoration: true,
   },
   images: {
