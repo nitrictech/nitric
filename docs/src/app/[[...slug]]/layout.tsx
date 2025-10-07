@@ -61,7 +61,7 @@ export default function DocLayout({
               </p>
               <Button asChild variant="unstyled">
                 <a
-                  href="https://github.com/nitrictech/nitric/issues/new?template=3.docs.md"
+                  href={`https://github.com/nitrictech/nitric/issues/new?template=3.docs.md&title=${encodeURIComponent(`Docs feedback: /docs/${doc.slug}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center gap-x-2 text-sm dark:text-zinc-300 dark:hover:text-white"
