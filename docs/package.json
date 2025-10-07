@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "husky && prisma generate && node scripts/collect-assets",
+    "postinstall": "husky && node scripts/collect-assets",
     "dev": "next dev",
     "prebuild": "yarn generate-sitemap-pages",
     "build": "next build",
@@ -28,7 +28,6 @@
     "@mdx-js/loader": "^3.0.0",
     "@mdx-js/react": "^3.0.0",
     "@next/mdx": "^14.0.4",
-    "@prisma/client": "^5.20.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.2",
@@ -97,7 +96,6 @@
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",
-    "prisma": "^5.20.0",
     "remark-frontmatter": "^5.0.0",
     "sharp": "0.33.1",
     "spellchecker-cli": "^6.2.0"

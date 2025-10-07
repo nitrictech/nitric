@@ -6,7 +6,6 @@ import DocToc from '@/components/layout/DocToC'
 import { Button } from '@/components/ui/button'
 import { GitHubIcon } from '@/components/icons/GitHubIcon'
 import Breadcrumbs from '@/components/Breadcrumbs'
-import FeedbackForm from '@/components/FeedbackForm'
 import { Code } from '@/components/mdx'
 
 export default function DocLayout({
@@ -56,7 +55,22 @@ export default function DocLayout({
             </Button>
           </div>
           <div className="w-full">
-            <FeedbackForm />
+            <div className="flex flex-col items-start justify-start gap-4">
+              <p className="text-sm text-zinc-900 dark:text-white">
+                Have feedback on this page?
+              </p>
+              <Button asChild variant="unstyled">
+                <a
+                  href="https://github.com/nitrictech/nitric/issues/new?template=3.docs.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-x-2 text-sm dark:text-zinc-300 dark:hover:text-white"
+                >
+                  <GitHubIcon className="h-5 w-5 fill-zinc-800 transition group-hover:fill-zinc-900 dark:fill-zinc-300 dark:group-hover:fill-white" />
+                  Open GitHub Issue
+                </a>
+              </Button>
+            </div>
           </div>
           <div className="text-2xs text-muted-foreground">
             Last updated on{' '}

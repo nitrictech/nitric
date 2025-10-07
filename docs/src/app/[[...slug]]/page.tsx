@@ -81,6 +81,8 @@ export async function generateMetadata({
   }
 }
 
+export const dynamic = 'force-static'
+
 export const generateStaticParams = async () => {
   return allDocuments.map((p) => ({
     slug: p.slug.split('/').map((name) => decodeURI(name)),
