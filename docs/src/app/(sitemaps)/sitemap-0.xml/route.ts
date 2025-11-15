@@ -22,14 +22,12 @@ export async function GET() {
     priority: 0.7,
   }))
 
-  const docPages: SitemapItem[] = allDocuments
-    .filter((page) => !page.slug.startsWith('misc/comparison/'))
-    .map((page) => ({
-      loc: page.slug === '' ? URL : `${URL}/${page.slug}`,
-      lastmod: new Date(page.lastModified).toISOString(),
-      changefreq: 'daily',
-      priority: 0.7,
-    }))
+  const docPages: SitemapItem[] = allDocuments.map((page) => ({
+    loc: page.slug === '' ? URL : `${URL}/${page.slug}`,
+    lastmod: new Date(page.lastModified).toISOString(),
+    changefreq: 'daily',
+    priority: 0.7,
+  }))
 
   const allPagesSorted = [...pages, ...docPages].sort((a, b) =>
     a.loc < b.loc ? -1 : 1,

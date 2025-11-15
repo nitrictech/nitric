@@ -95,12 +95,18 @@ const nextConfig = {
           permanent: true,
         }),
       ),
-      {
-        source: '/docs/comparison/:slug',
-        destination: '/docs/concepts/comparison/:slug',
+      ...[
+        '/docs/comparison/:slug',
+        '/docs/misc/comparison/:path*',
+        '/docs/concepts/comparison',
+        '/docs/concepts/comparison/:slug*',
+        '/docs/assets/comparison/:path*',
+      ].map((source) => ({
+        source: source,
+        destination: '/docs/',
         basePath: false,
         permanent: true,
-      },
+      })),
       {
         source: '/docs/assets/faq',
         destination: '/docs/faq',
@@ -146,12 +152,6 @@ const nextConfig = {
       {
         source: '/docs/access-control',
         destination: '/docs/get-started/foundations/infrastructure/security',
-        basePath: false,
-        permanent: true,
-      },
-      {
-        source: '/docs/assets/comparison/:path*',
-        destination: '/docs/faq/comparison/:path*',
         basePath: false,
         permanent: true,
       },
@@ -350,18 +350,6 @@ const nextConfig = {
       {
         source: '/docs/concepts/cicd',
         destination: '/docs/get-started/foundations/deployment#ci-cd',
-        basePath: false,
-        permanent: true,
-      },
-      {
-        source: '/docs/concepts/comparison',
-        destination: '/docs/misc/faq#differences-from-other-solutions',
-        basePath: false,
-        permanent: true,
-      },
-      {
-        source: '/docs/concepts/comparison/:slug*',
-        destination: '/docs/misc/comparison/:slug*',
         basePath: false,
         permanent: true,
       },
@@ -626,12 +614,6 @@ const nextConfig = {
       {
         source: '/docs/reference/python/schedules/schedule',
         destination: '/docs/reference/python/schedule/schedule',
-        basePath: false,
-        permanent: true,
-      },
-      {
-        source: '/docs/misc/comparison/winglang',
-        destination: '/docs/',
         basePath: false,
         permanent: true,
       },

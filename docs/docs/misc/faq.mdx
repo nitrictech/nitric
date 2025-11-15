@@ -40,20 +40,6 @@ Yes, Nitric supports monorepos through the custom runtime feature, which allows 
 
 Nitric is designed with flexibility to avoid lock-in, including to Nitric. If the framework no longer serves you, you'll simply need to choose a new IaC and migrate your provisioning code. The Nitric framework and CLI are written in Go, and use the Pulumi Go Providers, so you may be able to avoid rewriting all of the provisioning code by lifting the provisioning code which Nitric has already built for you. If relevant, you'll also need to rebuild your CI pipelines to leverage the new IaC tooling you've chosen. Nitric doesn't have access to your data, so no data migration is needed.
 
-## Differences From Other Solutions
-
-Learn how Nitric compares to:
-
-- [AWS CDK](./comparison/aws-cdk)
-- [AWS SAM](./comparison/aws-sam)
-- [Google Cloud Deployment Manager](./comparison/gcp-deployment-manager)
-- [Azure Resource Manager](./comparison/bicep)
-- [Pulumi](./comparison/pulumi)
-- [Terraform](./comparison/terraform)
-- [SST](./comparison/sst)
-- [Encore](./comparison/encore)
-- [Ampt](./comparison/ampt)
-
 ## More questions?
 
 Start a discussion on [GitHub](https://github.com/nitrictech/nitric/discussions) or come and chat on our community [Discord](https://nitric.io/chat).
