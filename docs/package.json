@@ -63,7 +63,7 @@
     "mdx-annotations": "^0.1.1",
     "mdx-mermaid": "^2.0.3",
     "mermaid": "^11.4.1",
-    "next": "^14.2.21",
+    "next": "^14.2.25",
     "next-contentlayer2": "^0.5.1",
     "next-themes": "^0.3.0",
     "radash": "^12.1.0",
@@ -100,5 +100,8 @@
     "sharp": "0.33.1",
     "spellchecker-cli": "^6.2.0"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "resolutions": {
+    "form-data": "^4.0.4"
+  }
 }
