@@ -6,6 +6,7 @@ APIs
 ARNs
 BoltDB
 backends
+cli
 CLI
 CLI's
 CDKs
@@ -31,6 +32,8 @@ SNS
 SQS
 UUID
 UUIDs
+enum
+ENUM
 api
 apis
 args
@@ -120,6 +123,7 @@ GraphQL
 graphql
 CDK
 TLDR
+oneof
 BYO
 webhook
 utils
