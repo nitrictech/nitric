@@ -432,6 +432,10 @@ export const navigation: NavEntry[] = [
             href: '/providers/custom/create',
           },
           {
+            title: 'Adding Resource Types',
+            href: '/providers/custom/adding-resource-types',
+          },
+          {
             title: 'Install with Docker',
             href: '/providers/custom/docker',
           },
