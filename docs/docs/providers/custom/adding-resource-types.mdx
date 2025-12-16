@@ -46,11 +46,19 @@ Your application code makes SDK calls that are sent via gRPC to the Nitric CLI's
 
 The first step is defining your new resource type in the [nitric/core](https://github.com/nitrictech/nitric) repository.
 
+### Clone the Repository
+
+```bash
+git clone https://github.com/nitrictech/nitric.git
+```
+
 ### Add Resource Type Enum
 
-In `core/pkg/proto/resources/v1/resources.proto`, add your new resource type to the `ResourceType` enum:
+The proto source files are in `nitric/proto/`, and Go code is generated into `core/pkg/proto/`.
 
-```protobuf title:core/pkg/proto/resources/v1/resources.proto
+In `nitric/proto/resources/v1/resources.proto`, add your new resource type to the `ResourceType` enum:
+
+```protobuf title:nitric/proto/resources/v1/resources.proto
 enum ResourceType {
   // ... existing types ...
   YourResourceType = N;  // Use the next available number
@@ -61,7 +69,7 @@ enum ResourceType {
 
 In the same file, add a message for your resource configuration:
 
-```protobuf title:core/pkg/proto/resources/v1/resources.proto
+```protobuf title:nitric/proto/resources/v1/resources.proto
 message YourResource {
   // Resource-specific configuration fields
   string some_config = 1;
@@ -72,7 +80,7 @@ message YourResource {
 
 Add your resource to the `ResourceDeclareRequest` oneof:
 
-```protobuf title:core/pkg/proto/resources/v1/resources.proto
+```protobuf title:nitric/proto/resources/v1/resources.proto
 message ResourceDeclareRequest {
   ResourceIdentifier id = 1;
   oneof config {
@@ -84,9 +92,9 @@ message ResourceDeclareRequest {
 
 ### Add Deployment Resource
 
-If your resource needs deployment-specific configuration, update `core/pkg/proto/deployments/v1/deployments.proto`:
+If your resource needs deployment-specific configuration, update `nitric/proto/deployments/v1/deployments.proto`:
 
-```protobuf title:core/pkg/proto/deployments/v1/deployments.proto
+```protobuf title:nitric/proto/deployments/v1/deployments.proto
 message YourDeploymentResource {
   // Deployment-specific fields (image URIs, targets, etc.)
 }
@@ -102,7 +110,11 @@ message Resource {
 
 ### Regenerate Proto Code
 
-Run the proto generation scripts to create Go code from your proto definitions.
+Run the proto generation in the `core` directory to create Go code from your proto definitions:
+
+```bash
+cd core && make generate-proto
+```
 
 ## Part 2: CLI Changes - Resource Collection
 
