@@ -386,7 +386,26 @@ func (p *Provider) deployResource(resource *deploymentspb.Resource) error {
 
 ### Implement gRPC Runtime Service
 
-If your resource needs runtime APIs (like storage read/write, topic publish, etc.), implement the corresponding gRPC service in your provider.
+If your resource has runtime operations (e.g., read/write), first create a service proto in `nitric/proto/yourresource/v1/yourresource.proto`:
+
+```protobuf title:nitric/proto/yourresource/v1/yourresource.proto
+syntax = "proto3";
+package nitric.proto.yourresource.v1;
+
+option go_package = "github.com/nitrictech/nitric/core/pkg/proto/yourresource/v1;yourresourcepb";
+
+service YourResource {
+  rpc Get (GetRequest) returns (GetResponse);
+  rpc Set (SetRequest) returns (SetResponse);
+  rpc Delete (DeleteRequest) returns (DeleteResponse);
+}
+
+// Define request/response messages...
+```
+
+See `nitric/proto/storage/v1/storage.proto` or `nitric/proto/kvstore/v1/kvstore.proto` for complete examples. Run `make generate-proto` again after adding this file.
+
+Then implement the generated service interface in your provider.
 
 ## Part 5: Update go.mod
 
