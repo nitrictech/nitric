@@ -118,6 +118,10 @@ cd core && make generate-proto
 
 ## Part 2: CLI Changes - Resource Collection
 
+<Note>
+  The following changes are made in the **[nitric/cli](https://github.com/nitrictech/cli)** repository, not nitric/core.
+</Note>
+
 These changes enable `nitric up` to collect your new resource type from application code.
 
 ### Update ServiceRequirements Struct
@@ -233,6 +237,10 @@ func ServiceRequirementsToSpec(...) (*deploymentspb.Spec, error) {
 
 ## Part 3: CLI Changes - Local Development
 
+<Note>
+  The following changes are also made in the **[nitric/cli](https://github.com/nitrictech/cli)** repository.
+</Note>
+
 To support your new resource in `nitric start`, you'll need to implement a local service.
 
 ### Create Local Service
@@ -318,6 +326,23 @@ func New(projectName string, opts LocalCloudOptions) (*LocalCloud, error) {
 
 4. Wire into server plugins in `AddService()` and `AddBatch()`:
 
+<Note>
+  First, you'll need to add the `WithYourResourcePlugin` option to the nitric/core
+  server package (in `core/pkg/server/options.go`). This function must accept
+  your proto-generated service interface (e.g., `yourresourcepb.YourResourceServer`)
+  and follow the same pattern as existing plugins like `WithStoragePlugin`:
+
+  ```go
+  func WithYourResourcePlugin(plugin yourresourcepb.YourResourceServer) ServerOption {
+      return func(s *Server) {
+          yourresourcepb.RegisterYourResourceServer(s.grpcServer, plugin)
+      }
+  }
+  ```
+
+  See [core/pkg/server/options.go](https://github.com/nitrictech/nitric/blob/main/core/pkg/server/options.go) for complete examples.
+</Note>
+
 ```go title:pkg/cloud/cloud.go
 nitricRuntimeServer, _ := server.New(
     // ... existing plugins ...
@@ -325,11 +350,6 @@ nitricRuntimeServer, _ := server.New(
     // ...
 )
 ```
-
-<Note>
-  You'll need to add the `WithYourResourcePlugin` option to the nitric/core
-  server package.
-</Note>
 
 ### Update Local Resources Service
 
@@ -367,20 +387,49 @@ l.state.YourResources.ClearRequestingService(serviceName)
 
 Your custom provider receives the deployment spec via gRPC and creates cloud resources.
 
-### Handle New Resource in Provider
+### Implement Resource Type Method
 
-In your provider's deployment handler, add a case for your resource type:
+Providers implement the `NitricPulumiProvider` interface. Create a new file `deploy/yourresource.go` with a method for your resource type:
+
+```go title:deploy/yourresource.go
+package deploy
+
+import (
+    deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+    "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+    // Import your cloud provider's SDK (e.g., AWS, GCP, Azure)
+)
+
+func (p *NitricYourCloudProvider) YourResourceType(
+    ctx *pulumi.Context,
+    parent pulumi.Resource,
+    name string,
+    config *deploymentspb.YourDeploymentResource,
+) error {
+    // Create your cloud resource using the Pulumi SDK
+    // For example, using AWS SDK with Pulumi:
+    resource, err := yourservice.NewResource(ctx, name, &yourservice.ResourceArgs{
+        // Map config to cloud provider arguments
+    }, pulumi.Parent(parent))
+    if err != nil {
+        return err
+    }
+
+    // Store resource reference if needed for later use
+    p.YourResources[name] = resource
+
+    return nil
+}
+```
+
+The deployment framework automatically calls your method for each resource of this type. Follow the **one-file-per-resource** pattern used by existing providers - see [cloud/aws/deploy/queue.go](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploy/queue.go) (simple) or [cloud/aws/deploy/api.go](https://github.com/nitrictech/nitric/blob/main/cloud/aws/deploy/api.go) (complex) for examples.
+
+You'll also need to add a field to your provider struct in `deploy/deploy.go`:
 
 ```go title:deploy/deploy.go
-func (p *Provider) deployResource(resource *deploymentspb.Resource) error {
-    switch resource.Id.Type {
-    // ... existing cases ...
-
-    case resourcespb.ResourceType_YourResourceType:
-        config := resource.GetYourResource()
-        // Create your cloud resource here using config
-    }
-    return nil
+type NitricYourCloudProvider struct {
+    // ... existing fields ...
+    YourResources map[string]*YourResourceType
 }
 ```
 
