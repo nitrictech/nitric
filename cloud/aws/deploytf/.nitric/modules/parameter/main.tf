@@ -13,7 +13,9 @@ resource "aws_ssm_parameter" "text_parameter" {
   type      = "String"
   value     = var.parameter_value
   data_type = "text"
-  tier      = var.parameter_tier
+  # Intelligent-Tiering lets AWS upgrade to Advanced when the index outgrows Standard's 4KB limit,
+  # and avoids the forced replacement of switching an Advanced parameter back to Standard
+  tier      = "Intelligent-Tiering"
 }
 
 # Create the access policy
