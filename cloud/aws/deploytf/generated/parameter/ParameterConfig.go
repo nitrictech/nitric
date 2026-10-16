@@ -19,5 +19,8 @@ type ParameterConfig struct {
 	ParameterName *string `field:"required" json:"parameterName" yaml:"parameterName"`
 	// The text value of the parameter.
 	ParameterValue *string `field:"required" json:"parameterValue" yaml:"parameterValue"`
+	// The tier of the SSM parameter (Standard or Advanced).
+	// Docs: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_parameter#tier
+	ParameterTier *string `field:"optional" json:"parameterTier" yaml:"parameterTier"`
 }
 

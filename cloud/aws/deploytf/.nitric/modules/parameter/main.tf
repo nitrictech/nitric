@@ -13,6 +13,7 @@ resource "aws_ssm_parameter" "text_parameter" {
   type      = "String"
   value     = var.parameter_value
   data_type = "text"
+  tier      = var.parameter_tier
 }
 
 # Create the access policy

@@ -36,6 +36,8 @@ type Parameter interface {
 	Node() constructs.Node
 	ParameterName() *string
 	SetParameterName(val *string)
+	ParameterTier() *string
+	SetParameterTier(val *string)
 	ParameterValue() *string
 	SetParameterValue(val *string)
 	// Experimental.
@@ -169,6 +171,16 @@ func (j *jsiiProxy_Parameter) ParameterName() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Parameter) ParameterTier() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"parameterTier",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Parameter) ParameterValue() *string {
 	var returns *string
 	_jsii_.Get(
@@ -291,6 +303,14 @@ func (j *jsiiProxy_Parameter)SetParameterName(val *string) {
 	_jsii_.Set(
 		j,
 		"parameterName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Parameter)SetParameterTier(val *string) {
+	_jsii_.Set(
+		j,
+		"parameterTier",
 		val,
 	)
 }

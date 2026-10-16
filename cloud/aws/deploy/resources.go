@@ -164,11 +164,21 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		return string(indexJson), nil
 	}).(pulumi.StringOutput)
 
+	// Auto-select SSM parameter tier based on value size.
+	// Standard tier supports up to 4,096 chars; Advanced supports up to 8,192.
+	ssmTier := resourceIndexJson.ApplyT(func(val string) string {
+		if len(val) > 4096 {
+			return "Advanced"
+		}
+		return "Standard"
+	}).(pulumi.StringOutput)
+
 	_, err := ssm.NewParameter(ctx, "nitric-resource-index", &ssm.ParameterArgs{
 		// Create a deterministic name for the resource index
 		Name:     pulumi.Sprintf("/nitric/%s/resource-index", a.StackId),
 		DataType: pulumi.String("text"),
 		Type:     pulumi.String("String"),
+		Tier:     ssmTier,
 		// Store the nitric resource index serialized as a JSON string
 		Value: resourceIndexJson,
 	})

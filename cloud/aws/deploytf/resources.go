@@ -76,10 +76,18 @@ func (a *NitricAwsTerraformProvider) ResourcesStore(stack cdktf.TerraformStack, 
 		return fmt.Errorf("failed to marshal resource index: %w", err)
 	}
 
+	// Auto-select SSM parameter tier based on value size.
+	// Standard tier supports up to 4,096 chars; Advanced supports up to 8,192.
+	parameterTier := "Standard"
+	if len(indexJson) > 4096 {
+		parameterTier = "Advanced"
+	}
+
 	parameter.NewParameter(stack, jsii.String("nitric_resources"), &parameter.ParameterConfig{
 		ParameterName:   jsii.Sprintf("/nitric/%s/resource-index", *a.Stack.StackIdOutput()),
 		ParameterValue:  jsii.String(string(indexJson)),
 		AccessRoleNames: jsii.Strings(accessRoleNames...),
+		ParameterTier:   jsii.String(parameterTier),
 	})
 
 	return nil
