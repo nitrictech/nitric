@@ -12,7 +12,7 @@ init: check-gopath go-mod-download install-tools
 check: lint test
 
 sec:
-	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+	@go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -exclude-dir=tools ./...
 
 sourcefiles := $(shell find . -type f -name "*.go" -o -name "*.dockerfile")
 

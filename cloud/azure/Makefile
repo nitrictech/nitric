@@ -9,7 +9,7 @@ binaries: deploybin
 
 sec:
 	@touch common/runtime/runtime-azure
-	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+	@go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -exclude-dir=tools ./...
 
 runtimebin:
 	@echo Building Azure Runtime Server
