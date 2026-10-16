@@ -48,24 +48,40 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/go
+      # Compiling the pulumi SDKs in parallel exhausts the runner's 16GB
+      GOFLAGS: -p=2
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      # gosec v2.29.0 requires go >= 1.25
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.24.0
-      - name: Setup Golang caches
-        uses: actions/cache@v3
+          go-version: 1.26.9
+      - name: Restore Golang caches
+        uses: actions/cache/restore@v3
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
+          key: ${{ runner.os }}-golang-sec-${{ hashFiles('**/go.sum', '**/work.sum') }}
           restore-keys: |
-            ${{ runner.os }}-golang-
+            ${{ runner.os }}-golang-sec-
       - name: Run Gosec Security Scanner
-        run: make sec
+        run: |
+          # Temporary: log resource usage while gosec runs; the runner has been killing this step
+          (while sleep 15; do
+            echo "[mon] $(free -m | awk '/Mem/{print "mem used " $3 "/" $2 "MB"}') $(df -m / | awk 'NR==2{print "disk free " $4 "MB"}') top: $(ps -eo rss=,comm= --sort=-rss | head -3 | awk '{printf "%s=%dMB ", $2, $1/1024}')"
+          done) &
+          make sec
+      - name: Save Golang caches
+        if: always()
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-golang-sec-${{ hashFiles('**/go.sum', '**/work.sum') }}
 
   generate-check:
     runs-on: ubuntu-latest
