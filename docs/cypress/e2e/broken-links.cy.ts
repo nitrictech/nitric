@@ -37,6 +37,10 @@ const IGNORED_URLS = [
   'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks',
   'https://jwt.io',
   'https://portal.azure.com',
+  // Block requests from CI runners with 403s, though they work in a browser
+  'https://x.com/',
+  'https://www.npmjs.com/',
+  'https://dzone.com/',
   // Generated per page from one template; checking 600+ copies only gets us rate limited by GitHub
   'github.com/nitrictech/nitric/edit/',
   'github.com/nitrictech/nitric/issues/new',
