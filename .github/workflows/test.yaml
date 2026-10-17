@@ -53,7 +53,6 @@ jobs:
   check:
     needs: changes
     if: needs.changes.outputs.modules != '[]'
-    name: check (${{ matrix.module }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "test:spellcheck": "spellchecker",
+    "test:site": "node scripts/check-site.mjs",
     "generate-sitemap-pages": "node scripts/build-sitemap",
     "format:check": "prettier --check src",
     "format:fix": "prettier --write src",

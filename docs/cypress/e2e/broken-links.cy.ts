@@ -37,7 +37,13 @@ const IGNORED_URLS = [
   'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks',
   'https://jwt.io',
   'https://portal.azure.com',
+  // Generated per page from one template; checking 600+ copies only gets us rate limited by GitHub
+  'github.com/nitrictech/nitric/edit/',
+  'github.com/nitrictech/nitric/issues/new',
 ]
+
+// External links are checked by the nightly workflow, not on every PR
+const CHECK_EXTERNAL_LINKS = String(Cypress.env('CHECK_EXTERNAL_LINKS')) === 'true'
 
 const rootBaseUrl = Cypress.config('baseUrl')
 
@@ -69,6 +75,10 @@ const getCleanInternalUrl = (url: string, currentPage: string) => {
 
 const isExternalUrl = (url: string) => {
   return !url.includes('localhost')
+}
+
+const isOtherHostUrl = (url: string) => {
+  return /^https?:\/\//.test(url) && !url.startsWith(rootBaseUrl)
 }
 
 const isAcceptedRateLimitedUrl = (url: string) => {
@@ -126,7 +136,8 @@ const req = (
 }
 
 describe('Broken links test suite', () => {
-  const VISITED_SUCCESSFUL_LINKS = {}
+  // Every link is checked once, pass or fail, so a broken link shared by all pages fails one test, not 600
+  const CHECKED_LINKS = {}
   const BATCH_SIZE = 10 // Process links in batches of 10
 
   pages.forEach((page) => {
@@ -169,11 +180,16 @@ describe('Broken links test suite', () => {
               return
             }
 
-            if (VISITED_SUCCESSFUL_LINKS[url]) {
+            if (CHECKED_LINKS[url]) {
               cy.log(`Skipping already checked link: ${url}`)
               return
             }
 
+            if (!CHECK_EXTERNAL_LINKS && isOtherHostUrl(url)) {
+              return
+            }
+
+            CHECKED_LINKS[url] = true
             linksToCheck.push(url)
           })
 
@@ -191,11 +207,10 @@ describe('Broken links test suite', () => {
                 if (!pages.includes(cleanUrl)) {
                   assert.fail(`${cleanUrl} is not part of the pages fixture`)
                 }
-                VISITED_SUCCESSFUL_LINKS[url] = true
                 return Promise.resolve()
               }
 
-              return req(url, 0, false, VISITED_SUCCESSFUL_LINKS).then(
+              return req(url).then(
                 (res: Cypress.Response<any>) => {
                   let acceptableCodes = CORRECT_CODES
                   if (
@@ -211,7 +226,6 @@ describe('Broken links test suite', () => {
                       cy.log(
                         `Rate limited for accepted URL ${url} after all retries, marking as successful`,
                       )
-                      VISITED_SUCCESSFUL_LINKS[url] = true
                       return
                     } else {
                       assert.fail(
@@ -224,10 +238,6 @@ describe('Broken links test suite', () => {
                       ...REDIRECT_CODES,
                       ...OTHER_CODES,
                     ]
-                  }
-
-                  if (acceptableCodes.includes(res.status)) {
-                    VISITED_SUCCESSFUL_LINKS[url] = true
                   }
 
                   expect(res.status).oneOf(

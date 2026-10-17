@@ -1,0 +1,50 @@
+name: Docs Nightly
+
+on:
+  schedule:
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+
+jobs:
+  # Slow or flaky checks that don't belong on every PR: external sites rate limit and go down, a11y covers every page twice
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: external-links
+            spec: cypress/e2e/broken-links.cy.ts
+          - name: a11y
+            spec: cypress/e2e/a11y.cy.ts
+    name: ${{ matrix.name }}
+    defaults:
+      run:
+        working-directory: docs
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      NEXT_PUBLIC_VERCEL_URL: nitric.io
+      CYPRESS_CHECK_EXTERNAL_LINKS: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          headless: true
+          config: video=false
+          browser: chrome
+          spec: ${{ matrix.spec }}
+          build: yarn cypress:build
+          start: yarn start
+          wait-on: "http://localhost:3000"
+          working-directory: docs
+        env:
+          NEXT_PUBLIC_GITHUB_BRANCH: ${{ github.ref_name }}
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-${{ matrix.name }}
+          path: docs/cypress/screenshots
