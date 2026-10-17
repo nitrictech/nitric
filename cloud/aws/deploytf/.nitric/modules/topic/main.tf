@@ -76,6 +76,12 @@ resource "aws_iam_role_policy" "publish_policy" {
 resource "aws_sfn_state_machine" "publish_to_topic" {
   name     = "${var.topic_name}-publish-to-topic"
   role_arn = aws_iam_role.sns_publish_role.arn
+
+  # Same tags as the topic, so the tagging resource resolver can find it for delayed publishing
+  tags = {
+    "x-nitric-${var.stack_id}-name" = var.topic_name
+    "x-nitric-${var.stack_id}-type" = "topic"
+  }
   definition = jsonencode({
     Comment = "",
     StartAt = "Wait",
