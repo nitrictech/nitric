@@ -35,10 +35,37 @@ func (p *NitricGcpPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Reso
 
 	resourceLabels := common.Tags(p.StackId, name, resources.Bucket)
 
-	p.Buckets[name], err = storage.NewBucket(ctx, name, &storage.BucketArgs{
+	bucketArgs := &storage.BucketArgs{
 		Location: pulumi.String(p.Region),
 		Labels:   pulumi.ToStringMap(resourceLabels),
-	}, p.WithDefaultResourceOptions(opts...)...)
+	}
+
+	if len(config.CorsRules) > 0 {
+		corsRules := storage.BucketCorArray{}
+		warnedAllowedHeaders := false
+		for _, rule := range config.CorsRules {
+			if len(rule.AllowedHeaders) > 0 && !warnedAllowedHeaders {
+				ctx.Log.Warn(fmt.Sprintf("bucket %q: GCP Cloud Storage does not support AllowedHeaders in CORS configuration. "+
+					"GCS automatically allows all request headers when the origin and method match. "+
+					"The AllowedHeaders setting will be ignored.", name), nil)
+				warnedAllowedHeaders = true
+			}
+
+			corsRule := storage.BucketCorArgs{
+				Origins: pulumi.ToStringArray(rule.AllowedOrigins),
+				Methods: pulumi.ToStringArray(rule.AllowedMethods),
+				// GCP's ResponseHeaders maps to the CORS Access-Control-Expose-Headers header
+				ResponseHeaders: pulumi.ToStringArray(rule.ExposeHeaders),
+			}
+			if rule.MaxAgeSeconds > 0 {
+				corsRule.MaxAgeSeconds = pulumi.IntPtr(int(rule.MaxAgeSeconds))
+			}
+			corsRules = append(corsRules, corsRule)
+		}
+		bucketArgs.Cors = corsRules
+	}
+
+	p.Buckets[name], err = storage.NewBucket(ctx, name, bucketArgs, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}

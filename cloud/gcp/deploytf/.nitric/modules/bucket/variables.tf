@@ -25,3 +25,14 @@ variable "storage_class" {
   type        = string
   default     = "STANDARD"
 }
+
+variable "cors_rules" {
+  description = "CORS rules for the bucket"
+  type = list(object({
+    allowed_origins = list(string)
+    allowed_methods = list(string)
+    expose_headers  = list(string)
+    max_age_seconds = number
+  }))
+  default = []
+}

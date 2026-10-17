@@ -17,3 +17,8 @@ The following resources are created when deploying Storage to Google Cloud:
 During deployment, your buckets will be provisioned as follows:
 
 - Your bucket definitions will be deployed individually as storage buckets.
+- If CORS rules are configured, they are applied directly to the [Cloud Storage bucket CORS configuration](https://cloud.google.com/storage/docs/cross-origin).
+
+<Note>
+  GCP Cloud Storage does not support the `allowed_headers` CORS setting. GCS automatically allows all request headers when the origin and method match a CORS rule. If `allowed_headers` is specified, a warning will be emitted and the setting will be ignored.
+</Note>

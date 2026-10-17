@@ -49,10 +49,22 @@ func (n *NitricAwsTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 		}
 	}
 
+	var corsRules []map[string]interface{}
+	for _, rule := range config.CorsRules {
+		corsRules = append(corsRules, map[string]interface{}{
+			"allowed_origins": jsii.Strings(rule.AllowedOrigins...),
+			"allowed_methods": jsii.Strings(rule.AllowedMethods...),
+			"allowed_headers": jsii.Strings(rule.AllowedHeaders...),
+			"expose_headers":  jsii.Strings(rule.ExposeHeaders...),
+			"max_age_seconds": jsii.Number(float64(rule.MaxAgeSeconds)),
+		})
+	}
+
 	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("bucket_%s", name), &bucket.BucketConfig{
 		BucketName:          &name,
 		StackId:             n.Stack.StackIdOutput(),
 		NotificationTargets: &notificationTargets,
+		CorsRules:           &corsRules,
 	})
 
 	return nil
