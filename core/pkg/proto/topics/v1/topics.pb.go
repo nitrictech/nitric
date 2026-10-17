@@ -31,7 +31,6 @@ type ClientMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ClientMessage_RegistrationRequest
 	//	*ClientMessage_MessageResponse
 	Content isClientMessage_Content `protobuf_oneof:"content"`
@@ -227,7 +226,6 @@ type ServerMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ServerMessage_RegistrationResponse
 	//	*ServerMessage_MessageRequest
 	Content isServerMessage_Content `protobuf_oneof:"content"`
@@ -404,7 +402,6 @@ type TopicMessage struct {
 	// The topic message contents
 	//
 	// Types that are assignable to Content:
-	//
 	//	*TopicMessage_StructPayload
 	Content isTopicMessage_Content `protobuf_oneof:"content"`
 }

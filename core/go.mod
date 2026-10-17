@@ -2,7 +2,7 @@ module github.com/nitrictech/nitric/core
 
 go 1.22.1
 
-toolchain go1.23.0
+toolchain go1.27.2
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.1.0

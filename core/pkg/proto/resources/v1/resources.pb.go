@@ -330,7 +330,6 @@ type ResourceDeclareRequest struct {
 
 	Id *ResourceIdentifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Config:
-	//
 	//	*ResourceDeclareRequest_Policy
 	//	*ResourceDeclareRequest_Bucket
 	//	*ResourceDeclareRequest_Topic
@@ -758,7 +757,6 @@ type SqlDatabaseMigrations struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Migrations:
-	//
 	//	*SqlDatabaseMigrations_MigrationsPath
 	Migrations isSqlDatabaseMigrations_Migrations `protobuf_oneof:"migrations"`
 }
@@ -931,7 +929,6 @@ type ApiSecurityDefinitionResource struct {
 
 	ApiName string `protobuf:"bytes,1,opt,name=api_name,json=apiName,proto3" json:"api_name,omitempty"`
 	// Types that are assignable to Definition:
-	//
 	//	*ApiSecurityDefinitionResource_Oidc
 	Definition isApiSecurityDefinitionResource_Definition `protobuf_oneof:"definition"`
 }

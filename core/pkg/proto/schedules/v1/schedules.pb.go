@@ -29,7 +29,6 @@ type ClientMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ClientMessage_RegistrationRequest
 	//	*ClientMessage_IntervalResponse
 	Content isClientMessage_Content `protobuf_oneof:"content"`
@@ -169,7 +168,6 @@ type ServerMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ServerMessage_RegistrationResponse
 	//	*ServerMessage_IntervalRequest
 	Content isServerMessage_Content `protobuf_oneof:"content"`
@@ -260,7 +258,6 @@ type RegistrationRequest struct {
 
 	ScheduleName string `protobuf:"bytes,1,opt,name=schedule_name,json=scheduleName,proto3" json:"schedule_name,omitempty"`
 	// Types that are assignable to Cadence:
-	//
 	//	*RegistrationRequest_Every
 	//	*RegistrationRequest_Cron
 	Cadence isRegistrationRequest_Cadence `protobuf_oneof:"cadence"`

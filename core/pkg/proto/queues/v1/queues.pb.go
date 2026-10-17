@@ -240,8 +240,7 @@ type QueueCompleteRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The nitric name for the queue
-	//
-	//	this will automatically be resolved to the provider specific queue identifier.
+	//  this will automatically be resolved to the provider specific queue identifier.
 	QueueName string `protobuf:"bytes,1,opt,name=queue_name,json=queueName,proto3" json:"queue_name,omitempty"`
 	// Lease id of the message to be completed
 	LeaseId string `protobuf:"bytes,2,opt,name=lease_id,json=leaseId,proto3" json:"lease_id,omitempty"`
@@ -340,7 +339,6 @@ type QueueMessage struct {
 	// The queue message contents
 	//
 	// Types that are assignable to Content:
-	//
 	//	*QueueMessage_StructPayload
 	Content isQueueMessage_Content `protobuf_oneof:"content"`
 }
