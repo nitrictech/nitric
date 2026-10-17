@@ -214,7 +214,6 @@ type DeploymentUpEvent struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Content:
-	//
 	//	*DeploymentUpEvent_Message
 	//	*DeploymentUpEvent_Update
 	//	*DeploymentUpEvent_Result
@@ -399,7 +398,6 @@ type UpResult struct {
 	// Indicate the success status
 	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*UpResult_Text
 	Content isUpResult_Content `protobuf_oneof:"content"`
 }
@@ -533,7 +531,6 @@ type DeploymentDownEvent struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Content:
-	//
 	//	*DeploymentDownEvent_Message
 	//	*DeploymentDownEvent_Result
 	//	*DeploymentDownEvent_Update
@@ -720,7 +717,6 @@ type Service struct {
 	// Source of the service
 	//
 	// Types that are assignable to Source:
-	//
 	//	*Service_Image
 	Source isService_Source `protobuf_oneof:"source"`
 	// Expected worker count for this service
@@ -901,7 +897,6 @@ type Batch struct {
 	// Source of the service
 	//
 	// Types that are assignable to Source:
-	//
 	//	*Batch_Image
 	Source isBatch_Source `protobuf_oneof:"source"`
 	// A simple type property
@@ -1047,7 +1042,6 @@ type BucketListener struct {
 
 	Config *v12.RegistrationRequest `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	// Types that are assignable to Target:
-	//
 	//	*BucketListener_Service
 	Target isBucketListener_Target `protobuf_oneof:"target"`
 }
@@ -1283,7 +1277,6 @@ type SubscriptionTarget struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Target:
-	//
 	//	*SubscriptionTarget_Service
 	Target isSubscriptionTarget_Target `protobuf_oneof:"target"`
 }
@@ -1398,7 +1391,6 @@ type HttpTarget struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Target:
-	//
 	//	*HttpTarget_Service
 	Target isHttpTarget_Target `protobuf_oneof:"target"`
 }
@@ -1514,7 +1506,6 @@ type Api struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Document:
-	//
 	//	*Api_Openapi
 	Document isApi_Document `protobuf_oneof:"document"`
 }
@@ -1650,7 +1641,6 @@ type WebsocketTarget struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Target:
-	//
 	//	*WebsocketTarget_Service
 	Target isWebsocketTarget_Target `protobuf_oneof:"target"`
 }
@@ -1726,7 +1716,6 @@ type Website struct {
 	// The source of the website assets
 	//
 	// Types that are assignable to AssetSource:
-	//
 	//	*Website_LocalDirectory
 	AssetSource isWebsite_AssetSource `protobuf_oneof:"asset_source"`
 }
@@ -1815,7 +1804,6 @@ type ScheduleTarget struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Target:
-	//
 	//	*ScheduleTarget_Service
 	Target isScheduleTarget_Target `protobuf_oneof:"target"`
 }
@@ -1884,7 +1872,6 @@ type Schedule struct {
 
 	Target *ScheduleTarget `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
 	// Types that are assignable to Cadence:
-	//
 	//	*Schedule_Every
 	//	*Schedule_Cron
 	Cadence isSchedule_Cadence `protobuf_oneof:"cadence"`
@@ -1972,7 +1959,6 @@ type SqlDatabase struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Migrations:
-	//
 	//	*SqlDatabase_ImageUri
 	Migrations isSqlDatabase_Migrations `protobuf_oneof:"migrations"`
 }
@@ -2137,7 +2123,6 @@ type Resource struct {
 
 	Id *v1.ResourceIdentifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Config:
-	//
 	//	*Resource_Service
 	//	*Resource_Bucket
 	//	*Resource_Topic

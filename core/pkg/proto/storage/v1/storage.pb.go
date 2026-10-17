@@ -123,7 +123,6 @@ type ClientMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ClientMessage_RegistrationRequest
 	//	*ClientMessage_BlobEventResponse
 	Content isClientMessage_Content `protobuf_oneof:"content"`
@@ -216,7 +215,6 @@ type ServerMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ServerMessage_RegistrationResponse
 	//	*ServerMessage_BlobEventRequest
 	Content isServerMessage_Content `protobuf_oneof:"content"`
@@ -307,7 +305,6 @@ type BlobEventRequest struct {
 
 	BucketName string `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
 	// Types that are assignable to Event:
-	//
 	//	*BlobEventRequest_BlobEvent
 	Event isBlobEventRequest_Event `protobuf_oneof:"event"`
 }
@@ -600,8 +597,7 @@ type StorageWriteRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Nitric name of the bucket to store in
-	//
-	//	this will be automatically resolved to the provider specific bucket identifier.
+	//  this will be automatically resolved to the provider specific bucket identifier.
 	BucketName string `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
 	// Key to store the item under
 	Key string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
@@ -708,8 +704,7 @@ type StorageReadRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Nitric name of the bucket to retrieve from
-	//
-	//	this will be automatically resolved to the provider specific bucket identifier.
+	//  this will be automatically resolved to the provider specific bucket identifier.
 	BucketName string `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
 	// Key of item to retrieve
 	Key string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
@@ -914,8 +909,7 @@ type StoragePreSignUrlRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Nitric name of the bucket to retrieve from
-	//
-	//	this will be automatically resolved to the provider specific bucket identifier.
+	//  this will be automatically resolved to the provider specific bucket identifier.
 	BucketName string `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
 	// Key of item to generate the signed URL for.
 	// The URL and the token it contains will only be valid for operations on this resource specifically.

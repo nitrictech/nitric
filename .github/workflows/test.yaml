@@ -13,6 +13,7 @@ concurrency:
 
 env:
   GOPATH: /home/runner/go
+  GO_VERSION: 1.27.2
   # Compiling the pulumi SDKs in parallel exhausts the runner's 16GB
   GOFLAGS: -p=2
 
@@ -67,11 +68,11 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24.0
+          go-version: ${{ env.GO_VERSION }}
           cache: false
       - name: Cache key
         id: key
-        run: echo "prefix=go-check-${MODULE//\//-}-${{ hashFiles('**/go.sum', '**/work.sum') }}" >> "$GITHUB_OUTPUT"
+        run: echo "prefix=go-check-${MODULE//\//-}-go${GO_VERSION}-${{ hashFiles('**/go.sum', '**/work.sum') }}" >> "$GITHUB_OUTPUT"
       - name: Restore Go caches
         uses: actions/cache/restore@v4
         with:
@@ -91,12 +92,13 @@ jobs:
       - name: Build
         if: ${{ !cancelled() && env.IS_PROVIDER == 'true' }}
         run: make -C "$MODULE" binaries
-      # Prebuilt binary, so analysis uses this job's go toolchain and build cache
+      # Built with this job's go: a golangci-lint built with an older go can't type check newer standard libraries
       - name: Install golangci-lint
         if: ${{ !cancelled() }}
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
+          install-mode: goinstall
           install-only: true
       - name: Lint
         if: ${{ !cancelled() }}

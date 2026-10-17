@@ -374,7 +374,6 @@ type ClientMessage struct {
 	// Globally unique id to pair requests/responses
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ClientMessage_RegistrationRequest
 	//	*ClientMessage_WebsocketEventResponse
 	Content isClientMessage_Content `protobuf_oneof:"content"`
@@ -566,7 +565,6 @@ type WebsocketEventRequest struct {
 	// The connection this trigger came from
 	ConnectionId string `protobuf:"bytes,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	// Types that are assignable to WebsocketEvent:
-	//
 	//	*WebsocketEventRequest_Connection
 	//	*WebsocketEventRequest_Disconnection
 	//	*WebsocketEventRequest_Message
@@ -725,7 +723,6 @@ type ServerMessage struct {
 	// Server message ID, used to pair requests/responses
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ServerMessage_RegistrationResponse
 	//	*ServerMessage_WebsocketEventRequest
 	Content isServerMessage_Content `protobuf_oneof:"content"`
@@ -817,7 +814,6 @@ type WebsocketEventResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to WebsocketResponse:
-	//
 	//	*WebsocketEventResponse_ConnectionResponse
 	WebsocketResponse isWebsocketEventResponse_WebsocketResponse `protobuf_oneof:"websocket_response"`
 }

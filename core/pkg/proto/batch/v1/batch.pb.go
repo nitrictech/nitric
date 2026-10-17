@@ -29,7 +29,6 @@ type ClientMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ClientMessage_RegistrationRequest
 	//	*ClientMessage_JobResponse
 	Content isClientMessage_Content `protobuf_oneof:"content"`
@@ -174,7 +173,6 @@ type JobData struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Data:
-	//
 	//	*JobData_Struct
 	Data isJobData_Data `protobuf_oneof:"data"`
 }
@@ -452,7 +450,6 @@ type ServerMessage struct {
 	// globally unique ID of the request/response pair
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are assignable to Content:
-	//
 	//	*ServerMessage_RegistrationResponse
 	//	*ServerMessage_JobRequest
 	Content isServerMessage_Content `protobuf_oneof:"content"`
@@ -523,6 +520,7 @@ type isServerMessage_Content interface {
 }
 
 type ServerMessage_RegistrationResponse struct {
+	//
 	RegistrationResponse *RegistrationResponse `protobuf:"bytes,2,opt,name=registration_response,json=registrationResponse,proto3,oneof"`
 }
 

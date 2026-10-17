@@ -2,7 +2,7 @@ module github.com/nitrictech/nitric/cloud/common
 
 go 1.23.1
 
-toolchain go1.24.0
+toolchain go1.27.2
 
 require (
 	github.com/aws/constructs-go/constructs/v10 v10.4.2
