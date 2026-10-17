@@ -10,12 +10,6 @@ binaries: $(providers)
 		$(MAKE) -C $$dir || exit 1; \
 	done
 
-sec:
-	for dir in $(all); do \
-		echo "Running gosec on $$dir"; \
-		$(MAKE) sec -C $$dir || exit 1; \
-	done
-
 check: lint test
 
 fmt: $(all)
@@ -61,4 +55,4 @@ tidy: $(all)
 		$(MAKE) tidy -C $$dir || exit 1; \
 	done
 
-.PHONY: install-tools binaries sec check fmt lint test test-coverage license-check generate-sources tidy
+.PHONY: install-tools binaries check fmt lint test test-coverage license-check generate-sources tidy

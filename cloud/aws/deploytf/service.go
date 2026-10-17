@@ -74,7 +74,7 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 	}
 
 	if a.Vpc != nil && a.Rds != nil {
-		serviceConfig.SecurityGroupIds = &[]*string{(a.Rds.SecurityGroupIdOutput())}
+		serviceConfig.SecurityGroupIds = &[]*string{a.Rds.SecurityGroupIdOutput()}
 		serviceConfig.SubnetIds = cdktf.Token_AsList(a.Vpc.PrivateSubnetIdsOutput(), &cdktf.EncodingOptions{})
 	}
 
