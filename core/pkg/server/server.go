@@ -221,13 +221,13 @@ func (s *NitricServer) Start(startOpts ...ServerStartOptions) error {
 	logger.Debug("Registered Gateway Plugin")
 
 	// Start the gRPC server
-	go (func() {
+	go func() {
 		logger.Debugf("Services listening on: %s", s.ServiceAddress)
 		err := s.grpcServer.Serve(lis)
 		if err != nil {
 			logger.Errorf("grpc serve %v", err)
 		}
-	})()
+	}()
 
 	// Start our child process
 	// This will block until our child process is ready to accept incoming connections

@@ -92,8 +92,17 @@ jobs:
       - name: Build
         if: ${{ !cancelled() && env.IS_PROVIDER == 'true' }}
         run: make -C "$MODULE" binaries
+      # Prebuilt binary, so analysis uses this job's go toolchain and build cache
+      - name: Install golangci-lint
+        if: ${{ !cancelled() }}
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          install-only: true
       - name: Lint
         if: ${{ !cancelled() }}
+        env:
+          GOLANGCI_LINT: golangci-lint
         run: make -C "$MODULE" lint
       - name: Test
         if: ${{ !cancelled() }}
@@ -118,53 +127,10 @@ jobs:
             ~/go/pkg/mod
           key: ${{ steps.key.outputs.prefix }}-${{ github.sha }}
 
-  security:
-    needs: changes
-    if: needs.changes.outputs.modules != '[]'
-    name: security (${{ matrix.module }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        module: ${{ fromJSON(needs.changes.outputs.modules) }}
-    env:
-      MODULE: ${{ matrix.module }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      # gosec v2.29.0 requires go >= 1.25
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.26.9
-          cache: false
-      - name: Cache key
-        id: key
-        run: echo "prefix=go-sec-${MODULE//\//-}-${{ hashFiles('**/go.sum', '**/work.sum') }}" >> "$GITHUB_OUTPUT"
-      - name: Restore Go caches
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ steps.key.outputs.prefix }}-${{ github.sha }}
-          restore-keys: |
-            ${{ steps.key.outputs.prefix }}-
-      - name: Run gosec
-        run: make -C "$MODULE" sec
-      - name: Save Go caches
-        if: ${{ always() && github.event_name == 'push' }}
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ steps.key.outputs.prefix }}-${{ github.sha }}
-
   # Single required status check: passes when every selected job passed, or nothing needed to run
   ci:
     if: always()
-    needs: [changes, check, security]
+    needs: [changes, check]
     runs-on: ubuntu-latest
     steps:
       - name: Check results

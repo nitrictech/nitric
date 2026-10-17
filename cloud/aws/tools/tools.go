@@ -18,6 +18,7 @@
 package tools
 
 import (
+	// Unused (lint runs golangci-lint v2), but removing it downgrades shared dependencies; drop it in a dedicated dependency update
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/addlicense"
 	_ "github.com/onsi/ginkgo/ginkgo"
