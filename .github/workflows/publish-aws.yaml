@@ -28,7 +28,10 @@ jobs:
           # either 'goreleaser' (default) or 'goreleaser-pro':
           distribution: goreleaser
           version: '~> v1'
-          args: release --clean
+          # Limit the number of parallel builds to prevent build crashes
+          args: release --clean -p 1
           workdir: cloud/aws
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Compiling the pulumi SDKs in parallel exhausts the runner's 16GB
+          GOFLAGS: -p=2
