@@ -4,203 +4,138 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "docs/**"
   pull_request:
-    paths-ignore:
-      - "docs/**"
+
+# Cancel superseded runs on PRs; let every push to main finish so its caches are saved
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  GOPATH: /home/runner/go
+  # Compiling the pulumi SDKs in parallel exhausts the runner's 16GB
+  GOFLAGS: -p=2
 
 jobs:
-  build:
+  # Select the go modules affected by this change; pushes to main check every module
+  changes:
     runs-on: ubuntu-latest
-    env:
-      GOPATH: /home/runner/go
+    outputs:
+      modules: ${{ steps.select.outputs.modules }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/checkout@v4
         with:
-          go-version: 1.24.0
-      - name: Setup Golang caches
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-golang-
-      - name: Build check
-        run: make binaries
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: binaries
-          path: |
-            cloud/aws/bin/
-            cloud/gcp/bin/
-            cloud/azure/bin/
-          retention-days: 1
-
-  # Jobs that can run independently without build dependencies
-  security:
-    runs-on: ubuntu-latest
-    env:
-      GOPATH: /home/runner/go
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.24.0
-      - name: Setup Golang caches
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-golang-
-      - name: Run Gosec Security Scanner
-        run: make sec
-
-  generate-check:
-    runs-on: ubuntu-latest
-    env:
-      GOPATH: /home/runner/go
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.24.0
-      - name: Setup Golang caches
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-golang-
-      - name: Generate Sources
-        run: make generate-sources
-      - name: Check generated sources
+          fetch-depth: 0
+      - name: Select modules
+        id: select
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          git add .
-          git diff --cached --exit-code
+          all="core cloud/common cloud/aws cloud/gcp cloud/azure"
+          if [ "$EVENT" != "pull_request" ]; then
+            selected="$all"
+          else
+            selected=""
+            for f in $(git diff --name-only "$BASE_SHA...$HEAD_SHA"); do
+              case "$f" in
+                core/*|nitric/*|go.work|go.work.sum|Makefile|.github/workflows/test.yaml) selected="$selected $all" ;;
+                cloud/common/*) selected="$selected cloud/common cloud/aws cloud/gcp cloud/azure" ;;
+                cloud/aws/*|cloud/gcp/*|cloud/azure/*) selected="$selected $(echo "$f" | cut -d/ -f1-2)" ;;
+              esac
+            done
+          fi
+          modules=$(tr ' ' '\n' <<< "$selected" | sort -u | jq -R . | jq -sc 'map(select(length > 0))')
+          echo "modules=$modules" | tee -a "$GITHUB_OUTPUT"
 
-  # Jobs that need build dependencies
-  lint:
-    needs: build
+  check:
+    needs: changes
+    if: needs.changes.outputs.modules != '[]'
+    name: check (${{ matrix.module }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.changes.outputs.modules) }}
     env:
-      GOPATH: /home/runner/go
+      MODULE: ${{ matrix.module }}
+      IS_PROVIDER: ${{ startsWith(matrix.module, 'cloud/') && matrix.module != 'cloud/common' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: 1.24.0
-      - name: Setup Golang caches
-        uses: actions/cache@v3
+          cache: false
+      - name: Cache key
+        id: key
+        run: echo "prefix=go-check-${MODULE//\//-}-${{ hashFiles('**/go.sum', '**/work.sum') }}" >> "$GITHUB_OUTPUT"
+      - name: Restore Go caches
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cache/go-build
             ~/.cache/golangci-lint
             ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
+          key: ${{ steps.key.outputs.prefix }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-golang-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
+            ${{ steps.key.outputs.prefix }}-
+      # Runs first, on a clean tree, so build and test outputs can't show up in the diff
+      - name: Check generated sources
+        run: |
+          make -C "$MODULE" generate-sources
+          git add -A
+          git diff --cached --exit-code
+      - name: Build
+        if: ${{ !cancelled() && env.IS_PROVIDER == 'true' }}
+        run: make -C "$MODULE" binaries
+      # Prebuilt binary, so analysis uses this job's go toolchain and build cache
+      - name: Install golangci-lint
+        if: ${{ !cancelled() }}
+        uses: golangci/golangci-lint-action@v9
         with:
-          name: binaries
-      - name: Linting check
-        run: make lint
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      GOPATH: /home/runner/go
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
+          version: v2.15.0
+          install-only: true
+      - name: Lint
+        if: ${{ !cancelled() }}
+        env:
+          GOLANGCI_LINT: golangci-lint
+        run: make -C "$MODULE" lint
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: make -C "$MODULE" test-coverage
+      - name: Check dependency licenses
+        if: ${{ !cancelled() && env.IS_PROVIDER == 'true' }}
+        run: make -C "$MODULE" license-check
+      - name: Upload coverage
+        if: ${{ !cancelled() && hashFiles(format('{0}/all.coverprofile', matrix.module)) != '' }}
+        uses: codecov/codecov-action@v5
         with:
-          go-version: 1.24.0
-      - name: Setup Golang caches
-        uses: actions/cache@v3
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./${{ matrix.module }}/all.coverprofile
+          flags: ${{ matrix.module == 'core' && 'core' || (matrix.module == 'cloud/common' && 'common' || (matrix.module == 'cloud/aws' && 'aws' || (matrix.module == 'cloud/gcp' && 'gcp' || 'azure'))) }}
+      - name: Save Go caches
+        if: ${{ always() && github.event_name == 'push' }}
+        uses: actions/cache/save@v4
         with:
           path: |
             ~/.cache/go-build
+            ~/.cache/golangci-lint
             ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-golang-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries
-      - name: Run Tests
-        run: make test-coverage
-      # Upload coverage reports
-      - name: Upload Coverage Report Core
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./core/all.coverprofile
-          flags: core # optional
-      - name: Upload Coverage Report AWS
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./cloud/aws/all.coverprofile
-          flags: aws # optional
-      - name: Upload Coverage Report GCP
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./cloud/gcp/all.coverprofile
-          flags: gcp # optional
-      - name: Upload Coverage Report Azure
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: ./cloud/azure/all.coverprofile
-          flags: azure # optional
+          key: ${{ steps.key.outputs.prefix }}-${{ github.sha }}
 
-  license-check:
-    needs: build
+  # Single required status check: passes when every selected job passed, or nothing needed to run
+  ci:
+    if: always()
+    needs: [changes, check]
     runs-on: ubuntu-latest
-    env:
-      GOPATH: /home/runner/go
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.24.0
-      - name: Setup Golang caches
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum', '**/work.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-golang-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries
-      - name: Check Dependency Licenses
-        run: make license-check
+      - name: Check results
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null

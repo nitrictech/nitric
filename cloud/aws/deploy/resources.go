@@ -173,6 +173,9 @@ func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
 		Name:     pulumi.Sprintf("/nitric/%s/resource-index", a.StackId),
 		DataType: pulumi.String("text"),
 		Type:     pulumi.String("String"),
+		// Intelligent-Tiering lets AWS upgrade to Advanced when the index outgrows Standard's 4KB limit,
+		// and avoids the forced replacement of switching an Advanced parameter back to Standard
+		Tier: pulumi.String("Intelligent-Tiering"),
 		// Store the nitric resource index serialized as a JSON string
 		Value: resourceIndexJson,
 	})

@@ -3,13 +3,9 @@ GOLANGCI_LINT_CACHE=/tmp/golangci-lint-cache/
 else
 GOLANGCI_LINT_CACHE=${HOME}/.cache/golangci-lint
 endif
-GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/cmd/golangci-lint
+GOLANGCI_LINT ?= GOLANGCI_LINT_CACHE=$(GOLANGCI_LINT_CACHE) go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
 
 binaries: deploybin
-
-sec:
-	@touch common/runtime/runtime-azure
-	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
 
 runtimebin:
 	@echo Building Azure Runtime Server

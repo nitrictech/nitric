@@ -179,6 +179,31 @@ func handleApiEvent(ctx context.Context, resolver resource.AwsResourceResolver, 
 	}
 }
 
+// lambdaHeaders accumulates headers for an APIGatewayV2HTTPResponse,
+// routing Set-Cookie to the dedicated Cookies field and comma-folding
+// all other multi-value headers per RFC 9110 §5.3.
+type lambdaHeaders struct {
+	Headers map[string]string
+	Cookies []string
+}
+
+func newLambdaHeaders() *lambdaHeaders {
+	return &lambdaHeaders{Headers: make(map[string]string)}
+}
+
+func (h *lambdaHeaders) Add(key, value string) {
+	lk := strings.ToLower(key)
+	if lk == "set-cookie" {
+		h.Cookies = append(h.Cookies, value)
+		return
+	}
+	if existing, ok := h.Headers[lk]; ok {
+		h.Headers[lk] = existing + ", " + value
+	} else {
+		h.Headers[lk] = value
+	}
+}
+
 func handleHttpProxyRequest(ctx context.Context, httpmanager http.HttpRequestHandler, evt events.APIGatewayV2HTTPRequest) (interface{}, error) {
 	request := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(request)
@@ -202,18 +227,19 @@ func handleHttpProxyRequest(ctx context.Context, httpmanager http.HttpRequestHan
 		return nil, err
 	}
 
-	lambdaHTTPHeaders := make(map[string]string)
+	lh := newLambdaHeaders()
 	resp.Header.VisitAll(func(key, value []byte) {
-		lambdaHTTPHeaders[string(key)] = string(value)
+		lh.Add(string(key), string(value))
 	})
 
 	responseString := base64.StdEncoding.EncodeToString(resp.Body())
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode:      resp.StatusCode(),
-		Headers:         lambdaHTTPHeaders,
+		Headers:         lh.Headers,
 		Body:            responseString,
 		IsBase64Encoded: true,
+		Cookies:         lh.Cookies,
 	}, nil
 }
 
@@ -255,7 +281,7 @@ func handleApiGatewayRequest(ctx context.Context, nitricName string, apismanager
 	if evt.IsBase64Encoded {
 		data, err = base64.StdEncoding.DecodeString(evt.Body)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
+			return events.APIGatewayV2HTTPResponse{
 				StatusCode:      400,
 				Body:            "Error processing lambda request",
 				IsBase64Encoded: false,
@@ -278,27 +304,30 @@ func handleApiGatewayRequest(ctx context.Context, nitricName string, apismanager
 
 	resp, err := apismanager.HandleRequest(nitricName, req)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode:      500,
 			Body:            "Internal Server Error",
 			IsBase64Encoded: false,
 		}, nil
 	}
 
-	lambdaHTTPHeaders := make(map[string]string)
+	lh := newLambdaHeaders()
 	if resp.GetHttpResponse().Headers != nil {
 		for k, v := range resp.GetHttpResponse().Headers {
-			lambdaHTTPHeaders[k] = v.Value[0]
+			for _, val := range v.Value {
+				lh.Add(k, val)
+			}
 		}
 	}
 
 	responseString := base64.StdEncoding.EncodeToString(resp.GetHttpResponse().Body)
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode:      int(resp.GetHttpResponse().Status),
-		Headers:         lambdaHTTPHeaders,
+		Headers:         lh.Headers,
 		Body:            responseString,
 		IsBase64Encoded: true,
+		Cookies:         lh.Cookies,
 	}, nil
 }
 

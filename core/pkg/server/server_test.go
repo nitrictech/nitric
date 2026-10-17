@@ -97,9 +97,9 @@ var _ = Describe("Nitric Server", func() {
 
 			When("There is a worker available in the pool", func() {
 				BeforeEach(func() {
-					go (func() {
+					go func() {
 						_ = http.ListenAndServe("localhost:8081", nil)
-					})()
+					}()
 				})
 
 				It("Should wait for the service to start", func() {

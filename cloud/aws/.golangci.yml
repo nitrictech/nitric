@@ -1,36 +1,57 @@
+version: "2"
 run:
-  timeout: "5m"
-  go: 1.21
-
+  go: "1.21"
 linters:
-  disable-all: true
+  default: none
   enable:
-    - goimports
-    - gofmt
-    - govet
-    - gofumpt
-    - whitespace
-    - staticcheck
-    - ineffassign
-    - unused
-    - misspell
-    - unconvert
     - errcheck
     - errorlint
-
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unconvert
+    - unused
+    - whitespace
+  settings:
+    staticcheck:
+      checks:
+        - SA*
+    govet:
+      disable:
+        - structtag
+  exclusions:
+    generated: lax
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+    presets:
+      - comments
+      - common-false-positives
+      - std-error-handling
+    paths:
+      - tools/tools.go
+      - deploytf/generated
+      - tools
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-dirs:
-    - deploytf/generated
-    - tools
-  exclude-files:
-    - tools/tools.go
   max-issues-per-linter: 0
   max-same-issues: 0
-
-linters-settings:
-  govet:
-    check-shadowing: false
-    disable:
-      # lambda gateway requires struct tag shadowing
-      # for deserializing typed lambda events
-      - structtag
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - tools/tools.go
+      - deploytf/generated
+      - tools
+      - third_party$
+      - builtin$
+      - examples$
