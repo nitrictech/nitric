@@ -19,7 +19,7 @@ generate-sources:
 	@echo No sources to generate
 
 sec:
-	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+	@go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -exclude-dir=tools ./...
 
 
 test:

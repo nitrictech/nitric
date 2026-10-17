@@ -9,7 +9,7 @@ binaries: deploybin
 
 sec:
 	@touch common/runtime/runtime-aws
-	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+	@go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -exclude-dir=tools ./...
 	@rm common/runtime/runtime-aws
 
 # build runtime binary directly into the deploy director so it can be embedded directly into the deployment engine binary

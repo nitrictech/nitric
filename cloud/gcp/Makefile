@@ -17,7 +17,7 @@ predeploybin: runtimebin
 
 sec:
 	@touch common/runtime/runtime-gcp
-	@go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=tools ./...
+	@go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 -exclude-dir=tools ./...
 	@rm common/runtime/runtime-gcp
 
 # There appears to be an old namespace conflict with the protobuf definitions
