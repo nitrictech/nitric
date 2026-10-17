@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -27,6 +28,7 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/storage"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 )
 
 func (p *NitricGcpPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error {
@@ -42,20 +44,12 @@ func (p *NitricGcpPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Reso
 
 	if len(config.CorsRules) > 0 {
 		corsRules := storage.BucketCorArray{}
-		warnedAllowedHeaders := false
 		for _, rule := range config.CorsRules {
-			if len(rule.AllowedHeaders) > 0 && !warnedAllowedHeaders {
-				ctx.Log.Warn(fmt.Sprintf("bucket %q: GCP Cloud Storage does not support AllowedHeaders in CORS configuration. "+
-					"GCS automatically allows all request headers when the origin and method match. "+
-					"The AllowedHeaders setting will be ignored.", name), nil)
-				warnedAllowedHeaders = true
-			}
-
 			corsRule := storage.BucketCorArgs{
 				Origins: pulumi.ToStringArray(rule.AllowedOrigins),
 				Methods: pulumi.ToStringArray(rule.AllowedMethods),
-				// GCP's ResponseHeaders maps to the CORS Access-Control-Expose-Headers header
-				ResponseHeaders: pulumi.ToStringArray(rule.ExposeHeaders),
+				// GCS uses responseHeader for both preflight Access-Control-Allow-Headers and Access-Control-Expose-Headers
+				ResponseHeaders: pulumi.ToStringArray(lo.Uniq(slices.Concat(rule.AllowedHeaders, rule.ExposeHeaders))),
 			}
 			if rule.MaxAgeSeconds > 0 {
 				corsRule.MaxAgeSeconds = pulumi.IntPtr(int(rule.MaxAgeSeconds))

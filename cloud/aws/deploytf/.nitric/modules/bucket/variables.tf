@@ -24,7 +24,7 @@ variable "cors_rules" {
     allowed_methods = list(string)
     allowed_headers = list(string)
     expose_headers  = list(string)
-    max_age_seconds = number
+    max_age_seconds = optional(number)
   }))
   default = []
 }

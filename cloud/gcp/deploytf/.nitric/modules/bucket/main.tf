@@ -27,7 +27,7 @@ resource "google_storage_bucket" "bucket" {
     content {
       origin          = cors.value.allowed_origins
       method          = cors.value.allowed_methods
-      response_header = cors.value.expose_headers
+      response_header = cors.value.response_headers
       max_age_seconds = cors.value.max_age_seconds
     }
   }

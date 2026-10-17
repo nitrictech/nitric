@@ -138,9 +138,9 @@ func TestBucket_WithCorsRules_SetsCorsOnBucket(t *testing.T) {
 	if len(methods) != 2 || methods[0].StringValue() != "GET" {
 		t.Fatalf("unexpected methods: %v", methods)
 	}
-	// GCP maps ExposeHeaders to ResponseHeaders
+	// GCP maps both AllowedHeaders and ExposeHeaders to ResponseHeaders
 	responseHeaders := rule["responseHeaders"].ArrayValue()
-	if len(responseHeaders) != 1 || responseHeaders[0].StringValue() != "ETag" {
+	if len(responseHeaders) != 2 || responseHeaders[0].StringValue() != "Content-Type" || responseHeaders[1].StringValue() != "ETag" {
 		t.Fatalf("unexpected responseHeaders: %v", responseHeaders)
 	}
 	maxAge, ok := rule["maxAgeSeconds"]

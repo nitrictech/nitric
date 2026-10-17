@@ -61,11 +61,12 @@ license-check: runtimebin
 
 test: generate-mocks
 	@echo Running unit tests
-	@go run github.com/onsi/ginkgo/ginkgo ./runtime/...
+	@go run github.com/onsi/ginkgo/ginkgo ./runtime/... ./deploy/...
 
 test-coverage: generate-mocks
 	@echo Running unit tests
 	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/...
+	@go test ./deploy/...
 
 # generate mock implementations
 generate-mocks:
