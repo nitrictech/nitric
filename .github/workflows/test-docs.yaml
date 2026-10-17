@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # External links and a11y are checked nightly (docs-nightly.yaml), keeping this within a few minutes
+  # Checks the built site without a browser; external links and a11y run nightly (docs-nightly.yaml)
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -26,36 +26,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: yarn
+          cache-dependency-path: docs/yarn.lock
       - name: Install dependencies
-        uses: cypress-io/github-action@v6
-        with:
-          runTests: false
-          install-command: yarn --frozen-lockfile
-          working-directory: docs
+        run: yarn --frozen-lockfile
+        env:
+          CYPRESS_INSTALL_BINARY: 0
       - name: Run format linting
         run: yarn format:check
       - name: Run spellcheck test
         run: yarn test:spellcheck
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: docs/.next/cache
+          key: docs-next-${{ hashFiles('docs/yarn.lock') }}-${{ github.sha }}
+          restore-keys: |
+            docs-next-${{ hashFiles('docs/yarn.lock') }}-
       - name: Build
-        run: yarn cypress:build
+        run: yarn build
         env:
           NEXT_PUBLIC_GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
-      - name: Internal link and SEO tests
-        uses: cypress-io/github-action@v6
-        with:
-          install: false
-          headless: true
-          config: video=false
-          browser: chrome
-          spec: cypress/e2e/broken-links.cy.ts,cypress/e2e/seo.cy.ts
-          start: yarn start
-          wait-on: "http://localhost:3000"
-          working-directory: docs
-        env:
-          NEXT_PUBLIC_GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
-      - name: Upload screenshots
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: cypress-screenshots
-          path: docs/cypress/screenshots
+      - name: Check links and SEO tags
+        run: yarn test:site
