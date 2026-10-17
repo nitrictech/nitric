@@ -17,9 +17,18 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
+)
+
+const (
+	// ResourceResolverSSM uses SSM Parameter Store for runtime resource discovery (default).
+	ResourceResolverSSM = "ssm"
+	// ResourceResolverTagging uses the AWS Resource Groups Tagging API for runtime resource discovery.
+	ResourceResolverTagging = "tagging"
 )
 
 type AwsApiConfig struct {
@@ -64,6 +73,7 @@ type AuroraRdsClusterConfig struct {
 
 type AwsConfig struct {
 	ScheduleTimezone                      string `mapstructure:"schedule-timezone,omitempty"`
+	ResourceResolver                      string `mapstructure:"resource-resolver,omitempty"`
 	Import                                AwsImports
 	Refresh                               bool
 	Apis                                  map[string]*AwsApiConfig
@@ -137,6 +147,15 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AwsConfig, error)
 	if awsConfig.ScheduleTimezone == "" {
 		// default to UTC
 		awsConfig.ScheduleTimezone = "UTC"
+	}
+
+	// Default resource resolver to SSM if not specified
+	if awsConfig.ResourceResolver == "" {
+		awsConfig.ResourceResolver = ResourceResolverSSM
+	}
+
+	if awsConfig.ResourceResolver != ResourceResolverSSM && awsConfig.ResourceResolver != ResourceResolverTagging {
+		return nil, fmt.Errorf("invalid resource-resolver value %q: must be %q or %q", awsConfig.ResourceResolver, ResourceResolverSSM, ResourceResolverTagging)
 	}
 
 	if awsConfig.Apis == nil {

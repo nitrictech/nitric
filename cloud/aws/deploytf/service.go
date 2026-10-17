@@ -19,6 +19,7 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/aws/deploytf/generated/service"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
@@ -61,6 +62,12 @@ func (a *NitricAwsTerraformProvider) Service(stack cdktf.TerraformStack, name st
 
 	for k, v := range config.GetEnv() {
 		jsiiEnv[k] = jsii.String(v)
+	}
+
+	// Set after config.GetEnv() so the stack-level setting cannot be overridden by
+	// user env config, which would break resource discovery when SSM index creation was skipped.
+	if a.AwsConfig.ResourceResolver == common.ResourceResolverTagging {
+		jsiiEnv["NITRIC_AWS_RESOURCE_RESOLVER"] = jsii.String(common.ResourceResolverTagging)
 	}
 
 	serviceConfig := &service.ServiceConfig{

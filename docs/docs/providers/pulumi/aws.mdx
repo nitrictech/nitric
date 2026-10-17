@@ -166,6 +166,13 @@ region: my-aws-stack-region
 # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 schedule-timezone: Australia/Sydney # Available since v0.27.0
 
+# Configure how the runtime discovers deployed resources
+# 'ssm' (default) stores a resource index in SSM Parameter Store
+# 'tagging' uses the AWS Resource Groups Tagging API for runtime resource
+# discovery, avoiding the SSM parameter size limits (4KB standard / 8KB advanced)
+# which can be exceeded in stacks with many resources
+resource-resolver: tagging
+
 # Import existing AWS Resources
 # Available since v0.28.0
 import:

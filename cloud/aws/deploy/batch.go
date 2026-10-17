@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/nitrictech/nitric/cloud/aws/common"
 	"github.com/nitrictech/nitric/cloud/common/deploy/image"
 	"github.com/nitrictech/nitric/cloud/common/deploy/provider"
 	"github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -361,6 +362,13 @@ func (p *NitricAwsPulumiProvider) Batch(ctx *pulumi.Context, parent pulumi.Resou
 				jobDefinitionContainerProperties.Environment = append(jobDefinitionContainerProperties.Environment, EnvironmentVariable{
 					Name:  "NITRIC_DATABASE_BASE_URL",
 					Value: fmt.Sprintf("postgres://%s:%s@%s:%s", "nitric", nitricDbPassword, nitricDbEndpoint, "5432"),
+				})
+			}
+
+			if p.AwsConfig.ResourceResolver == common.ResourceResolverTagging {
+				jobDefinitionContainerProperties.Environment = append(jobDefinitionContainerProperties.Environment, EnvironmentVariable{
+					Name:  "NITRIC_AWS_RESOURCE_RESOLVER",
+					Value: common.ResourceResolverTagging,
 				})
 			}
 

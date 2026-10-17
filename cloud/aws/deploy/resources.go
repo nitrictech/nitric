@@ -24,6 +24,10 @@ import (
 )
 
 func (a *NitricAwsPulumiProvider) resourcesStore(ctx *pulumi.Context) error {
+	if a.AwsConfig.ResourceResolver == common.ResourceResolverTagging {
+		return nil
+	}
+
 	// Build the AWS resource index from the provider information
 	// This will be used to store the ARNs/Identifiers of all resources created by the stack
 	bucketArnMap := pulumi.StringMap{}
