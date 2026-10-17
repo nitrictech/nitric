@@ -205,7 +205,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 				}
 				defer data.Close()
 
-				//#nosec G304 -- path unpacking known modules embedded fs
+				//#nosec G304 G122 -- path unpacking known modules embedded fs
 				out, err := os.Create(path)
 				if err != nil {
 					return err
@@ -217,6 +217,7 @@ func createTerraformStackForNitricProvider(req *deploymentspb.DeploymentUpReques
 				return err
 			}
 
+			//#nosec G122 -- path unpacking known modules embedded fs
 			return os.MkdirAll(path, 0o750)
 		})
 		if err != nil {
