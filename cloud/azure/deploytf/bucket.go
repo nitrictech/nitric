@@ -15,6 +15,8 @@
 package deploytf
 
 import (
+	"fmt"
+
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/azure/deploytf/generated/bucket"
@@ -45,6 +47,11 @@ func eventTypeToStorageEventType(eventType storagepb.BlobEventType) []*string {
 
 // Bucket - Deploy a Storage Bucket
 func (n *NitricAzureTerraformProvider) Bucket(stack cdktf.TerraformStack, name string, config *deploymentspb.Bucket) error {
+	if len(config.CorsRules) > 0 {
+		return fmt.Errorf("bucket %q has CORS rules configured, but Azure does not support per-container CORS. "+
+			"CORS must be configured at the Storage Account level", name)
+	}
+
 	listeners := map[string]BucketSubscriber{}
 
 	allDependants := []cdktf.ITerraformDependable{}

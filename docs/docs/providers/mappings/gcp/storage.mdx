@@ -17,3 +17,8 @@ The following resources are created when deploying Storage to Google Cloud:
 During deployment, your buckets will be provisioned as follows:
 
 - Your bucket definitions will be deployed individually as storage buckets.
+- If CORS rules are configured, they are applied directly to the [Cloud Storage bucket CORS configuration](https://cloud.google.com/storage/docs/cross-origin).
+
+<Note>
+  Cloud Storage has a single `responseHeader` CORS setting, used for both allowed request headers and exposed response headers. Nitric combines `allowed_headers` and `expose_headers` into it, so a header allowed in a request is also exposed in the response.
+</Note>

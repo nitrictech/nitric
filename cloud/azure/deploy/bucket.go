@@ -88,6 +88,11 @@ func (p *NitricAzurePulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Re
 	var err error
 	opts := []pulumi.ResourceOption{pulumi.Parent(parent)}
 
+	if len(config.CorsRules) > 0 {
+		return fmt.Errorf("bucket %q has CORS rules configured, but Azure does not support per-container CORS. "+
+			"CORS must be configured at the Storage Account level", name)
+	}
+
 	p.Buckets[name], err = storage.NewBlobContainer(ctx, ResourceName(ctx, name, StorageContainerRT), &storage.BlobContainerArgs{
 		ResourceGroupName: p.ResourceGroup.Name,
 		AccountName:       p.StorageAccount.Name,

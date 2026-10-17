@@ -18,6 +18,7 @@ package deploy
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/nitrictech/nitric/cloud/common/deploy/resources"
 	common "github.com/nitrictech/nitric/cloud/common/deploy/tags"
@@ -27,6 +28,7 @@ import (
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/pubsub"
 	"github.com/pulumi/pulumi-gcp/sdk/v8/go/gcp/storage"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/samber/lo"
 )
 
 func (p *NitricGcpPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Resource, name string, config *deploymentspb.Bucket) error {
@@ -35,10 +37,29 @@ func (p *NitricGcpPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Reso
 
 	resourceLabels := common.Tags(p.StackId, name, resources.Bucket)
 
-	p.Buckets[name], err = storage.NewBucket(ctx, name, &storage.BucketArgs{
+	bucketArgs := &storage.BucketArgs{
 		Location: pulumi.String(p.Region),
 		Labels:   pulumi.ToStringMap(resourceLabels),
-	}, p.WithDefaultResourceOptions(opts...)...)
+	}
+
+	if len(config.CorsRules) > 0 {
+		corsRules := storage.BucketCorArray{}
+		for _, rule := range config.CorsRules {
+			corsRule := storage.BucketCorArgs{
+				Origins: pulumi.ToStringArray(rule.AllowedOrigins),
+				Methods: pulumi.ToStringArray(rule.AllowedMethods),
+				// GCS uses responseHeader for both preflight Access-Control-Allow-Headers and Access-Control-Expose-Headers
+				ResponseHeaders: pulumi.ToStringArray(lo.Uniq(slices.Concat(rule.AllowedHeaders, rule.ExposeHeaders))),
+			}
+			if rule.MaxAgeSeconds > 0 {
+				corsRule.MaxAgeSeconds = pulumi.IntPtr(int(rule.MaxAgeSeconds))
+			}
+			corsRules = append(corsRules, corsRule)
+		}
+		bucketArgs.Cors = corsRules
+	}
+
+	p.Buckets[name], err = storage.NewBucket(ctx, name, bucketArgs, p.WithDefaultResourceOptions(opts...)...)
 	if err != nil {
 		return err
 	}

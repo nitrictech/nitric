@@ -49,11 +49,31 @@ func (n *NitricAwsTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 		}
 	}
 
+	var corsRules []map[string]interface{}
+	for _, rule := range config.CorsRules {
+		corsRules = append(corsRules, map[string]interface{}{
+			"allowed_origins": jsii.Strings(rule.AllowedOrigins...),
+			"allowed_methods": jsii.Strings(rule.AllowedMethods...),
+			"allowed_headers": jsii.Strings(rule.AllowedHeaders...),
+			"expose_headers":  jsii.Strings(rule.ExposeHeaders...),
+			"max_age_seconds": maxAgeSeconds(rule),
+		})
+	}
+
 	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("bucket_%s", name), &bucket.BucketConfig{
 		BucketName:          &name,
 		StackId:             n.Stack.StackIdOutput(),
 		NotificationTargets: &notificationTargets,
+		CorsRules:           &corsRules,
 	})
 
 	return nil
+}
+
+// maxAgeSeconds returns nil for an unset (0) max age so the provider default applies
+func maxAgeSeconds(rule *deploymentspb.BucketCorsRule) *float64 {
+	if rule.MaxAgeSeconds <= 0 {
+		return nil
+	}
+	return jsii.Number(float64(rule.MaxAgeSeconds))
 }

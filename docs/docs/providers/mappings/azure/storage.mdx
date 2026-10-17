@@ -24,3 +24,7 @@ During deployment the Nitric CLI creates your Storage Containers:
 
 - Each Bucket declaration in your services are deployed as a Blob Container in Azure
 - Container Apps are configured to enable access to Storage Containers
+
+<Note>
+  Azure Blob Storage does not support per-container CORS configuration. CORS is configured at the [Storage Account level](https://learn.microsoft.com/en-us/rest/api/storageservices/cross-origin-resource-sharing--cors--support-for-the-azure-storage-services). Deployments will fail if CORS rules are specified for buckets on Azure. To enable CORS, configure it directly on the Storage Account via the Azure Portal or CLI.
+</Note>
