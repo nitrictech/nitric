@@ -8,3 +8,8 @@ coverage:
     patch:
       default:
         target: 0%
+
+# Modules skipped by path selection keep their coverage from the base commit
+flag_management:
+  default_rules:
+    carryforward: true
