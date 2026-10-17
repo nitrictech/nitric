@@ -28,7 +28,10 @@ jobs:
           # either 'goreleaser' (default) or 'goreleaser-pro':
           distribution: goreleaser
           version: '~> v1'
-          args: release --clean -f .goreleaser.tf.yaml
+          # Limit the number of parallel builds to prevent build crashes
+          args: release --clean -f .goreleaser.tf.yaml -p 1
           workdir: cloud/aws
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Compiling the provider SDKs in parallel exhausts the runner's 16GB
+          GOFLAGS: -p=2
