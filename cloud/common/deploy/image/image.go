@@ -20,6 +20,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -29,7 +30,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi-docker/sdk/v4/go/docker"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"golang.org/x/exp/maps"
 )
 
 type ImageArgs struct {
