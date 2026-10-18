@@ -678,6 +678,28 @@ profiles.on(BlobEventType.delete, "*", (ctx) async {
 
 </CodeSwitcher>
 
+## CORS Configuration
+
+Cross-Origin Resource Sharing (CORS) rules can be configured on buckets to allow browser-based applications to access bucket files directly. This is useful when your frontend needs to upload or download files from a bucket using signed URLs.
+
+CORS rules are configured at the deployment level through the deployment spec and support the following options per rule:
+
+| Property | Description |
+| --- | --- |
+| `allowed_origins` | Origins allowed to make cross-origin requests (e.g., `https://example.com`) |
+| `allowed_methods` | HTTP methods allowed (e.g., `GET`, `PUT`, `POST`) |
+| `allowed_headers` | Request headers allowed in preflight requests |
+| `expose_headers` | Response headers exposed to the browser |
+| `max_age_seconds` | How long preflight responses can be cached (in seconds) |
+
+<Note>
+  CORS support varies by cloud provider. See the provider-specific documentation for details:
+
+  - **AWS**: Full CORS support on S3 buckets
+  - **GCP**: Full CORS support on Cloud Storage buckets. `allowed_headers` is not supported — GCS automatically allows all request headers when the origin and method match.
+  - **Azure**: CORS is **not supported** per-bucket. Azure configures CORS at the Storage Account level, not per blob container. Deployments will fail if CORS rules are specified for Azure buckets.
+</Note>
+
 ## Cloud Service Mapping
 
 Each cloud provider comes with a set of default services used when deploying resources. You can find the default services for each cloud provider below.

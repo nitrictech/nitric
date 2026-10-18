@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/bucket"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
+	"github.com/nitrictech/nitric/core/pkg/logger"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
 )
 
@@ -62,10 +63,28 @@ func (n *NitricGcpTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 		}
 	}
 
+	var corsRules []map[string]interface{}
+	warnedAllowedHeaders := false
+	for _, rule := range config.CorsRules {
+		if len(rule.AllowedHeaders) > 0 && !warnedAllowedHeaders {
+			logger.Warnf("bucket %q: GCP Cloud Storage does not support AllowedHeaders in CORS configuration. "+
+				"GCS automatically allows all request headers when the origin and method match. "+
+				"The AllowedHeaders setting will be ignored.", name)
+			warnedAllowedHeaders = true
+		}
+		corsRules = append(corsRules, map[string]interface{}{
+			"allowed_origins": jsii.Strings(rule.AllowedOrigins...),
+			"allowed_methods": jsii.Strings(rule.AllowedMethods...),
+			"expose_headers":  jsii.Strings(rule.ExposeHeaders...),
+			"max_age_seconds": jsii.Number(float64(rule.MaxAgeSeconds)),
+		})
+	}
+
 	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("bucket_%s", name), &bucket.BucketConfig{
 		BucketName:          &name,
 		StackId:             n.Stack.StackIdOutput(),
 		NotificationTargets: &notificationTargets,
+		CorsRules:           &corsRules,
 	})
 
 	return nil

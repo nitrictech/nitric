@@ -16,3 +16,15 @@ variable "notification_targets" {
     events = list(string)
   }))
 }
+
+variable "cors_rules" {
+  description = "CORS rules for the bucket"
+  type = list(object({
+    allowed_origins = list(string)
+    allowed_methods = list(string)
+    allowed_headers = list(string)
+    expose_headers  = list(string)
+    max_age_seconds = number
+  }))
+  default = []
+}

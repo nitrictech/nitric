@@ -19,6 +19,8 @@ type BucketConfig struct {
 	NotificationTargets interface{} `field:"required" json:"notificationTargets" yaml:"notificationTargets"`
 	// The ID of the Nitric stack.
 	StackId *string `field:"required" json:"stackId" yaml:"stackId"`
+	// CORS rules for the bucket.
+	CorsRules interface{} `field:"optional" json:"corsRules" yaml:"corsRules"`
 	// The class of storage used to store the bucket's contents.
 	//
 	// This can be STANDARD, NEARLINE, COLDLINE, ARCHIVE, or MULTI_REGIONAL.

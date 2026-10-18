@@ -190,8 +190,23 @@ message Batch {
   repeated Job jobs = 12;
 }
 
+// CORS rule configuration for a storage bucket.
+message BucketCorsRule {
+  // Origins allowed to make cross-origin requests (e.g., "https://example.com").
+  repeated string allowed_origins = 1;
+  // HTTP methods allowed for cross-origin requests (e.g., "GET", "PUT").
+  repeated string allowed_methods = 2;
+  // Request headers allowed in preflight requests. Not supported by all providers.
+  repeated string allowed_headers = 3;
+  // Response headers exposed to the browser.
+  repeated string expose_headers = 4;
+  // Maximum time in seconds a preflight response can be cached. Omit or set to 0 for provider default.
+  int32 max_age_seconds = 5;
+}
+
 message Bucket {
   repeated BucketListener listeners = 1;
+  repeated BucketCorsRule cors_rules = 2;
 }
 
 message BucketListener {

@@ -21,6 +21,8 @@ type Bucket interface {
 	CdktfStack() cdktf.TerraformStack
 	// Experimental.
 	ConstructNodeMetadata() *map[string]interface{}
+	CorsRules() interface{}
+	SetCorsRules(val interface{})
 	// Experimental.
 	DependsOn() *[]*string
 	// Experimental.
@@ -115,6 +117,16 @@ func (j *jsiiProxy_Bucket) ConstructNodeMetadata() *map[string]interface{} {
 	_jsii_.Get(
 		j,
 		"constructNodeMetadata",
+		&returns,
+	)
+	return returns
+}
+
+func (j *jsiiProxy_Bucket) CorsRules() interface{} {
+	var returns interface{}
+	_jsii_.Get(
+		j,
+		"corsRules",
 		&returns,
 	)
 	return returns
@@ -275,6 +287,17 @@ func (j *jsiiProxy_Bucket)SetBucketName(val *string) {
 	_jsii_.Set(
 		j,
 		"bucketName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Bucket)SetCorsRules(val interface{}) {
+	if err := j.validateSetCorsRulesParameters(val); err != nil {
+		panic(err)
+	}
+	_jsii_.Set(
+		j,
+		"corsRules",
 		val,
 	)
 }

@@ -12,7 +12,7 @@ resource "random_id" "bucket_id" {
 data "google_client_config" "this" {
 }
 
-# Google Stora bucket
+# Google Storage bucket
 resource "google_storage_bucket" "bucket" {
   name          = "${var.bucket_name}-${random_id.bucket_id.hex}"
   location      = data.google_client_config.this.region
@@ -20,6 +20,16 @@ resource "google_storage_bucket" "bucket" {
   labels = {
     "x-nitric-${var.stack_id}-name" = var.bucket_name
     "x-nitric-${var.stack_id}-type" = "bucket"
+  }
+
+  dynamic "cors" {
+    for_each = var.cors_rules
+    content {
+      origin          = cors.value.allowed_origins
+      method          = cors.value.allowed_methods
+      response_header = cors.value.expose_headers
+      max_age_seconds = cors.value.max_age_seconds
+    }
   }
 }
 
