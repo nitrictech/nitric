@@ -15,11 +15,14 @@
 package deploytf
 
 import (
+	"slices"
+
 	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/nitrictech/nitric/cloud/gcp/deploytf/generated/bucket"
 	deploymentspb "github.com/nitrictech/nitric/core/pkg/proto/deployments/v1"
 	storagepb "github.com/nitrictech/nitric/core/pkg/proto/storage/v1"
+	"github.com/samber/lo"
 )
 
 func eventsForBlobEventType(blobEventType storagepb.BlobEventType) []string {
@@ -62,11 +65,31 @@ func (n *NitricGcpTerraformProvider) Bucket(stack cdktf.TerraformStack, name str
 		}
 	}
 
+	var corsRules []map[string]interface{}
+	for _, rule := range config.CorsRules {
+		corsRules = append(corsRules, map[string]interface{}{
+			"allowed_origins": jsii.Strings(rule.AllowedOrigins...),
+			"allowed_methods": jsii.Strings(rule.AllowedMethods...),
+			// GCS uses response_header for both preflight Access-Control-Allow-Headers and Access-Control-Expose-Headers
+			"response_headers": jsii.Strings(lo.Uniq(slices.Concat(rule.AllowedHeaders, rule.ExposeHeaders))...),
+			"max_age_seconds":  maxAgeSeconds(rule),
+		})
+	}
+
 	n.Buckets[name] = bucket.NewBucket(stack, jsii.Sprintf("bucket_%s", name), &bucket.BucketConfig{
 		BucketName:          &name,
 		StackId:             n.Stack.StackIdOutput(),
 		NotificationTargets: &notificationTargets,
+		CorsRules:           &corsRules,
 	})
 
 	return nil
+}
+
+// maxAgeSeconds returns nil for an unset (0) max age so the provider default applies
+func maxAgeSeconds(rule *deploymentspb.BucketCorsRule) *float64 {
+	if rule.MaxAgeSeconds <= 0 {
+		return nil
+	}
+	return jsii.Number(float64(rule.MaxAgeSeconds))
 }

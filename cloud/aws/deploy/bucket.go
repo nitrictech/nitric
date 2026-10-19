@@ -201,6 +201,30 @@ func (a *NitricAwsPulumiProvider) Bucket(ctx *pulumi.Context, parent pulumi.Reso
 
 	a.Buckets[name] = bucket
 
+	if len(config.CorsRules) > 0 {
+		corsRules := s3.BucketCorsConfigurationV2CorsRuleArray{}
+		for _, rule := range config.CorsRules {
+			corsRule := s3.BucketCorsConfigurationV2CorsRuleArgs{
+				AllowedOrigins: pulumi.ToStringArray(rule.AllowedOrigins),
+				AllowedMethods: pulumi.ToStringArray(rule.AllowedMethods),
+				AllowedHeaders: pulumi.ToStringArray(rule.AllowedHeaders),
+				ExposeHeaders:  pulumi.ToStringArray(rule.ExposeHeaders),
+			}
+			if rule.MaxAgeSeconds > 0 {
+				corsRule.MaxAgeSeconds = pulumi.IntPtr(int(rule.MaxAgeSeconds))
+			}
+			corsRules = append(corsRules, corsRule)
+		}
+
+		_, err := s3.NewBucketCorsConfigurationV2(ctx, fmt.Sprintf("%s-cors", name), &s3.BucketCorsConfigurationV2Args{
+			Bucket:    bucket.ID().ToStringOutput(),
+			CorsRules: corsRules,
+		}, opts...)
+		if err != nil {
+			return fmt.Errorf("unable to create CORS configuration for bucket %s: %w", name, err)
+		}
+	}
+
 	if len(config.Listeners) > 0 {
 		notificationName := fmt.Sprintf("notification-%s", name)
 		notification, err := createNotification(ctx, notificationName, &S3NotificationArgs{

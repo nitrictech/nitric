@@ -19,3 +19,4 @@ During deployment the Nitric CLI creates buckets for your stack:
 
 - Declared Buckets are created in S3
 - IAM policies are created enabling your Lambda Functions to access S3 objects
+- If CORS rules are configured, an [S3 CORS Configuration](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html) is created for the bucket
