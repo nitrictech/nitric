@@ -2,7 +2,7 @@ module github.com/nitrictech/nitric/cloud/aws
 
 go 1.26.0
 
-toolchain go1.27.2
+toolchain go1.27.3
 
 tool github.com/uw-labs/lichen
 
