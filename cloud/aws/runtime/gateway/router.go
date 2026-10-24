@@ -228,9 +228,9 @@ func handleHttpProxyRequest(ctx context.Context, httpmanager http.HttpRequestHan
 	}
 
 	lh := newLambdaHeaders()
-	resp.Header.VisitAll(func(key, value []byte) {
+	for key, value := range resp.Header.All() {
 		lh.Add(string(key), string(value))
-	})
+	}
 
 	responseString := base64.StdEncoding.EncodeToString(resp.Body())
 
