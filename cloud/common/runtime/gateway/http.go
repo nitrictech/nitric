@@ -59,7 +59,7 @@ type HttpGateway struct {
 func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
 	headerCopy := make(map[string][]string)
 
-	rh.VisitAll(func(key []byte, val []byte) {
+	for key, val := range rh.All() {
 		keyString := string(key)
 
 		if strings.ToLower(keyString) == "host" {
@@ -77,7 +77,7 @@ func HttpHeadersToMap(rh *fasthttp.RequestHeader) map[string][]string {
 		} else {
 			headerCopy[string(key)] = append(headerCopy[string(key)], string(val))
 		}
-	})
+	}
 
 	return headerCopy
 }
@@ -102,7 +102,7 @@ func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam
 		}
 
 		query := map[string]*apispb.QueryValue{}
-		rc.QueryArgs().VisitAll(func(key []byte, val []byte) {
+		for key, val := range rc.QueryArgs().All() {
 			k := string(key)
 
 			if query[k] == nil {
@@ -110,7 +110,7 @@ func (s *HttpGateway) newApiHandler(opts *gateway.GatewayStartOpts, apiNameParam
 			}
 
 			query[k].Value = append(query[k].Value, string(val))
-		})
+		}
 
 		httpTrigger := &apispb.ServerMessage{
 			Content: &apispb.ServerMessage_HttpRequest{
