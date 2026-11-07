@@ -116,6 +116,13 @@ adminemail: test@example.com
 # Subscription ID to associate deployed services with
 subscription-id: example-subscription-id
 
+# Configure the storage account that holds the stack's buckets, key/value stores and queues
+storage:
+  # The replication type to use, one of LRS, ZRS, GRS, RAGRS, GZRS or RAGZRS (defaults to LRS)
+  # Changing between some types recreates the storage account and deletes its data, so set this before your first deployment
+  # See https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account#account_replication_type
+  replication-type: GRS
+
 # Add CDN configuration, required for custom domains for website deployments
 # Available since v1.23.0
 cdn:

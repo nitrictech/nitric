@@ -29,5 +29,7 @@ type StackConfig struct {
 	InfrastructureSubnetId *string `field:"optional" json:"infrastructureSubnetId" yaml:"infrastructureSubnetId"`
 	// The name of the resource group to reuse.
 	ResourceGroupName *string `field:"optional" json:"resourceGroupName" yaml:"resourceGroupName"`
+	// The replication type of the storage account LRS.
+	StorageReplicationType *string `field:"optional" json:"storageReplicationType" yaml:"storageReplicationType"`
 }
 

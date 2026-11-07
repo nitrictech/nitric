@@ -17,10 +17,15 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
 )
+
+// defaultStorageReplicationType is used for the stack's storage account when no replication type is configured.
+const defaultStorageReplicationType = "LRS"
 
 type AzureConfigItem struct {
 	ContainerApps *AzureContainerAppsConfig `mapstructure:"containerapps,omitempty"`
@@ -49,6 +54,11 @@ type CdnDomainConfig struct {
 	SkipCacheInvalidation bool `mapstructure:"skip-cache-invalidation"`
 }
 
+type StorageConfig struct {
+	// The replication type of the stack's storage account, which holds its buckets, key/value stores and queues
+	ReplicationType string `mapstructure:"replication-type"`
+}
+
 type AzureConfig struct {
 	Refresh                                 bool
 	ResourceGroup                           string `mapstructure:"resource-group"`
@@ -56,6 +66,7 @@ type AzureConfig struct {
 	AdminEmail                              string `mapstructure:"adminemail"`
 	Apis                                    map[string]*AzureApiConfig
 	CdnDomain                               CdnDomainConfig `mapstructure:"cdn"`
+	Storage                                 StorageConfig   `mapstructure:"storage"`
 	config.AbstractConfig[*AzureConfigItem] `mapstructure:"config,squash"`
 }
 
@@ -89,6 +100,16 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, erro
 
 	if azureConfig.Org == "" {
 		azureConfig.Org = "unknown"
+	}
+
+	if azureConfig.Storage.ReplicationType == "" {
+		azureConfig.Storage.ReplicationType = defaultStorageReplicationType
+	}
+
+	switch azureConfig.Storage.ReplicationType {
+	case "LRS", "ZRS", "GRS", "RAGRS", "GZRS", "RAGZRS":
+	default:
+		return nil, fmt.Errorf("invalid storage replication-type value %q: must be one of LRS, ZRS, GRS, RAGRS, GZRS or RAGZRS", azureConfig.Storage.ReplicationType)
 	}
 
 	if azureConfig.Apis == nil {
