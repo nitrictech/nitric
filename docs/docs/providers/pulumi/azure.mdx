@@ -148,6 +148,9 @@ cdn:
   domain-name: app.example.com
   # Skip CDN cache invalidation during deployments (defaults to false)
   skip-cache-invalidation: true
+  # The Azure Front Door tier to deploy, either standard or premium (defaults to standard)
+  # Changing this on a deployed stack can recreate the Front Door profile, which changes its default hostname
+  sku: premium
 
 # Configure your deployed services
 config:
