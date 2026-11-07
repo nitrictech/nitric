@@ -149,6 +149,12 @@ cdn:
   # Skip CDN cache invalidation during deployments (defaults to false)
   skip-cache-invalidation: true
 
+# Configure the storage account that holds the stack's buckets, key/value stores and queues
+storage:
+  # The replication type to use, one of LRS, ZRS, GRS, RAGRS, GZRS or RAGZRS (defaults to LRS)
+  # Not all types can be changed in place, see https://learn.microsoft.com/azure/storage/common/redundancy-migration
+  replication-type: GRS
+
 # Configure your deployed services
 config:
   # How services without a type will be deployed

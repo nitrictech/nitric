@@ -37,8 +37,7 @@ resource "azurerm_storage_account" "storage" {
   location            = var.location
   account_tier        = "Standard"
   access_tier         = "Hot"
-  # TODO: Make configurable  
-  account_replication_type = "LRS"
+  account_replication_type = var.storage_replication_type
   account_kind             = "StorageV2"
   tags = merge(var.tags, {
     "x-nitric-${local.stack_id}-name" = var.stack_name

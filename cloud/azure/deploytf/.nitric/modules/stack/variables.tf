@@ -9,6 +9,12 @@ variable "enable_storage" {
   default     = false
 }
 
+variable "storage_replication_type" {
+  description = "The replication type of the storage account"
+  type        = string
+  default     = "LRS"
+}
+
 variable "enable_keyvault" {
   description = "Enable the creation of a keyvault"
   type        = bool

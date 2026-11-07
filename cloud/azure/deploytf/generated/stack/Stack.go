@@ -74,6 +74,8 @@ type Stack interface {
 	StorageAccountIdOutput() *string
 	StorageAccountNameOutput() *string
 	StorageAccountQueueEndpointOutput() *string
+	StorageReplicationType() *string
+	SetStorageReplicationType(val *string)
 	SubscriptionIdOutput() *string
 	Tags() *map[string]*string
 	SetTags(val *map[string]*string)
@@ -490,6 +492,16 @@ func (j *jsiiProxy_Stack) StorageAccountQueueEndpointOutput() *string {
 	return returns
 }
 
+func (j *jsiiProxy_Stack) StorageReplicationType() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"storageReplicationType",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Stack) SubscriptionIdOutput() *string {
 	var returns *string
 	_jsii_.Get(
@@ -622,6 +634,14 @@ func (j *jsiiProxy_Stack)SetStackName(val *string) {
 	_jsii_.Set(
 		j,
 		"stackName",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Stack)SetStorageReplicationType(val *string) {
+	_jsii_.Set(
+		j,
+		"storageReplicationType",
 		val,
 	)
 }

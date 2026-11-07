@@ -180,13 +180,14 @@ func (a *NitricAzureTerraformProvider) Pre(tfstack cdktf.TerraformStack, resourc
 
 	// Deploy the stack - this deploys all pre-requisite environment level resources to support the nitric stack
 	a.Stack = stack.NewStack(tfstack, jsii.String("stack"), &stack.StackConfig{
-		EnableStorage:     jsii.Bool(enableStorage),
-		EnableKeyvault:    jsii.Bool(enableKeyvault),
-		EnableDatabase:    jsii.Bool(enableDatabase),
-		Location:          jsii.String(a.Region),
-		StackName:         jsii.String(a.StackName),
-		Tags:              a.GetGlobalTags(),
-		ResourceGroupName: resourceGroupImport,
+		EnableStorage:          jsii.Bool(enableStorage),
+		EnableKeyvault:         jsii.Bool(enableKeyvault),
+		EnableDatabase:         jsii.Bool(enableDatabase),
+		Location:               jsii.String(a.Region),
+		StackName:              jsii.String(a.StackName),
+		Tags:                   a.GetGlobalTags(),
+		ResourceGroupName:      resourceGroupImport,
+		StorageReplicationType: jsii.String(a.AzureConfig.Storage.ReplicationType),
 	})
 
 	a.Roles = roles.NewRoles(tfstack, jsii.String("roles"), &roles.RolesConfig{

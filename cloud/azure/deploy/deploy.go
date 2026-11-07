@@ -177,14 +177,14 @@ func createKeyVault(ctx *pulumi.Context, group *resources.ResourceGroup, tenantI
 	return keyVault, nil
 }
 
-func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, tags map[string]string) (*storage.StorageAccount, error) {
+func createStorageAccount(ctx *pulumi.Context, group *resources.ResourceGroup, replicationType string, tags map[string]string) (*storage.StorageAccount, error) {
 	accName := ResourceName(ctx, "", StorageAccountRT)
 	storageAccount, err := storage.NewStorageAccount(ctx, accName, &storage.StorageAccountArgs{
 		AccessTier:        storage.AccessTierHot,
 		ResourceGroupName: group.Name,
 		Kind:              pulumi.String("StorageV2"),
 		Sku: storage.SkuArgs{
-			Name: pulumi.String(storage.SkuName_Standard_LRS),
+			Name: pulumi.String("Standard_" + replicationType),
 		},
 		Tags: pulumi.ToStringMap(tags),
 	})
@@ -406,7 +406,7 @@ func (a *NitricAzurePulumiProvider) Pre(ctx *pulumi.Context, nitricResources []*
 	// This means we need to create a storage account for each stack, before buckets can be created.
 	if hasBuckets || hasKvStores || hasQueues {
 		logger.Info("Stack declares bucket(s), key/value store(s) or queue(s), creating stack level Azure Storage Account")
-		a.StorageAccount, err = createStorageAccount(ctx, a.ResourceGroup, a.GetTags(a.StackId, ctx.Stack(), commonresources.Stack))
+		a.StorageAccount, err = createStorageAccount(ctx, a.ResourceGroup, a.AzureConfig.Storage.ReplicationType, a.GetTags(a.StackId, ctx.Stack(), commonresources.Stack))
 		if err != nil {
 			return errors.WithMessage(err, "storage account create")
 		}
