@@ -171,8 +171,7 @@ func (p *NitricAzurePulumiProvider) deployCDN(ctx *pulumi.Context) error {
 		ResourceGroupName: p.ResourceGroup.Name,
 		Location:          pulumi.String("Global"),
 		Sku: &cdn.SkuArgs{
-			// TODO could make this a config option, standard or premium
-			Name: cdn.SkuName_Standard_AzureFrontDoor,
+			Name: pulumi.String(p.AzureConfig.CdnDomain.FrontDoorSkuName()),
 		},
 	})
 	if err != nil {

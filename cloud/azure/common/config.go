@@ -17,6 +17,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nitrictech/nitric/cloud/common/deploy/config"
@@ -38,6 +40,13 @@ type AzureApiConfig struct {
 	Description string
 }
 
+const (
+	// cdnSkuStandard deploys websites using the Standard tier of Azure Front Door (default).
+	cdnSkuStandard = "standard"
+	// cdnSkuPremium deploys websites using the Premium tier of Azure Front Door.
+	cdnSkuPremium = "premium"
+)
+
 type CdnDomainConfig struct {
 	// Name of the managed zone in azure DNS zones
 	ZoneName string `mapstructure:"zone-name"`
@@ -47,6 +56,17 @@ type CdnDomainConfig struct {
 	DomainName string `mapstructure:"domain-name"`
 	// If true, CDN cache invalidation will not be run on deployment
 	SkipCacheInvalidation bool `mapstructure:"skip-cache-invalidation"`
+	// The Azure Front Door tier to deploy, either standard or premium
+	Sku string `mapstructure:"sku"`
+}
+
+// FrontDoorSkuName returns the name Azure uses for the configured Front Door tier
+func (c CdnDomainConfig) FrontDoorSkuName() string {
+	if c.Sku == cdnSkuPremium {
+		return "Premium_AzureFrontDoor"
+	}
+
+	return "Standard_AzureFrontDoor"
 }
 
 type AzureConfig struct {
@@ -97,6 +117,14 @@ func ConfigFromAttributes(attributes map[string]interface{}) (*AzureConfig, erro
 
 	if azureConfig.Config == nil {
 		azureConfig.Config = map[string]*AzureConfigItem{}
+	}
+
+	if azureConfig.CdnDomain.Sku == "" {
+		azureConfig.CdnDomain.Sku = cdnSkuStandard
+	}
+
+	if azureConfig.CdnDomain.Sku != cdnSkuStandard && azureConfig.CdnDomain.Sku != cdnSkuPremium {
+		return nil, fmt.Errorf("invalid cdn sku value %q: must be %q or %q", azureConfig.CdnDomain.Sku, cdnSkuStandard, cdnSkuPremium)
 	}
 
 	// if no default then set provider level defaults

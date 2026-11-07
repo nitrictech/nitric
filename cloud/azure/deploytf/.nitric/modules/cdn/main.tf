@@ -10,7 +10,7 @@ locals {
 resource "azurerm_cdn_frontdoor_profile" "cdn_profile" {
   name                = "${var.stack_id}-cdn-profile"
   resource_group_name = var.resource_group_name
-  sku_name            = "Standard_AzureFrontDoor"
+  sku_name            = var.sku_name
 }
 
 resource "azurerm_cdn_frontdoor_endpoint" "cdn_endpoint" {

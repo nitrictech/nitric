@@ -58,6 +58,8 @@ type Cdn interface {
 	SkipAssetCreationFromLocalModules() *bool
 	SkipCacheInvalidation() *bool
 	SetSkipCacheInvalidation(val *bool)
+	SkuName() *string
+	SetSkuName(val *string)
 	// Experimental.
 	Source() *string
 	StackId() *string
@@ -321,6 +323,16 @@ func (j *jsiiProxy_Cdn) SkipCacheInvalidation() *bool {
 	return returns
 }
 
+func (j *jsiiProxy_Cdn) SkuName() *string {
+	var returns *string
+	_jsii_.Get(
+		j,
+		"skuName",
+		&returns,
+	)
+	return returns
+}
+
 func (j *jsiiProxy_Cdn) Source() *string {
 	var returns *string
 	_jsii_.Get(
@@ -497,6 +509,14 @@ func (j *jsiiProxy_Cdn)SetSkipCacheInvalidation(val *bool) {
 	_jsii_.Set(
 		j,
 		"skipCacheInvalidation",
+		val,
+	)
+}
+
+func (j *jsiiProxy_Cdn)SetSkuName(val *string) {
+	_jsii_.Set(
+		j,
+		"skuName",
 		val,
 	)
 }

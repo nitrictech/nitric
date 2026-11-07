@@ -135,6 +135,7 @@ func (n *NitricAzureTerraformProvider) NewCdn(tfstack cdktf.TerraformStack) erro
 		EnableCustomDomain:    jsii.Bool(enableCustomDomain),
 		EnableApiRewrites:     jsii.Bool(enableApiRewrites),
 		SkipCacheInvalidation: jsii.Bool(n.AzureConfig.CdnDomain.SkipCacheInvalidation),
+		SkuName:               jsii.String(n.AzureConfig.CdnDomain.FrontDoorSkuName()),
 		DependsOn:             &dependsOn,
 	})
 

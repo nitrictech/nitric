@@ -9,6 +9,12 @@ variable "resource_group_name" {
   sensitive   = true
 }
 
+variable "sku_name" {
+  description = "The SKU of the Azure Front Door profile"
+  type        = string
+  default     = "Standard_AzureFrontDoor"
+}
+
 variable "uploaded_files" {
   description = "Map of uploaded files with their MD5 hashes"
   type        = map(string)

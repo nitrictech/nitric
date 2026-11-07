@@ -54,11 +54,11 @@ lint:
 
 test: generate-mocks
 	@echo Running unit tests
-	@go run github.com/onsi/ginkgo/ginkgo ./runtime/...
+	@go run github.com/onsi/ginkgo/ginkgo ./runtime/... ./common/...
 
 test-coverage: generate-mocks
 	@echo Running unit tests
-	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/...
+	@go run github.com/onsi/ginkgo/ginkgo -cover -outputdir=./ -coverprofile=all.coverprofile ./runtime/... ./common/...
 
 clean-mocks:
 	@rm -rf mocks
