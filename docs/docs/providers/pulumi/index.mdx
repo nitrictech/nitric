@@ -35,6 +35,19 @@ Nitric uses the [Pulumi Automation API](https://www.pulumi.com/automation/) for 
 
 This does not change how you integrate Nitric with Pulumi Cloud if you wish to use it as a [state backend](https://www.pulumi.com/docs/iac/concepts/state-and-backends/) for your stacks.
 
+## State backends
+
+Pulumi stores the state of your stacks in a [state backend](https://www.pulumi.com/docs/iac/concepts/state-and-backends/), which needs to be selected before deploying. On your own machine, run `pulumi login` to select one.
+
+Non-interactive environments, such as CI, can't prompt for a login. Deployments in these environments fail with the error `PULUMI_ACCESS_TOKEN must be set for login during non-interactive CLI sessions` until a backend has been selected using one of these environment variables:
+
+| Environment variable  | Backend                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `PULUMI_ACCESS_TOKEN` | [Pulumi Cloud](https://www.pulumi.com/docs/pulumi-cloud/access-management/access-tokens/), using an access token |
+| `PULUMI_BACKEND_URL`  | A [self-managed backend](https://www.pulumi.com/docs/iac/concepts/state-and-backends/), by URL                   |
+
+Self-managed backends also need `PULUMI_CONFIG_PASSPHRASE` to be set, as it's used to encrypt the secrets in your stacks. See the [GitHub Actions guide](/guides/deploying/github-actions) for a CI example.
+
 ## Using your Pulumi Cloud Account (Optional)
 
 If you need to login to your Pulumi Cloud account you can do so with:

@@ -16,11 +16,16 @@ package provider
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 )
 
 type ErrorHandler = func(err error) error
+
+// pulumiLoginRequiredMsg is reported by the Pulumi CLI when no state backend has been selected
+// and it can't prompt for a login, which is the case for non-interactive sessions such as CI.
+const pulumiLoginRequiredMsg = "must be set for login during non-interactive CLI sessions"
 
 func explainCommonErrs(err error) error {
 	// Check for common Pulumi 'autoError' types
@@ -35,6 +40,11 @@ func explainCommonErrs(err error) error {
 		err = fmt.Errorf("failed to create Pulumi stack, this may be a bug in nitric. Seek help https://github.com/nitrictech/nitric/issues\n%w", err)
 	} else if auto.IsCompilationError(err) {
 		err = fmt.Errorf("failed to compile Pulumi program, this may be a bug in your chosen provider or with nitric. Seek help https://github.com/nitrictech/nitric/issues\n%w", err)
+	} else if strings.Contains(err.Error(), pulumiLoginRequiredMsg) {
+		if pe := parsePulumiError(err); pe != nil {
+			err = pe
+		}
+		err = fmt.Errorf("no Pulumi state backend is configured.\nNon-interactive environments, such as CI, can't prompt for a login. Set PULUMI_ACCESS_TOKEN to use Pulumi Cloud or PULUMI_BACKEND_URL to use a self-managed backend.\nSee https://nitric.io/docs/providers/pulumi#state-backends\n%w", err)
 	} else if pe := parsePulumiError(err); pe != nil {
 		err = pe
 	}
