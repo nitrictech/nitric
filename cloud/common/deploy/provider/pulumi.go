@@ -229,7 +229,7 @@ func (s *PulumiProviderServer) Up(req *deploymentspb.DeploymentUpRequest, stream
 
 	autoStack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, pulumiProgram)
 	if err != nil {
-		return err
+		return explainCommonErrs(err)
 	}
 
 	pulumiEventsChan := make(chan events.EngineEvent)
@@ -303,7 +303,7 @@ func (s *PulumiProviderServer) Down(req *deploymentspb.DeploymentDownRequest, st
 
 	stack, err := auto.UpsertStackInlineSource(context.TODO(), fmt.Sprintf("%s-%s", projectName, stackName), projectName, nil)
 	if err != nil {
-		return err
+		return explainCommonErrs(err)
 	}
 
 	pulumiEventsChan := make(chan events.EngineEvent)
